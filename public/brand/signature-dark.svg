@@ -3,7 +3,7 @@
     <rect x="16" y="12" width="7" height="76" fill="#D92D20"/>
     <polygon points="23,22 88,22 68,44 88,66 23,66" fill="#D92D20"/>
   </g>
-  <text x="118" y="46" font-family="Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="3.4" fill="#ECEFF1">FLAMME</text>
-  <text x="118" y="78" font-family="Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="3.4" fill="#D92D20">ROUGE</text>
+  <text x="118" y="46" font-family="Barlow,Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="300" letter-spacing="4.4" fill="#ECEFF1">FLAMME</text>
+  <text x="118" y="78" font-family="Barlow,Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="3.6" fill="#D92D20">ROUGE</text>
   
 </svg>

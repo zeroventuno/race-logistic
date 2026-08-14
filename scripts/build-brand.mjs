@@ -38,13 +38,34 @@ function iconSvg({ color = ROUGE, background = null, scale = 1, rounded = false 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${bg}<g transform="translate(${inset} ${inset}) scale(${scale})"><polygon points="${PENNANT_ICON}" fill="${color}"/></g></svg>`;
 }
 
+/**
+ * Pilha de fontes das assinaturas.
+ *
+ * ADVERTÊNCIA que vale registrar: um `<text>` em SVG só desenha na fonte
+ * pedida se ela existir no contexto que renderiza. Dentro da aplicação a
+ * Barlow está carregada e sai correta. Num arquivo SVG aberto solto, ou
+ * colocado num editor de terceiros, ele cai para a reserva.
+ *
+ * Para IMPRESSÃO e para material que sai da aplicação, o texto precisa ser
+ * convertido em contorno. Está anotado como pendência no manual — converter
+ * exige um passo de vetorização que não vale automatizar antes de a fonte
+ * estar definitiva.
+ */
+const FONT = "Barlow,Helvetica Neue,Arial,sans-serif";
+
 function signatureSvg({ color = ROUGE, ink = ASPHALT, endorsed = false }) {
   // Assinatura horizontal: bandeirola com mastro + nome empilhado.
   // Duas palavras longas lado a lado empurrariam o símbolo para fora da caixa
   // e o conjunto deixaria de caber num cabeçalho.
+  //
+  // FLAMME em 300 e ROUGE em 700: o contraste de peso dá ritmo ao
+  // empilhamento e faz a palavra vermelha carregar peso visual junto com a
+  // cor, em vez de cor e peso competirem. A entreletra do ROUGE é menor
+  // porque o peso maior já ocupa mais largura — igualar os dois trackings
+  // deixaria as palavras desalinhadas na vertical.
   const endorsementBlock = endorsed
-    ? `<text x="118" y="94" font-family="Helvetica Neue,Arial,sans-serif" font-size="9" letter-spacing="1.6" fill="${ink}" opacity="0.55">BY </text>
-       <text x="136" y="94" font-family="Helvetica Neue,Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="1.6" fill="${TRAKR_LIME}">TRAKR</text>`
+    ? `<text x="118" y="94" font-family="${FONT}" font-size="9" font-weight="500" letter-spacing="1.6" fill="${ink}" opacity="0.55">BY </text>
+       <text x="137" y="94" font-family="${FONT}" font-size="9" font-weight="700" letter-spacing="1.6" fill="${TRAKR_LIME}">TRAKR</text>`
     : "";
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 110" width="360" height="110">
@@ -52,8 +73,8 @@ function signatureSvg({ color = ROUGE, ink = ASPHALT, endorsed = false }) {
     <rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>
     <polygon points="${FLAG}" fill="${color}"/>
   </g>
-  <text x="118" y="46" font-family="Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="3.4" fill="${ink}">FLAMME</text>
-  <text x="118" y="78" font-family="Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="3.4" fill="${color}">ROUGE</text>
+  <text x="118" y="46" font-family="${FONT}" font-size="34" font-weight="300" letter-spacing="4.4" fill="${ink}">FLAMME</text>
+  <text x="118" y="78" font-family="${FONT}" font-size="34" font-weight="700" letter-spacing="3.6" fill="${color}">ROUGE</text>
   ${endorsementBlock}
 </svg>`;
 }

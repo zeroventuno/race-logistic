@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Barlow, auto-hospedada.
+
+   Sem CDN de fonte, e não por preferência: um painel de direção de prova roda
+   em 4G de trailer e atrás de portal cativo de hotel. Uma fonte que depende de
+   um terceiro é uma fonte que às vezes não chega — e o letreiro cai numa
+   substituta com métricas diferentes justamente no dia do evento.
+
+   Só três pesos. Cada peso é um arquivo que o navegador baixa:
+     300  o "FLAMME" do letreiro
+     500  texto de interface
+     700  o "ROUGE" do letreiro e os números que precisam pesar
+   --------------------------------------------------------------------------- */
+@import "@fontsource/barlow/300.css";
+@import "@fontsource/barlow/500.css";
+@import "@fontsource/barlow/700.css";
+
 /* ===========================================================================
    Linguagem visual — direção de prova
    ===========================================================================
@@ -41,6 +58,11 @@
   --color-info: #38bdf8;
 
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+
+  /* Barlow tem o traço de baixo contraste e os terminais retos da sinalização
+     rodoviária — o mesmo mundo visual da bandeirola. A pilha de reserva é
+     larga de propósito: se a fonte não carregar, o layout não deve saltar. */
+  --font-sans: "Barlow", "Helvetica Neue", Arial, system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------------------
@@ -180,6 +202,7 @@ body {
 body {
   background: var(--color-surface-0);
   color: var(--color-ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   /* Sem seleção acidental de texto ao tocar em botões no celular do motorista. */
@@ -192,6 +215,44 @@ body {
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* ---------------------------------------------------------------------------
+   O letreiro da marca.
+
+   FLAMME leve, ROUGE pesado. As duas palavras no mesmo peso, empilhadas,
+   leem como um bloco cinza; o contraste dá ritmo ao empilhamento e faz a
+   palavra vermelha carregar peso visual junto com a cor — a cor e o peso
+   apontando para o mesmo lugar em vez de competirem.
+
+   Entreletra generosa porque caixa alta em peso leve fecha demais: sem o
+   respiro, "FLAMME" em 300 vira uma mancha em tamanho pequeno.
+   --------------------------------------------------------------------------- */
+.wordmark {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  line-height: 0.88;
+  display: flex;
+  flex-direction: column;
+}
+
+.wordmark-flamme {
+  font-weight: 300;
+  letter-spacing: 0.13em;
+}
+
+.wordmark-rouge {
+  font-weight: 700;
+  /* Menos entreletra que o FLAMME: peso maior já ocupa mais largura, e
+     igualar o tracking desalinharia as duas palavras na vertical. */
+  letter-spacing: 0.105em;
+  color: var(--brand-rouge, #d92d20);
+}
+
+/* Dentro da superfície operacional a marca é monocromática — vermelho ali
+   significa socorro, e a regra está em src/brand/mark.ts. */
+.wordmark-mono .wordmark-rouge {
+  color: inherit;
 }
 
 /* Pulso do alerta crítico não reconhecido. Respeita quem pediu menos

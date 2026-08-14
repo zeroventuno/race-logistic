@@ -17,6 +17,7 @@
     "sim": "node scripts/simulate-drivers.mjs"
   },
   "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.58.0",
     "@tabler/icons-react": "^3.46.0",
