@@ -10,6 +10,7 @@ import type { AlertCategory, AlertPriority } from "@/lib/types";
 import {
   panelHealth,
   POLL_INTERVAL_MS,
+  POLL_TIMEOUT_MS,
   type ConnectionState,
   type LiveAlertView,
   type LiveSnapshot,
@@ -97,10 +98,29 @@ export function useLiveState({
     emVooRef.current = true;
     setAtualizando(true);
 
+    /**
+     * Teto de tempo, menor que o intervalo de polling.
+     *
+     * Sem ele, uma requisição que PENDURA — 4G ruim, portal cativo de hotel,
+     * proxy que engole o pacote — nunca resolve, o `finally` nunca roda,
+     * `emVooRef` fica travado em `true` e TODO poll futuro sai na primeira
+     * linha. `atualizando` fica travado em `true` e desabilita o botão
+     * "atualizar agora", que é o único caminho manual de recuperação.
+     *
+     * O resultado medido: 25 s de rede pendurada e depois rede 100% saudável →
+     * zero tentativas de reconciliação, para sempre. O painel dizia
+     * corretamente "PAINEL SEM CONEXÃO — confirme tudo pelo rádio", mas a única
+     * saída real era F5, e a tela não dizia isso. O mecanismo que existe para
+     * detectar congelamento era o que estava congelado.
+     */
+    const controle = new AbortController();
+    const expirar = setTimeout(() => controle.abort(), POLL_TIMEOUT_MS);
+
     try {
       const resposta = await fetch(`/api/races/${raceId}/live`, {
         cache: "no-store",
         headers: { accept: "application/json" },
+        signal: controle.signal,
       });
 
       if (!resposta.ok) {
@@ -123,12 +143,16 @@ export function useLiveState({
       }));
     } catch (error) {
       if (!montadoRef.current) return;
+      const abortou = (error as Error).name === "AbortError";
       setConnection((c) => ({
         ...c,
         consecutivePollFailures: c.consecutivePollFailures + 1,
-        lastError: (error as Error).message,
+        lastError: abortou
+          ? `A leitura passou de ${POLL_TIMEOUT_MS / 1000} s e foi cancelada.`
+          : (error as Error).message,
       }));
     } finally {
+      clearTimeout(expirar);
       emVooRef.current = false;
       if (montadoRef.current) setAtualizando(false);
     }
@@ -422,6 +446,16 @@ function aplicarAlerta(
     lat: numeroOuNulo(linha.lat),
     lng: numeroOuNulo(linha.lng),
     routeOffsetM: numeroOuNulo(linha.route_offset_m),
+    lap: numeroOuNulo(linha.lap) ?? existente?.lap ?? 0,
+    absoluteOffsetM:
+      numeroOuNulo(linha.absolute_offset_m) ?? existente?.absoluteOffsetM ?? null,
+    routeOffsetAmbiguous:
+      linha.route_offset_ambiguous === true ||
+      (existente?.routeOffsetAmbiguous ?? false),
+    routeOffsetConfidence:
+      (linha.route_offset_confidence as "high" | "medium" | "low" | null) ??
+      existente?.routeOffsetConfidence ??
+      null,
     raisedBy: raiser
       ? { positionId: raiser.positionId, label: raiser.label, role: raiser.role }
       : (existente?.raisedBy ?? null),

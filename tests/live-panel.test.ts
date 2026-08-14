@@ -47,6 +47,8 @@ function veiculo(over: Partial<LiveVehicleView> = {}): LiveVehicleView {
         : (over.routeOffsetM ?? 1_000),
     lapKnown: over.lapKnown ?? true,
     offRoute: over.offRoute ?? false,
+    snapAmbiguous: over.snapAmbiguous ?? false,
+    snapConfidence: over.snapConfidence ?? "high",
     snapDistanceM: null,
     speedMps: null,
     rollingSpeedMps: null,
@@ -78,6 +80,13 @@ function alerta(over: Partial<LiveAlertView> = {}): LiveAlertView {
     lat: null,
     lng: null,
     routeOffsetM: over.routeOffsetM ?? null,
+    lap: over.lap ?? 0,
+    absoluteOffsetM:
+      over.absoluteOffsetM !== undefined
+        ? over.absoluteOffsetM
+        : (over.routeOffsetM ?? null),
+    routeOffsetAmbiguous: over.routeOffsetAmbiguous ?? false,
+    routeOffsetConfidence: over.routeOffsetConfidence ?? "high",
     raisedBy: over.raisedBy ?? null,
     dispatch: over.dispatch ?? null,
     suggestions: over.suggestions ?? [],

@@ -88,15 +88,26 @@ export interface LiveVehicleView {
   /**
    * A volta deste veículo foi realmente apurada?
    *
-   * Só o abertura e o fechamento têm o histórico carregado a cada leitura, que
-   * é o que permite contar as passagens pela linha. Para os demais, numa prova
-   * de várias voltas em circuito, a volta é DESCONHECIDA — e a tela diz isso em
-   * vez de mostrar "km 3" como se fosse a primeira passagem.
+   * A ingestão grava `lap` por ping para TODO veículo, então o caso normal é
+   * `true`. Fica `false` só quando não há estado gravado e a reconstrução por
+   * histórico — disponível apenas para abertura e fechamento — também não
+   * alcança. Nesses casos a tela diz "volta ?" em vez de mostrar "km 3" como
+   * se fosse a primeira passagem.
    */
   lapKnown: boolean;
 
   offRoute: boolean;
   snapDistanceM: number | null;
+  /**
+   * A âncora deste veículo veio de desempate, não de geometria.
+   *
+   * O traçado passa por ali em mais de um ponto a distâncias estatisticamente
+   * iguais. A distância perpendicular pode ser de poucos metros e a posição na
+   * prova estar a quilômetros do certo. Quem for despachado precisa saber, e
+   * qualquer sugestão de acionamento ancorada assim tem que ser rebaixada.
+   */
+  snapAmbiguous: boolean;
+  snapConfidence: "high" | "medium" | "low" | null;
   speedMps: number | null;
   rollingSpeedMps: number | null;
   batteryPct: number | null;
@@ -206,7 +217,26 @@ export interface LiveAlertView {
   resolutionNote: string | null;
   lat: number | null;
   lng: number | null;
+  /** Posição dentro de UMA volta. Não é o km da prova. */
   routeOffsetM: number | null;
+  lap: number;
+  /**
+   * O km DA PROVA onde o alerta foi disparado.
+   *
+   * É este o número que vai na tela e o que a comparação de proximidade usa.
+   * Usar `routeOffsetM` fazia um alerta na volta 3 do km 23 aparecer como
+   * "no km 3,0", e a lista de apoio mais próximo — que compara offsets —
+   * oferecia como candidato nº 1 uma moto "a 0,5 km" que estava uma volta
+   * inteira atrás.
+   */
+  absoluteOffsetM: number | null;
+  /**
+   * A posição congelada no alerta veio de âncora ambígua.
+   *
+   * A diferença entre "a 200 m" e "a 37 km" decide se alguém pega o rádio.
+   */
+  routeOffsetAmbiguous: boolean;
+  routeOffsetConfidence: "high" | "medium" | "low" | null;
   raisedBy: { positionId: string; label: string; role: PositionRole } | null;
   dispatch: LiveAlertDispatchView | null;
   suggestions: LiveAlertSuggestionView[];
@@ -551,6 +581,17 @@ export interface ConnectionState {
 export const POLL_INTERVAL_MS = 10_000;
 export const POLL_STALE_MS = 30_000;
 export const POLL_DEAD_MS = 60_000;
+
+/**
+ * Teto de duração de uma leitura, deliberadamente MENOR que o intervalo.
+ *
+ * Requisição pendurada é rotina num trailer de prova com 4G ou atrás de portal
+ * cativo. Sem teto, a leitura nunca resolve e leva junto todo o mecanismo de
+ * reconciliação — inclusive o botão manual de recuperação. Cancelar aos 8 s e
+ * contar como falha é infinitamente melhor que esperar para sempre: falha o
+ * painel admite; espera eterna ele não percebe.
+ */
+export const POLL_TIMEOUT_MS = 8_000;
 
 /**
  * Saúde do painel.

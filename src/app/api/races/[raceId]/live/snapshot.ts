@@ -61,6 +61,12 @@ const POSITION_COLUMNS =
 const ALERT_COLUMNS =
   "id, client_alert_id, category, priority, status, note, created_at, received_at, " +
   "acknowledged_at, acknowledged_by, resolved_at, resolution_note, lat, lng, route_offset_m, " +
+  // `absolute_offset_m` e `lap` são o km DA PROVA; `route_offset_m` é o km
+  // dentro da volta. Exibir o segundo como se fosse o primeiro fazia um alerta
+  // na volta 3 do km 23 aparecer como "no km 3,0" — e a lista de apoio mais
+  // próximo comparava dois offsets locais, oferecendo como candidato nº 1 uma
+  // moto que estava "a 0,5 km" e na verdade estava uma volta inteira atrás.
+  "absolute_offset_m, lap, route_offset_confidence, route_offset_ambiguous, " +
   "raised_by_position_id, dispatched_position_id, dispatch_mode, dispatch_reason, " +
   "dispatched_at, dispatch_acknowledged_at, dispatch_declined_at, dispatch_decline_reason, on_scene_at";
 
@@ -87,6 +93,11 @@ interface StateRow {
   recorded_at: string;
   received_at: string;
   route_offset_m: number | null;
+  /** Posição na PROVA, contando as voltas. Gravada pela ingestão. */
+  absolute_offset_m: number | null;
+  lap: number | null;
+  snap_ambiguous: boolean | null;
+  snap_confidence: "high" | "medium" | "low" | null;
   snap_distance_m: number | null;
   off_route: boolean;
   rolling_speed_mps: number | null;
@@ -109,6 +120,10 @@ interface AlertRow {
   resolution_note: string | null;
   lat: number | null;
   lng: number | null;
+  absolute_offset_m: number | null;
+  lap: number | null;
+  route_offset_ambiguous: boolean | null;
+  route_offset_confidence: "high" | "medium" | "low" | null;
   route_offset_m: number | null;
   raised_by_position_id: string | null;
   dispatched_position_id: string | null;
@@ -310,9 +325,31 @@ export async function buildLiveSnapshot(
 
   const vehicles: LiveVehicleView[] = positions.map((p) => {
     const state = states.get(p.id) ?? null;
-    const lap = lapByPosition.get(p.id) ?? 0;
-    const lapKnown = !needsLapCounting || lapByPosition.has(p.id);
     const offset = state?.route_offset_m ?? null;
+
+    // A INGESTÃO É A FONTE DA VOLTA, não este arquivo.
+    //
+    // `position_state.lap` e `absolute_offset_m` são gravados por ping, pelo
+    // único código que tem o cursor de continuidade necessário para saber em
+    // que volta o veículo está. Reconstruir aqui produzia dois defeitos
+    // medidos:
+    //
+    //  - só os dois veículos de referência entravam na reconstrução, então os
+    //    outros dezoito ficavam todos na volta 0. Duas ambulâncias a 20 km e
+    //    duas voltas de distância apareciam a 50 m uma da outra — e a
+    //    ordenação padrão da lista se chama "Posição na prova".
+    //
+    //  - quando a geometria do percurso não carregava, `isLoop` virava false,
+    //    a reconstrução virava identidade, e a separação entre abertura e
+    //    vassoura colapsava para ZERO. A tela mostrava "0 m pela estrada" com
+    //    selo verde de MEDIDO: a afirmação de que os dois carros estão juntos
+    //    e a estrada atrás está limpa, com 20 km entre eles.
+    const dbLap = state?.lap ?? null;
+    const dbAbsolute = state?.absolute_offset_m ?? null;
+
+    const lap = dbLap ?? lapByPosition.get(p.id) ?? 0;
+    const lapKnown =
+      dbLap !== null || !needsLapCounting || lapByPosition.has(p.id);
 
     const clockSkewSeconds =
       state === null
@@ -337,10 +374,18 @@ export async function buildLiveSnapshot(
       receivedAt: state?.received_at ?? null,
       routeOffsetM: offset,
       lap,
-      absoluteOffsetM: offset === null ? null : lap * lapDistanceM + offset,
+      absoluteOffsetM:
+        dbAbsolute ?? (offset === null ? null : lap * lapDistanceM + offset),
       lapKnown,
       offRoute: state?.off_route ?? false,
       snapDistanceM: state?.snap_distance_m ?? null,
+      // A migração 0007 existe para que a ambiguidade da âncora chegue a quem
+      // decide. O app do motorista já recebia; o painel da direção descartava
+      // as duas colunas no `map`, e um veículo ancorado por desempate — que
+      // pode estar a quilômetros do ponto mostrado — aparecia como candidato
+      // nº 1 de um alerta médico, com ETA de 2 minutos.
+      snapAmbiguous: state?.snap_ambiguous ?? false,
+      snapConfidence: state?.snap_confidence ?? null,
       speedMps: state?.speed_mps ?? null,
       rollingSpeedMps: state?.rolling_speed_mps ?? null,
       batteryPct: state?.battery_pct ?? null,
@@ -507,6 +552,14 @@ export async function buildLiveSnapshot(
       lat: a.lat,
       lng: a.lng,
       routeOffsetM: a.route_offset_m,
+      lap: a.lap ?? 0,
+      absoluteOffsetM:
+        a.absolute_offset_m ??
+        (a.route_offset_m === null
+          ? null
+          : (a.lap ?? 0) * lapDistanceM + a.route_offset_m),
+      routeOffsetAmbiguous: a.route_offset_ambiguous ?? false,
+      routeOffsetConfidence: a.route_offset_confidence ?? null,
       raisedBy: raiser
         ? { positionId: raiser.positionId, label: raiser.label, role: raiser.role }
         : null,
