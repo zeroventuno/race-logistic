@@ -377,15 +377,21 @@ body {
    `max-height` descontando a faixa de baixo, para nunca passar por cima dela. */
 .coluna-flutuante {
   position: absolute;
-  top: 3.5rem;
+  /* Abaixo da faixa de estado, que ocupa o alto e é onde a coluna direita
+     batia com o selo de "reconciliado há 8 s". */
+  top: 4.5rem;
   z-index: 20;
   display: grid;
   align-content: start;
   gap: 0.75rem;
-  max-height: calc(100% - 8.5rem);
+  /* O desconto é a soma do que existe acima e abaixo dela: 4,5rem de faixa de
+     estado no alto, mais a faixa de referência e os controles do mapa
+     embaixo. Sem isto o último cartão passa por cima dos dois. */
+  max-height: calc(100% - 12rem);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 0.375rem;
+  padding-bottom: 0.5rem;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
 }
@@ -433,4 +439,21 @@ body {
 :root {
   --route-line: light-dark(#1f6fb2, #78bef0);
   --route-casing: light-dark(rgb(255 255 255 / 0.85), rgb(10 13 16 / 0.6));
+}
+
+/* Os controles do MapLibre ficam no rodapé do mapa, e a nossa faixa de
+   referência fica logo acima deles. Sem esta folga os dois disputam os mesmos
+   12 px de canto: a escala aparecia por baixo do texto do rodapé e o zoom por
+   baixo do aviso âmbar.
+
+   O `!important` é do próprio CSS da biblioteca, que declara as margens
+   inline no elemento. */
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
+  z-index: 15;
+}
+
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl,
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+  margin-bottom: 10px !important;
 }

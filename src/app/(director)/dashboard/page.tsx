@@ -1,7 +1,8 @@
 import Link from "next/link";
 
+import { MiniPercurso } from "@/components/director/MiniPercurso";
 import { BotaoLink, Cartao, Selo } from "@/components/director/ui";
-import { formatDuration } from "@/lib/i18n/format";
+import { formatDistance, formatDuration } from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/config";
 import type { Translator } from "@/lib/i18n/translate";
@@ -13,7 +14,31 @@ import { requireUser } from "../_lib/session";
 
 export const metadata = { title: "Flamme Rouge" };
 
-export default async function DashboardPage() {
+/**
+ * Os filtros da lista.
+ *
+ * Vão na URL, não em estado de cliente, por três motivos práticos: a página
+ * continua sendo do servidor (nenhum JavaScript novo desce para filtrar uma
+ * lista que já veio pronta), o link é compartilhável, e o botão de voltar
+ * funciona. Uma aba que só existe na memória do navegador é uma aba que se
+ * perde quando o diretor abre uma prova e volta.
+ */
+const FILTROS = ["todas", "prontas", "preparacao", "encerradas"] as const;
+type Filtro = (typeof FILTROS)[number];
+
+const ROTULO_FILTRO: Record<Filtro, string> = {
+  /* i18n: precisa de chave — as quatro abas de filtro da lista de provas */
+  todas: "Todas",
+  prontas: "Prontas",
+  preparacao: "Em preparação",
+  encerradas: "Encerradas",
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ estado?: string }>;
+}) {
   const { supabase } = await requireUser();
   const { locale, t } = await getTranslator();
 
@@ -33,7 +58,11 @@ export default async function DashboardPage() {
     ids.length
       ? supabase
           .from("route_tracks")
-          .select("race_id")
+          // `render_points` é a linha já simplificada. Ela pode ter algumas
+          // centenas de pares por prova, e é pesada — mas morre AQUI: esta é
+          // uma página de servidor, e para o navegador desce só o atributo
+          // `d` do SVG que a miniatura gera.
+          .select("race_id, total_distance_m, render_points")
           .in("race_id", ids)
           .eq("is_active", true)
       : Promise.resolve({ data: [] as { race_id: string }[] }),
@@ -51,9 +80,17 @@ export default async function DashboardPage() {
         }),
   ]);
 
-  const comPercurso = new Set(
-    ((tracksRes.data ?? []) as { race_id: string }[]).map((r) => r.race_id),
-  );
+  type LinhaTrack = {
+    race_id: string;
+    total_distance_m: number;
+    render_points: [number, number][];
+  };
+
+  const percursoPorProva = new Map<string, LinhaTrack>();
+  for (const linha of (tracksRes.data ?? []) as LinhaTrack[]) {
+    percursoPorProva.set(linha.race_id, linha);
+  }
+  const comPercurso = new Set(percursoPorProva.keys());
 
   const porProva = new Map<
     string,
@@ -75,22 +112,100 @@ export default async function DashboardPage() {
     porProva.set(p.race_id, atual);
   }
 
+  // Calcula a prontidão de todas antes de filtrar: os contadores das abas
+  // precisam do total de cada estado, não só do que sobrou depois do filtro.
+  const comEstado = races.map((race) => {
+    const contagem = porProva.get(race.id) ?? {
+      total: 0,
+      lead: false,
+      sweep: false,
+    };
+    const readiness = computeReadiness({
+      hasActiveRoute: comPercurso.has(race.id),
+      positionCount: contagem.total,
+      hasReferenceLead: contagem.lead,
+      hasReferenceSweep: contagem.sweep,
+      hasScheduledStart: race.scheduled_start !== null,
+    });
+    const encerrada = race.status === "finished" || race.status === "archived";
+
+    return {
+      race,
+      contagem,
+      readiness,
+      encerrada,
+      percurso: percursoPorProva.get(race.id) ?? null,
+      grupo: encerrada
+        ? ("encerradas" as const)
+        : readiness.ready
+          ? ("prontas" as const)
+          : ("preparacao" as const),
+    };
+  });
+
+  const pedido = (await searchParams).estado;
+  const filtro: Filtro = FILTROS.includes(pedido as Filtro)
+    ? (pedido as Filtro)
+    : "todas";
+
+  const contagemPorFiltro: Record<Filtro, number> = {
+    todas: comEstado.length,
+    prontas: comEstado.filter((r) => r.grupo === "prontas").length,
+    preparacao: comEstado.filter((r) => r.grupo === "preparacao").length,
+    encerradas: comEstado.filter((r) => r.grupo === "encerradas").length,
+  };
+
+  const visiveis =
+    filtro === "todas" ? comEstado : comEstado.filter((r) => r.grupo === filtro);
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <main className="mx-auto max-w-[73.75rem] px-5 pb-24 pt-12 sm:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="titulo text-3xl font-semibold text-ink">
+          <p className="font-mono text-[0.65rem] uppercase tracking-[0.24em] text-ink-faint">
+            {/* i18n: precisa de chave — sobretítulo da lista */}
+            Área da direção de prova
+          </p>
+          <h1 className="titulo mt-3 text-[2.75rem] font-bold leading-[1.02] text-ink">
             {t("director.myRaces")}
           </h1>
-          <p className="mt-1 text-sm text-ink-muted">
+          <p className="mt-2 text-[0.96875rem] text-ink-muted">
             {/* i18n: precisa de chave — "Cada prova tem seu percurso, suas posições de apoio e seus códigos." */}
             Cada prova tem seu percurso, suas posições de apoio e seus códigos.
           </p>
         </div>
-        <BotaoLink href="/dashboard/nova" variant="primary" size="lg">
+        <BotaoLink href="/dashboard/nova" variant="primary">
           + {t("director.newRace")}
         </BotaoLink>
       </div>
+
+      {races.length > 0 ? (
+        <nav
+          aria-label="Filtrar provas"
+          className="mt-9 flex flex-wrap gap-6 border-b border-border"
+        >
+          {FILTROS.map((f) => {
+            const ativa = f === filtro;
+            return (
+              <Link
+                key={f}
+                href={f === "todas" ? "/dashboard" : `/dashboard?estado=${f}`}
+                aria-current={ativa ? "page" : undefined}
+                className={`-mb-px border-b-2 pb-3 font-mono text-[0.6875rem] uppercase tracking-[0.16em] transition ${
+                  ativa
+                    ? "border-ink text-ink"
+                    : "border-transparent text-ink-faint hover:text-ink-muted"
+                }`}
+              >
+                {ROTULO_FILTRO[f]}{" "}
+                <span className="tnum text-ink-ghost">
+                  {contagemPorFiltro[f]}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+      ) : null}
 
       {error ? (
         <Cartao className="mt-8 border-warn/45 p-5">
@@ -104,37 +219,38 @@ export default async function DashboardPage() {
       ) : races.length === 0 ? (
         <EstadoVazio t={t} />
       ) : (
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-          {races.map((race) => {
-            const contagem = porProva.get(race.id) ?? {
-              total: 0,
-              lead: false,
-              sweep: false,
-            };
-            const readiness = computeReadiness({
-              hasActiveRoute: comPercurso.has(race.id),
-              positionCount: contagem.total,
-              hasReferenceLead: contagem.lead,
-              hasReferenceSweep: contagem.sweep,
-              hasScheduledStart: race.scheduled_start !== null,
-            });
-
-            return (
-              <li key={race.id}>
-                <Link
-                  href={`/dashboard/${race.id}`}
-                  className="block h-full border border-border bg-surface-1 p-5 transition hover:border-border-strong hover:bg-surface-2"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <h2 className="titulo font-semibold leading-tight text-ink text-xl">
+        /* A lista é dividida por FIO, não por margem.
+           Um `gap` de 1px sobre um fundo da cor da linha desenha as divisórias
+           sem que nenhuma linha precise carregar borda própria — e sem o
+           encosto de duas bordas de 1px virando 2px entre itens vizinhos. É a
+           diferença entre uma tabela de resultados e uma pilha de cartões
+           soltos, e uma lista de provas é a primeira. */
+        <ul
+          className="mt-8 grid gap-px border border-border bg-border"
+          role="list"
+        >
+          {visiveis.map(({ race, contagem, readiness, encerrada, percurso }) => (
+            <li key={race.id}>
+              <Link
+                href={`/dashboard/${race.id}`}
+                className={`grid grid-cols-1 items-start gap-x-8 gap-y-5 bg-surface-1 p-7 transition hover:bg-surface-2 sm:grid-cols-[minmax(0,1fr)_auto] ${
+                  encerrada ? "opacity-[0.66] hover:opacity-100" : ""
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="titulo text-2xl font-semibold leading-tight text-ink">
                       {race.name}
                     </h2>
                     <Selo tone={RACE_STATUS_TONE[race.status]}>
                       {t(`race.status.${race.status}`)}
                     </Selo>
+                    {readiness.ready && !encerrada ? (
+                      <Selo tone="ok">✓ {t("director.ready")}</Selo>
+                    ) : null}
                   </div>
 
-                  <p className="mt-1 text-sm text-ink-muted">
+                  <p className="mt-2 text-sm text-ink-muted">
                     {race.location ? `${race.location} · ` : ""}
                     <span className="tnum">
                       {formatRaceDate(
@@ -143,39 +259,91 @@ export default async function DashboardPage() {
                         race.timezone,
                       )}
                     </span>
+                    {(race as { laps?: number }).laps &&
+                    (race as { laps?: number }).laps! > 1
+                      ? /* i18n: precisa de chave — "circuito de N voltas" */
+                        ` · circuito de ${(race as { laps?: number }).laps} voltas`
+                      : ""}
                   </p>
 
-                  <p className="mt-3 text-xs text-ink-faint">
-                    {/* i18n: precisa de chave — rótulo curto "Janela alvo" */}
-                    Janela alvo{" "}
-                    <span className="tnum text-ink-muted">
-                      {formatDuration(race.target_gap_minutes * 60, locale)}
-                    </span>
-                    {" · "}
-                    <span className="tnum text-ink-muted">
-                      {contagem.total}
-                    </span>{" "}
-                    {t("race.positions").toLowerCase()}
-                  </p>
+                  <dl className="mt-5 flex flex-wrap gap-x-9 gap-y-3">
+                    <Metrica
+                      rotulo={t("race.route")}
+                      valor={
+                        percurso
+                          ? formatDistance(percurso.total_distance_m, locale)
+                          : "—"
+                      }
+                    />
+                    <Metrica
+                      /* i18n: precisa de chave — rótulo curto "Janela alvo" */
+                      rotulo="Janela alvo"
+                      valor={formatDuration(
+                        race.target_gap_minutes * 60,
+                        locale,
+                      )}
+                    />
+                    <Metrica
+                      /* i18n: precisa de chave — rótulo curto "Apoio" */
+                      rotulo="Apoio"
+                      valor={`${contagem.total} ${t("race.positions").toLowerCase()}`}
+                    />
+                  </dl>
 
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {readiness.ready ? (
-                      <Selo tone="ok">✓ {t("director.ready")}</Selo>
-                    ) : (
-                      readiness.blocking.map((item) => (
-                        <Selo key={item.key} tone="warn">
+                  {/* As pendências só aparecem quando existem, e em âmbar:
+                      elas são "o sistema ainda não sabe", não emergência. A
+                      única exceção é a falta de percurso, que é bloqueante —
+                      sem ele não há quilômetro nem janela, e a prova não vai
+                      ao ar. Esse é o único vermelho desta tela. */}
+                  {!encerrada && !readiness.ready ? (
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {readiness.blocking.map((item) => (
+                        <Selo
+                          key={item.key}
+                          tone={item.key === "route" ? "critical" : "warn"}
+                        >
                           {rotuloPendencia(item.key, t)}
                         </Selo>
-                      ))
-                    )}
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center gap-6 sm:flex-col sm:items-end sm:gap-4">
+                  <MiniPercurso
+                    pontos={percurso?.render_points ?? []}
+                    className="shrink-0 border border-border"
+                  />
+                  <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-ink-muted">
+                    {/* i18n: precisa de chave — "Abrir" / "Registro" */}
+                    {encerrada ? "Registro" : "Abrir"} →
+                  </span>
+                </div>
+              </Link>
+            </li>
+          ))}
+
+          {visiveis.length === 0 ? (
+            <li className="bg-surface-1 px-7 py-12 text-center text-sm text-ink-muted">
+              {/* i18n: precisa de chave — filtro sem resultado */}
+              Nenhuma prova neste estado.
+            </li>
+          ) : null}
         </ul>
       )}
     </main>
+  );
+}
+
+/** Um par rótulo/valor da linha de métricas. */
+function Metrica({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <div>
+      <dt className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-ink-faint">
+        {rotulo}
+      </dt>
+      <dd className="tnum mt-1 font-mono text-[0.8125rem] text-ink">{valor}</dd>
+    </div>
   );
 }
 

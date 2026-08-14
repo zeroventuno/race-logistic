@@ -296,12 +296,9 @@ export async function buildLiveSnapshot(
       return (rows[0]?.atMs ?? Infinity) <= start + 60_000;
     });
 
-  if (needsLapCounting && !historyComplete) {
-    warnings.push(
-      "Prova em circuito com várias voltas: o histórico carregado não alcança a largada, " +
-        "então a contagem de voltas pode estar subestimada.",
-    );
-  }
+  // O aviso de histórico incompleto NÃO entra aqui: quem o dá é o cartão da
+  // janela, encostado no número que ele põe em dúvida. `lapsInferred` e
+  // `historyComplete` seguem no payload justamente para o cartão decidir.
 
   const leadLaps = leadRow
     ? reconstructAbsoluteOffsets(histories.get(leadRow.id) ?? [], lapDistanceM, {

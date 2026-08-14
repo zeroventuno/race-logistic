@@ -18,18 +18,26 @@ import type {
  *   - verde  → item de preparação concluído (é literalmente "confirmado");
  *   - âmbar  → falta um dado que o sistema precisa ter, ou o arquivo tem algo
  *              suspeito (é literalmente "o sistema não sabe");
- *   - vermelho → nunca. Nada aqui é socorro, e gastar o vermelho num erro de
- *              formulário faria o diretor aprender a ignorá-lo justamente na
- *              tela onde ele significa acidente.
+ *   - vermelho → só em estado BLOQUEANTE, que é o que impede a prova de ir ao
+ *              ar. Hoje isso é uma coisa só: prova sem percurso, porque sem ele
+ *              não existe quilômetro nem janela.
+ *
+ * O que continua proibido é o vermelho de erro de formulário, e o motivo é o de
+ * sempre: gastá-lo em "preencha este campo" ensina o diretor a ignorá-lo
+ * justamente na tela onde ele significa acidente. Erro de campo é âmbar.
  */
 
-type Tone = "neutral" | "ok" | "warn" | "info";
+type Tone = "neutral" | "ok" | "warn" | "info" | "critical";
 
 const TONE_BADGE: Record<Tone, string> = {
   neutral: "border-border bg-surface-2 text-ink-muted",
   ok: "border-ok/40 bg-ok/10 text-ok",
   warn: "border-warn/40 bg-warn/10 text-warn",
   info: "border-info/40 bg-info/10 text-info",
+  /* Estado BLOQUEANTE, e só isso — o que impede a prova de ir ao ar. Nas telas
+     de operação vermelho continua significando uma pessoa no chão, e por isso
+     este tom não aparece em nenhuma delas. */
+  critical: "border-critical/45 bg-critical-dim text-critical-ink",
 };
 
 export function Selo({

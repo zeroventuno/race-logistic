@@ -90,9 +90,12 @@ export function MapCanvas({
       map.touchZoomRotate.disableRotation();
     }
 
+    // Os dois embaixo: o alto da tela pertence à faixa de estado e às colunas
+    // flutuantes. Um controle de zoom escondido atrás de um cartão é um botão
+    // que existe e não dá para apertar.
     map.addControl(
       new maplibregl.NavigationControl({ showCompass: !lockBearing }),
-      "top-right",
+      "bottom-right",
     );
     map.addControl(
       new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }),

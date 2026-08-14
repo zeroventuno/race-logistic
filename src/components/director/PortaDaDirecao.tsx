@@ -1,0 +1,115 @@
+import Link from "next/link";
+
+import { TemaBotao } from "@/components/TemaBotao";
+import type { Tema } from "@/lib/tema";
+
+/**
+ * A porta da direção: a casca de duas colunas do login e do cadastro.
+ *
+ * A COLUNA DA ESQUERDA É A ÚNICA IMAGEM DO PRODUTO. Passada esta tela, o
+ * sistema é tipografia e mapa — nenhuma fotografia, porque nenhuma
+ * acrescentaria informação a quem está operando. Aqui ela acrescenta: quem
+ * chega no login às seis da manhã do dia da prova, ou na véspera montando
+ * tudo, é a mesma pessoa que vai estar naquela estrada. A foto diz de que
+ * mundo é este software antes de qualquer palavra.
+ *
+ * Ela é DESSATURADA e a 42% de opacidade de propósito. Uma foto colorida em
+ * meia tela ao lado de um formulário compete com o formulário; em cinza ela
+ * vira textura e o olho vai direto para o campo de e-mail — que é a única
+ * coisa que a pessoa veio fazer aqui.
+ *
+ * ESTA É A ÚNICA TELA DO PRODUTO COM O ROUGE DA MARCA (no botão, via
+ * `variant="marca"` do formulário). Passada a porta, vermelho é uma pessoa no
+ * chão e nada mais.
+ */
+
+export interface PortaDaDirecaoProps {
+  /** Título da tela: "Painel da direção" ou "Criar conta de direção". */
+  titulo: string;
+  /** Uma frase explicando o que acontece depois de entrar. */
+  descricao: string;
+  tema: Tema;
+  children: React.ReactNode;
+}
+
+export function PortaDaDirecao({
+  titulo,
+  descricao,
+  tema,
+  children,
+}: PortaDaDirecaoProps) {
+  return (
+    <main className="grid min-h-dvh lg:grid-cols-[1.05fr_0.95fr]">
+      {/* A coluna da foto some no celular: metade de uma tela de 375 px é
+          espaço que o formulário precisa mais do que a atmosfera. */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#0c0f12] p-11 lg:flex lg:p-12">
+        <picture>
+          <source
+            type="image/avif"
+            sizes="(min-width: 1024px) 55vw, 100vw"
+            srcSet="/marketing/heroi-900.avif 900w, /marketing/heroi-1536.avif 1536w"
+          />
+          <img
+            src="/marketing/heroi-1536.webp"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-[center_44%] opacity-[0.42] [filter:grayscale(1)_contrast(1.06)]"
+          />
+        </picture>
+
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgb(12 15 18 / 0.72), rgb(12 15 18 / 0.94))",
+          }}
+        />
+
+        <p className="relative font-mono text-sm font-medium uppercase tracking-[0.34em] text-[rgb(246_245_242/0.9)]">
+          Flamme Rouge
+        </p>
+
+        <div className="relative max-w-[29rem]">
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.26em] text-[rgb(246_245_242/0.5)]">
+            Área da direção de prova
+          </p>
+          <p className="mt-4 font-[family-name:var(--font-wordmark)] text-[2.75rem] font-light leading-[1.04] text-[#f6f5f2]">
+            Prepare a prova antes.
+            <br />
+            <span className="font-bold">No dia, só acompanhe.</span>
+          </p>
+        </div>
+
+        <p className="relative flex flex-wrap gap-x-7 gap-y-2 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-[rgb(246_245_242/0.44)]">
+          <span>Percurso</span>
+          <span>Posições de apoio</span>
+          <span>Códigos de vínculo</span>
+        </p>
+      </div>
+
+      <div className="flex items-center justify-center px-6 py-12 sm:px-12">
+        <div className="w-full max-w-[24.5rem]">
+          <div className="flex items-center justify-between gap-4">
+            <Link
+              href="/"
+              className="font-mono text-xs uppercase tracking-[0.34em] text-ink-faint transition hover:text-ink"
+            >
+              Flamme Rouge
+            </Link>
+            <TemaBotao inicial={tema} />
+          </div>
+
+          <h1 className="titulo mt-7 text-[2.75rem] font-bold leading-[1.02] text-ink">
+            {titulo}
+          </h1>
+          <p className="mt-3 max-w-[21rem] text-[0.96875rem] leading-relaxed text-ink-muted">
+            {descricao}
+          </p>
+
+          <div className="mt-8">{children}</div>
+        </div>
+      </div>
+    </main>
+  );
+}

@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 import { AuthForm } from "@/components/director/AuthForm";
+import { PortaDaDirecao } from "@/components/director/PortaDaDirecao";
+import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import { entrar } from "./actions";
@@ -17,25 +19,15 @@ export default async function LoginPage() {
   const { data } = await supabase.auth.getUser();
   if (data.user) redirect("/dashboard");
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-8 px-6 py-16">
-      <header>
-        <Link
-          href="/"
-          className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint hover:text-ink-muted"
-        >
-          Flamme Rouge
-        </Link>
-        <h1 className="mt-3 titulo text-3xl font-semibold text-ink">
-          Painel da direção
-        </h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Entre para preparar a prova: percurso, posições de apoio e códigos de
-          vínculo.
-        </p>
-      </header>
+  const tema = temaDoCookie((await cookies()).get(TEMA_COOKIE)?.value);
 
+  return (
+    <PortaDaDirecao
+      tema={tema}
+      titulo="Painel da direção"
+      descricao="Entre para preparar a prova: percurso, posições de apoio e códigos de vínculo."
+    >
       <AuthForm modo="login" acao={entrar} />
-    </main>
+    </PortaDaDirecao>
   );
 }
