@@ -40,16 +40,48 @@ const HEROI: SlotVideo = SLOTS.heroi;
 
 export function Heroi() {
   const temVideo = HEROI.fontes !== null && HEROI.fontes.length > 0;
+  const temFoto = !temVideo && HEROI.posterSet !== null;
 
   return (
     <div className="fr-hero" id="fr-heroi">
       <div className="fr-shell">
         <div className="fr-hero__palco">
-          {/* A cena desenhada é o piso: pôster enquanto não há filmagem,
-              rede de segurança quando há. */}
-          {(!temVideo || HEROI.poster === null) && (
+          {/* Três casos, e o do meio faltava.
+              1. Há vídeo         → o vídeo, com o pôster no atributo.
+              2. Só pôster        → a imagem ocupa o palco. É o caso NORMAL:
+                                    a filmagem é opcional, a foto não.
+              3. Nem um nem outro → a cena desenhada, que se sustenta parada. */}
+          {temFoto ? (
+            <picture>
+              {HEROI.posterSet!.formatos.map((formato) => (
+                <source
+                  key={formato}
+                  type={`image/${formato}`}
+                  // Medido no DOM, não estimado: o palco fecha em 1184 px
+                  // dentro da casca. Declarar menos que a caixa real faz o
+                  // navegador escolher a variante pequena e exibi-la ampliada.
+                  sizes="(min-width: 1100px) 1200px, 100vw"
+                  srcSet={HEROI.posterSet!.larguras
+                    .map((l) => `${HEROI.posterSet!.base}-${l}.${formato} ${l}w`)
+                    .join(", ")}
+                />
+              ))}
+              <img
+                className="fr-hero__poster"
+                src={`${HEROI.posterSet!.base}-${HEROI.posterSet!.larguras.at(-1)}.webp`}
+                alt={HEROI.alt}
+                width={1536}
+                height={1024}
+                // É o elemento de maior pintura da página: carregar tarde
+                // atrasa a métrica que mede a primeira impressão.
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
+            </picture>
+          ) : !temVideo ? (
             <CenaPave className="fr-hero__poster" />
-          )}
+          ) : null}
 
           {temVideo && (
             <video

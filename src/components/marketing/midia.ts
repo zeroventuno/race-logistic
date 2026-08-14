@@ -34,14 +34,33 @@ export interface SlotImagem {
   briefing: string;
 }
 
+/**
+ * Pôster responsivo.
+ *
+ * O atributo `poster` de um `<video>` aceita uma URL só, sem `srcset`. Como
+ * aqui o pôster também é o que ocupa o palco quando NÃO há vídeo — e esse é o
+ * caso normal, não a exceção — ele precisa das variantes: servir 1536 px a um
+ * celular é gastar banda de quem está no 4G do carro para nada.
+ */
+export interface PosterResponsivo {
+  /** Caminho sem largura nem extensão: `/marketing/heroi`. */
+  base: string;
+  /** Larguras geradas, da menor para a maior. */
+  larguras: readonly number[];
+  /** Formatos em ordem de preferência. O navegador pega o primeiro que entende. */
+  formatos: readonly string[];
+}
+
 export interface SlotVideo {
   id: string;
   tipo: "video";
   proporcao: ProporcaoSlot;
   /** Fontes em ordem: o navegador pega a primeira que entende. */
   fontes: readonly { readonly src: string; readonly type: string }[] | null;
-  /** Pôster. Precisa se sustentar sozinho — ver comentário em HeroiPalco. */
+  /** URL única, para o atributo `poster` do `<video>`. */
   poster: string | null;
+  /** Variantes, para quando o pôster é o próprio conteúdo do palco. */
+  posterSet: PosterResponsivo | null;
   alt: string;
   maxKB: number;
   duracaoSegundos: readonly [number, number];
@@ -71,6 +90,11 @@ export const SLOTS = {
     // vê o vídeo rodar.
     fontes: null,
     poster: "/marketing/heroi-1536.avif",
+    posterSet: {
+      base: "/marketing/heroi",
+      larguras: [900, 1536],
+      formatos: ["avif", "webp"],
+    },
     alt:
       "Vista de cima da moto de prova numa estrada de paralelepípedo molhada, " +
       "dois ciclistas à frente contra o sol baixo, e o arco vermelho do último " +

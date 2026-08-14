@@ -506,19 +506,26 @@ body:has(.fr-landing) {
   overflow: hidden;
   background: var(--fr-night);
   border-radius: 2px;
-  /* Reserva a caixa antes de qualquer byte de mídia chegar: sem CLS. */
-  aspect-ratio: 4 / 5;
+  /* Reserva a caixa antes de qualquer byte de mídia chegar: sem CLS.
+     As proporções seguem a COMPOSIÇÃO, não um formato bonito no papel: o arco
+     ocupa o topo do quadro, a bandeirola pende no centro e o guidão da moto
+     ancora a base. Um palco panorâmico demais decepa os dois extremos e sobra
+     só a estrada — que é a parte que menos diz. */
+  aspect-ratio: 1 / 1;
 }
 
 @media (min-width: 48rem) {
   .fr-hero__palco {
-    aspect-ratio: 2 / 1;
+    /* Proporção nativa da foto: nada é cortado. */
+    aspect-ratio: 3 / 2;
   }
 }
 
 @media (min-width: 80rem) {
   .fr-hero__palco {
-    aspect-ratio: 21 / 9;
+    /* Corta ~16% da altura. Suporta, porque o corte é distribuído com viés
+       para cima (ver object-position) e o arco sobrevive inteiro. */
+    aspect-ratio: 16 / 9;
   }
 }
 
@@ -529,6 +536,9 @@ body:has(.fr-landing) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Viés para cima: quando há corte, quem tem de sobrear é o arco, não o
+     asfalto. Centrado, o topo do arco seria a primeira coisa a sair. */
+  object-position: center 42%;
   display: block;
 }
 
