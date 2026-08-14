@@ -11,6 +11,7 @@ import {
   Cartao,
   TituloSecao,
 } from "@/components/director/ui";
+import { VehicleIcon } from "@/components/icons/vehicle";
 import { useT } from "@/lib/i18n/client";
 import { ROLE_META, type PositionRole, type RacePosition } from "@/lib/types";
 
@@ -67,8 +68,10 @@ export function PosicoesPainel({
                 onClick={() => adicionar(role, 1)}
                 disabled={pendente}
               >
-                <span aria-hidden>{ROLE_META[role].icon}</span>+1{" "}
-                {t(`roles.${role}.short`)}
+                <span aria-hidden style={{ color: ROLE_META[role].color }}>
+                  <VehicleIcon role={role} size={16} />
+                </span>
+                +1 {t(`roles.${role}.short`)}
               </Botao>
             ))}
           </div>
@@ -89,8 +92,11 @@ export function PosicoesPainel({
                 className="mt-1.5 min-h-11 rounded-lg border border-border bg-surface-0 px-3 text-ink"
               >
                 {PAPEIS.map((p) => (
+                  // `<option>` só aceita texto: um SVG dentro dele é ignorado
+                  // pelo navegador. O rótulo sozinho basta, porque a lista já
+                  // está aberta e o contexto é o próprio seletor de papel.
                   <option key={p} value={p}>
-                    {ROLE_META[p].icon} {t(`roles.${p}.label`)}
+                    {t(`roles.${p}.label`)}
                   </option>
                 ))}
               </select>

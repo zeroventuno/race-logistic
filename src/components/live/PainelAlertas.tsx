@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 
+import { VehicleIcon } from "@/components/icons/vehicle";
 import { useFormat, useI18n, useT } from "@/lib/i18n/client";
 import { LOCALE_META } from "@/lib/i18n/config";
 import { ALERT_CATEGORY_META, ROLE_META, SIGNAL_META } from "@/lib/types";
@@ -246,9 +247,9 @@ function CartaoAlerta({
                 <>
                   <span aria-hidden>·</span>
                   <span>
-                    {t("alerts.raisedBy", {
-                      position: `${ROLE_META[alerta.raisedBy.role].icon} ${alerta.raisedBy.label}`,
-                    })}
+                    {/* A interpolação recebe só texto: o pictograma é um
+                        elemento e não cabe dentro de uma string traduzida. */}
+                    {t("alerts.raisedBy", { position: alerta.raisedBy.label })}
                   </span>
                 </>
               ) : null}
@@ -297,7 +298,9 @@ function CartaoAlerta({
                   : "border-border-strong bg-surface-3 text-ink"
             }`}
           >
-            <span aria-hidden>{ROLE_META[alerta.dispatch.role].icon}</span>
+            <span aria-hidden className="shrink-0">
+              <VehicleIcon role={alerta.dispatch.role} size={17} />
+            </span>
             <span className="font-semibold">
               {estagio === "declined"
                 ? t("alerts.dispatch.declined", { position: alerta.dispatch.label })
@@ -419,7 +422,9 @@ function CartaoAlerta({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-x-2 text-sm font-semibold text-ink">
-                          <span aria-hidden>{ROLE_META[s.role].icon}</span>
+                          <span aria-hidden style={{ color: ROLE_META[s.role].color }}>
+                            <VehicleIcon role={s.role} size={16} />
+                          </span>
                           {s.label}
                           {s.etaSeconds !== null ? (
                             <span className="tnum font-normal text-info">

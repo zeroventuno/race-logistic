@@ -129,9 +129,9 @@ export function BarraAlertaCritico({
             {alerta.raisedBy ? (
               <>
                 {" · "}
-                {t("alerts.raisedBy", {
-                  position: `${ROLE_META[alerta.raisedBy.role].icon} ${alerta.raisedBy.label}`,
-                })}
+                {/* Só o rótulo entra na interpolação: `t()` devolve texto, e um
+                    pictograma dentro dele viraria a palavra "ambulance". */}
+                {t("alerts.raisedBy", { position: alerta.raisedBy.label })}
               </>
             ) : null}
             {alerta.routeOffsetM !== null ? (

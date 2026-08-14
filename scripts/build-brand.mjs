@@ -51,7 +51,18 @@ function iconSvg({ color = ROUGE, background = null, scale = 1, rounded = false 
  * exige um passo de vetorização que não vale automatizar antes de a fonte
  * estar definitiva.
  */
-const FONT = "Barlow,Helvetica Neue,Arial,sans-serif";
+const FONT = "Barlow Condensed,Barlow,Arial Narrow,sans-serif";
+
+/**
+ * Larguras iguais para as duas palavras.
+ *
+ * O HTML resolve isso com flex; SVG não tem equivalente. Aqui o alinhamento
+ * sai de `textLength` + `lengthAdjust="spacing"`: as duas linhas recebem a
+ * MESMA largura alvo, e o renderizador distribui o espaço entre as letras.
+ * "FLAMME" tem seis letras em peso leve e "ROUGE" cinco em peso pesado — sem
+ * isto, as duas linhas terminam em pontos diferentes.
+ */
+const LARGURA_LETREIRO = 218;
 
 function signatureSvg({ color = ROUGE, ink = ASPHALT, endorsed = false }) {
   // Assinatura horizontal: bandeirola com mastro + nome empilhado.
@@ -73,8 +84,8 @@ function signatureSvg({ color = ROUGE, ink = ASPHALT, endorsed = false }) {
     <rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>
     <polygon points="${FLAG}" fill="${color}"/>
   </g>
-  <text x="118" y="46" font-family="${FONT}" font-size="34" font-weight="300" letter-spacing="4.4" fill="${ink}">FLAMME</text>
-  <text x="118" y="78" font-family="${FONT}" font-size="34" font-weight="700" letter-spacing="3.6" fill="${color}">ROUGE</text>
+  <text x="118" y="46" textLength="${LARGURA_LETREIRO}" lengthAdjust="spacing" font-family="${FONT}" font-size="36" font-weight="300" fill="${ink}">FLAMME</text>
+  <text x="118" y="80" textLength="${LARGURA_LETREIRO}" lengthAdjust="spacing" font-family="${FONT}" font-size="36" font-weight="700" fill="${color}">ROUGE</text>
   ${endorsementBlock}
 </svg>`;
 }

@@ -3,6 +3,7 @@
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { useT } from "@/lib/i18n/client";
 import type { CachedRoute, DriverAlertView, DriverVehicle } from "@/lib/driver/protocol";
@@ -295,7 +296,15 @@ function paintMarker(
   // diferentes e a segunda leva a decisões piores.
   el.style.opacity = signal === "lost" || signal === "never" ? "0.4" : "1";
   el.style.boxShadow = vehicle.isSelf ? "0 0 0 3px rgba(56,189,248,.45)" : "none";
-  el.textContent = meta.icon;
+
+  // Pictograma, não emoji: o desenho tem que ser o mesmo do painel da direção,
+  // e emoji muda de forma (e de legibilidade) em cada aparelho. `innerHTML`
+  // aqui recebe SVG gerado por nós — nada que venha do banco entra por aqui.
+  if (el.dataset.papel !== vehicle.role) {
+    el.innerHTML = vehicleGlyphSvg(vehicle.role, "#0a0c10", vehicle.isSelf ? 24 : 18);
+    el.dataset.papel = vehicle.role;
+  }
+
   const signalLabel = t(`signal.${signal}`);
   el.title = `${vehicle.label} · ${signalLabel}`;
   el.setAttribute("aria-label", `${vehicle.label}, ${signalLabel}`);

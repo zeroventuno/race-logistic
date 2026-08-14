@@ -11,6 +11,7 @@ import {
 } from "@/app/(director)/_actions/positions";
 import { Aviso, Botao, Campo, Selo, entradaClasse } from "@/components/director/ui";
 import { formatBindCode } from "@/lib/codes/bind-code";
+import { VehicleIcon } from "@/components/icons/vehicle";
 import { useT } from "@/lib/i18n/client";
 import { ROLE_META, type PositionRole, type RacePosition } from "@/lib/types";
 
@@ -128,8 +129,8 @@ export function PosicaoLinha({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg" aria-hidden>
-              {meta.icon}
+            <span aria-hidden style={{ color: meta.color }}>
+              <VehicleIcon role={posicao.role} size={19} />
             </span>
             <span className="font-semibold text-ink">{posicao.label}</span>
             <span className="text-xs text-ink-faint">
@@ -315,8 +316,9 @@ export function PosicaoLinha({
                 className={entradaClasse(null)}
               >
                 {PAPEIS.map((p) => (
+                  // `<option>` não renderiza SVG — só texto.
                   <option key={p} value={p}>
-                    {ROLE_META[p].icon} {t(`roles.${p}.label`)}
+                    {t(`roles.${p}.label`)}
                   </option>
                 ))}
               </select>

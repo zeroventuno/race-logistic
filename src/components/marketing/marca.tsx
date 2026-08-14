@@ -79,10 +79,40 @@ export function Assinatura({
   return (
     <span className={`fr-assinatura ${className ?? ""}`}>
       <Bandeirola size={size} tremular={tremular} />
-      <span className="fr-assinatura__nome" style={color ? { color } : undefined}>
-        Flamme
-        <span className="fr-assinatura__rouge">Rouge</span>
+      {/* O nome é lido daqui; as letras abaixo são desenho. Sem isto, o leitor
+          de tela soletraria "F, L, A, M, M, E". */}
+      <span
+        className="fr-assinatura__nome"
+        role="img"
+        aria-label="Flamme Rouge"
+        style={color ? { color } : undefined}
+      >
+        <Palavra texto="Flamme" classe="fr-assinatura__flamme" />
+        <Palavra texto="Rouge" classe="fr-assinatura__rouge" />
       </span>
+    </span>
+  );
+}
+
+/**
+ * Uma palavra do letreiro, letra a letra.
+ *
+ * As duas palavras precisam ocupar EXATAMENTE a mesma largura, formando um
+ * bloco. Entreletra fixa não resolve: "Flamme" tem seis letras em peso leve e
+ * "Rouge" tem cinco em peso pesado, e a diferença de largura muda a cada
+ * tamanho de fonte — um valor calibrado no cabeçalho desalinha no herói.
+ *
+ * Distribuindo as letras com `space-between` dentro de uma coluna flex, a
+ * coluna assume a largura da palavra mais larga e a outra estica até bater.
+ * O alinhamento passa a ser uma consequência do layout, não um número que
+ * alguém precisa manter.
+ */
+function Palavra({ texto, classe }: { texto: string; classe: string }) {
+  return (
+    <span className={`fr-assinatura__palavra ${classe}`} aria-hidden="true">
+      {[...texto.toUpperCase()].map((letra, i) => (
+        <span key={`${letra}-${i}`}>{letra}</span>
+      ))}
     </span>
   );
 }

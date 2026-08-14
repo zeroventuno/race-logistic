@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { BotaoImprimir } from "@/components/director/BotaoImprimir";
 import { Aviso } from "@/components/director/ui";
+import { VehicleIcon } from "@/components/icons/vehicle";
 import { formatBindCode } from "@/lib/codes/bind-code";
 import { formatDateTime } from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
@@ -143,15 +144,17 @@ export default async function CodigosPage({
 
         <div className="grid gap-4 sm:grid-cols-2">
           {validas.map((p) => {
-            const meta = ROLE_META[p.role];
             return (
               <article
                 key={p.id}
                 className="bloco-codigo rounded-lg border border-dashed border-border-strong p-4"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-base font-semibold text-ink">
-                    <span aria-hidden>{meta.icon}</span> {p.label}
+                  <p className="flex items-center gap-1.5 text-base font-semibold text-ink">
+                    {/* Sem a cor do papel: esta folha sai numa impressora
+                        preto-e-branco, e um traço colorido vira cinza claro. */}
+                    <VehicleIcon role={p.role} size={17} />
+                    {p.label}
                   </p>
                   <p className="text-xs uppercase tracking-wide text-ink-faint">
                     {/* O marcador de referência só aparece quando ele acrescenta

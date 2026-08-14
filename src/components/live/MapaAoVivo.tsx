@@ -3,6 +3,7 @@
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { useT } from "@/lib/i18n/client";
 import {
@@ -500,14 +501,22 @@ function pintarVeiculo(
     ? "0 0 0 3px #e8ecf2, 0 0 0 6px rgb(56 189 248 / .5)"
     : "0 1px 4px rgb(0 0 0 / .6)";
 
-  // O emoji fica num nó de texto próprio para não apagar o selo a cada pintura.
+  // O pictograma fica num nó próprio para não apagar o selo a cada pintura.
+  //
+  // `innerHTML` com SVG gerado por nós, nunca com dado de usuário: o rótulo do
+  // veículo entra por `textContent` mais abaixo, justamente para não abrir essa
+  // porta.
   let icone = chip.querySelector<HTMLSpanElement>("[data-icone]");
   if (!icone) {
     icone = document.createElement("span");
     icone.dataset.icone = "1";
+    icone.style.display = "flex";
     chip.insertBefore(icone, selo);
   }
-  icone.textContent = meta.icon;
+  if (icone.dataset.papel !== v.role) {
+    icone.innerHTML = vehicleGlyphSvg(v.role, "#0a0c10", 18);
+    icone.dataset.papel = v.role;
+  }
 
   // O selo só existe quando há o que confessar: idade que já compromete a
   // posição, veículo fora do percurso, ou aparelho nunca vinculado.

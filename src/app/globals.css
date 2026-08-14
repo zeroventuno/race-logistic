@@ -17,6 +17,13 @@
 @import "@fontsource/barlow/500.css";
 @import "@fontsource/barlow/700.css";
 
+/* Barlow CONDENSED, só para o letreiro.
+   Duas larguras da mesma família, cada uma na sua função: a condensada faz o
+   nome de doze caracteres virar um bloco compacto ao lado da bandeirola; a
+   normal é a que se lê em parágrafo sem cansar. */
+@import "@fontsource/barlow-condensed/300.css";
+@import "@fontsource/barlow-condensed/700.css";
+
 /* ===========================================================================
    Linguagem visual — direção de prova
    ===========================================================================
@@ -63,6 +70,11 @@
      rodoviária — o mesmo mundo visual da bandeirola. A pilha de reserva é
      larga de propósito: se a fonte não carregar, o layout não deve saltar. */
   --font-sans: "Barlow", "Helvetica Neue", Arial, system-ui, sans-serif;
+
+  /* Só o letreiro. Condensada em texto corrido cansa; em nome de marca ela
+     compacta doze caracteres num bloco que casa com a bandeirola. */
+  --font-wordmark:
+    "Barlow Condensed", "Barlow", "Arial Narrow", system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------------------
@@ -228,31 +240,12 @@ body {
    Entreletra generosa porque caixa alta em peso leve fecha demais: sem o
    respiro, "FLAMME" em 300 vira uma mancha em tamanho pequeno.
    --------------------------------------------------------------------------- */
+/* O letreiro vive em `.fr-assinatura` (marketing.css), com as letras
+   distribuídas por flex para as duas palavras ocuparem a mesma largura.
+   Aqui fica só o token da família, para o produto poder usá-la também. */
 .wordmark {
-  font-family: var(--font-sans);
+  font-family: var(--font-wordmark);
   text-transform: uppercase;
-  line-height: 0.88;
-  display: flex;
-  flex-direction: column;
-}
-
-.wordmark-flamme {
-  font-weight: 300;
-  letter-spacing: 0.13em;
-}
-
-.wordmark-rouge {
-  font-weight: 700;
-  /* Menos entreletra que o FLAMME: peso maior já ocupa mais largura, e
-     igualar o tracking desalinharia as duas palavras na vertical. */
-  letter-spacing: 0.105em;
-  color: var(--brand-rouge, #d92d20);
-}
-
-/* Dentro da superfície operacional a marca é monocromática — vermelho ali
-   significa socorro, e a regra está em src/brand/mark.ts. */
-.wordmark-mono .wordmark-rouge {
-  color: inherit;
 }
 
 /* Pulso do alerta crítico não reconhecido. Respeita quem pediu menos

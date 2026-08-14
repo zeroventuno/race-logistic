@@ -108,6 +108,27 @@ export function vehicleMarkerSvg(role: PositionRole, colorHex: string): string {
 }
 
 /**
+ * Só o glifo, sem disco de fundo.
+ *
+ * Para quando o elemento que recebe o ícone JÁ tem cor própria — o chip do
+ * veículo no mapa, por exemplo, que é pintado com a cor do papel. Enfiar ali o
+ * marcador completo desenharia um círculo dentro de outro círculo.
+ */
+export function vehicleGlyphSvg(
+  role: PositionRole,
+  strokeHex: string,
+  size = 20,
+): string {
+  const paths = MARKER_PATHS[ROLE_META[role].icon] ?? MARKER_PATHS.other;
+
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24"`,
+    ` fill="none" stroke="${strokeHex}" stroke-width="2.2" stroke-linecap="round"`,
+    ` stroke-linejoin="round" aria-hidden="true">${paths}</svg>`,
+  ].join("");
+}
+
+/**
  * Geometria simplificada para o marcador.
  *
  * Não reaproveita o path do Tabler de propósito: dentro de um círculo de

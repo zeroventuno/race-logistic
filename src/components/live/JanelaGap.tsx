@@ -1,5 +1,6 @@
 "use client";
 
+import { VehicleIcon } from "@/components/icons/vehicle";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { ROLE_META } from "@/lib/types";
 
@@ -382,7 +383,9 @@ function Extremidade({
 
   return (
     <div className="flex items-baseline gap-2 text-sm">
-      <span aria-hidden>{ROLE_META[ponto.role].icon}</span>
+      <span aria-hidden className="self-center" style={{ color: ROLE_META[ponto.role].color }}>
+        <VehicleIcon role={ponto.role} size={16} />
+      </span>
       <span className="font-medium text-ink">{ponto.label}</span>
       <span className="tnum text-ink-muted">
         {ponto.routeOffsetM === null ? "—" : fmt.distance(ponto.routeOffsetM)}

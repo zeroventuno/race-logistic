@@ -4,6 +4,7 @@ import { atualizarProva } from "@/app/(director)/_actions/race";
 import { ProvaForm } from "@/components/director/ProvaForm";
 import { StatusProvaBotao } from "@/components/director/StatusProvaBotao";
 import { BotaoLink, Cartao, TituloSecao } from "@/components/director/ui";
+import { VehicleIcon } from "@/components/icons/vehicle";
 import { formatDistance, formatDuration } from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
 import { ROLE_META } from "@/lib/types";
@@ -200,18 +201,32 @@ export default async function ResumoDaProvaPage({
           <dl className="mt-4 space-y-1.5 text-sm">
             <div className="flex gap-2">
               <dt className="text-ink-faint">{t("roles.lead_car.short")}:</dt>
-              <dd className={lead ? "text-ink" : "text-warn"}>
-                {lead
-                  ? `${ROLE_META[lead.role].icon} ${lead.label}`
-                  : t("common.none")}
+              <dd className={lead ? "flex items-center gap-1.5 text-ink" : "text-warn"}>
+                {lead ? (
+                  <>
+                    <span aria-hidden style={{ color: ROLE_META[lead.role].color }}>
+                      <VehicleIcon role={lead.role} size={15} />
+                    </span>
+                    {lead.label}
+                  </>
+                ) : (
+                  t("common.none")
+                )}
               </dd>
             </div>
             <div className="flex gap-2">
               <dt className="text-ink-faint">{t("roles.sweep_car.short")}:</dt>
-              <dd className={sweep ? "text-ink" : "text-warn"}>
-                {sweep
-                  ? `${ROLE_META[sweep.role].icon} ${sweep.label}`
-                  : t("common.none")}
+              <dd className={sweep ? "flex items-center gap-1.5 text-ink" : "text-warn"}>
+                {sweep ? (
+                  <>
+                    <span aria-hidden style={{ color: ROLE_META[sweep.role].color }}>
+                      <VehicleIcon role={sweep.role} size={15} />
+                    </span>
+                    {sweep.label}
+                  </>
+                ) : (
+                  t("common.none")
+                )}
               </dd>
             </div>
             <div className="flex gap-2">

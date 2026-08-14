@@ -61,9 +61,14 @@ body:has(.fr-landing) {
   --fr-shell: 78rem;
   --fr-gutter: 1.25rem;
 
+  /* Texto corrido em Barlow de largura normal: condensada cansa em parágrafo.
+     O letreiro em Barlow Condensed, que é outra função. */
   --fr-sans:
-    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
+    "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --fr-wordmark:
+    "Barlow Condensed", "Barlow", "Helvetica Neue Condensed", "Arial Narrow",
+    system-ui, sans-serif;
   --fr-mono: var(--font-mono, ui-monospace, "Cascadia Mono", Menlo, monospace);
 
   background: var(--fr-paper);
@@ -291,18 +296,47 @@ body:has(.fr-landing) {
   color: inherit;
 }
 
+/* ---------------------------------------------------------------------------
+   O letreiro: Barlow CONDENSED, com contraste de peso.
+
+   Condensada, e não a largura normal: a bandeirola é um bloco horizontal, e um
+   nome de doze caracteres em largura normal se espalha ao lado dela até o
+   conjunto não caber num cabeçalho. Estreitando as letras, FLAMME e ROUGE
+   empilhados formam um bloco de proporção parecida com a do símbolo.
+
+   FLAMME leve, ROUGE pesado. No mesmo peso, empilhadas, as duas palavras leem
+   como uma mancha cinza; o contraste dá ritmo e faz a palavra vermelha carregar
+   peso visual junto com a cor, em vez de cor e peso competirem.
+   --------------------------------------------------------------------------- */
 .fr-assinatura__nome {
-  font-family: var(--fr-sans);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  font-size: 0.8125rem;
-  line-height: 1.15;
+  font-family: var(--fr-wordmark);
+  font-size: 0.9375rem;
+  line-height: 1.06;
   text-transform: uppercase;
+
+  /* Coluna flex sem largura definida: ela assume a largura da palavra mais
+     larga, e a outra estica até bater. É o que mantém o bloco alinhado em
+     qualquer tamanho de fonte, sem número calibrado à mão. */
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.fr-assinatura__palavra {
+  display: flex;
+  justify-content: space-between;
+  /* Nenhuma entreletra aqui: quem distribui é o `space-between`. Somar
+     `letter-spacing` acrescentaria um espaço fantasma DEPOIS da última letra,
+     e as duas linhas deixariam de terminar no mesmo ponto. */
+  letter-spacing: 0;
+}
+
+.fr-assinatura__flamme {
+  font-weight: 300;
 }
 
 .fr-assinatura__rouge {
   color: var(--fr-rouge);
-  display: block;
+  font-weight: 700;
 }
 
 .fr-section--dark .fr-assinatura__rouge,

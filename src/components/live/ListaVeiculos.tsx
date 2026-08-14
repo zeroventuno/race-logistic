@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import { VehicleIcon } from "@/components/icons/vehicle";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { ROLE_META, SIGNAL_META } from "@/lib/types";
 
@@ -181,7 +182,7 @@ function LinhaVeiculo({
             opacity: sinal === "lost" || sinal === "never" ? 0.5 : 1,
           }}
         >
-          {ROLE_META[v.role].icon}
+          <VehicleIcon role={v.role} size={17} stroke={2.2} />
         </span>
 
         <span className="min-w-0 flex-1">
