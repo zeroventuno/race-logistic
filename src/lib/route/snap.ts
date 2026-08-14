@@ -27,12 +27,36 @@ export interface SnapPrevious {
   offsetM: number;
   /** Epoch em ms do ping anterior. */
   recordedAtMs: number;
+  /**
+   * Velocidade ao longo do percurso no ping anterior, em m/s.
+   *
+   * FORNEÇA ISTO. Sem velocidade, o modelo de movimento assume que o veículo
+   * está parado, e num trecho onde o percurso entra e volta pela mesma via a
+   * posição estimada fica sistematicamente para trás — o erro se acumula ping
+   * a ping até a geometria voltar a distinguir os sentidos. Medido num
+   * percurso real: 11 pings em 1525 com erro acima de 100 m, chegando a 537 m,
+   * todos concentrados num único trecho de retorno. Com a velocidade
+   * informada, o mesmo trecho passa sem erro perceptível.
+   *
+   * O valor pode vir de `speed_mps` do próprio GPS ou de
+   * `rolling_speed_mps` de `position_state`.
+   */
+  speedMps?: number | null;
 }
 
 export interface SnapOptions {
   previous?: SnapPrevious | null;
   /** Epoch em ms do ping sendo ancorado. */
   recordedAtMs: number;
+  /**
+   * Velocidade recente do veículo ao longo do percurso, se conhecida.
+   * Alimenta o modelo de movimento: sabendo que o veículo vinha a 12 m/s há
+   * 3 s, sabemos que ele avançou ~36 m, e isso desempata geometrias que a
+   * distância perpendicular sozinha não distingue.
+   */
+  expectedSpeedMps?: number | null;
+  /** Precisão informada pelo GPS neste ping, em metros. */
+  accuracyM?: number | null;
   /**
    * Velocidade máxima plausível de um veículo de apoio, em m/s.
    * 45 m/s = 162 km/h — folgado de propósito: melhor a janela ser larga demais
@@ -77,6 +101,25 @@ const DEFAULTS = {
   minForwardWindowM: 250,
 } as const;
 
+/**
+ * Incerteza de velocidade do modelo de movimento, em m/s.
+ *
+ * 8 m/s ≈ 29 km/h: um veículo de apoio pode acelerar ou parar bastante entre
+ * dois pings. Generoso de propósito — o termo de movimento existe para
+ * desempatar geometrias ambíguas, não para forçar o veículo a seguir uma
+ * previsão.
+ */
+const SPEED_UNCERTAINTY_MPS = 8;
+
+/** Piso da incerteza de movimento: nunca confiar cegamente na previsão. */
+const MIN_MOTION_SIGMA_M = 60;
+
+/**
+ * Piso da incerteza de GPS. Aparelho que reporta precisão de 3 m ainda erra
+ * mais que isso sob copa de árvore ou em vale fechado.
+ */
+const MIN_GPS_SIGMA_M = 12;
+
 interface Candidate {
   segmentIndex: number;
   offsetM: number;
@@ -116,7 +159,17 @@ export function snapToRoute(
   const windowStart = previous!.offsetM - maxBacktrackM;
   const windowEnd = previous!.offsetM + forward;
 
-  const windowBest = searchOffsetWindow(track, p, windowStart, windowEnd);
+  const expectedSpeedMps =
+    opts.expectedSpeedMps ?? previous!.speedMps ?? 0;
+
+  const windowBest = searchOffsetWindow(track, p, windowStart, windowEnd, {
+    expectedOffsetM: previous!.offsetM + expectedSpeedMps * elapsedSec,
+    sigmaMotionM: Math.max(
+      MIN_MOTION_SIGMA_M,
+      elapsedSec * SPEED_UNCERTAINTY_MPS,
+    ),
+    sigmaGpsM: Math.max(MIN_GPS_SIGMA_M, opts.accuracyM ?? 0),
+  });
 
   if (!windowBest) {
     return finalize(globalBest, "global_recovery", offRouteThreshold, track, "low");
@@ -174,31 +227,159 @@ function finalize(
   };
 }
 
-/** Melhor segmento entre os candidatos espaciais — usado sem histórico. */
+/**
+ * Distância de offset abaixo da qual dois candidatos são a MESMA passagem da
+ * estrada por ali, e acima da qual são passagens distintas (ida e volta, ou
+ * largada e chegada de um circuito).
+ */
+const PASSAGE_CLUSTER_M = 300;
+
+/**
+ * Quando duas passagens distintas estão praticamente à mesma distância do
+ * ponto, a diferença está dentro do erro do GPS e escolher pela menor
+ * distância é jogar cara ou coroa.
+ */
+const PASSAGE_TIE_TOLERANCE_M = 30;
+
+/**
+ * Melhor segmento entre os candidatos espaciais — usado quando não há
+ * histórico em que se apoiar.
+ *
+ * O caso que obriga esta função a ser mais que um `min()`: PROVA EM CIRCUITO.
+ * Largada e chegada no mesmo lugar significa que o offset 0 e o offset 55 000
+ * são o MESMO ponto do mapa. Um `min()` puro escolhe entre os dois pelo ruído
+ * do GPS — e escolher a chegada ancora o veículo no fim da prova, de onde ele
+ * não tem para onde avançar. O erro então não se corrige sozinho: a janela de
+ * continuidade dos pings seguintes passa a defender ativamente a posição
+ * errada. Foi exatamente isso que apareceu ao rodar um veículo simulado sobre
+ * o Giro delle Langhe: 8 km de erro médio ao longo de toda a prova.
+ *
+ * A regra: agrupar os candidatos por passagem, e no empate ficar com a
+ * passagem MAIS CEDO no percurso. Empate aqui significa "o GPS não sabe
+ * distinguir", e nesse caso subestimar o avanço é o erro seguro — um veículo
+ * reportado atrás do que está mantém a rua fechada por mais tempo; reportado à
+ * frente, abre a rua com o pelotão ainda dentro.
+ */
 function searchGlobal(index: RouteIndex, p: LatLng): Candidate | null {
   const candidates = index.candidatesNear(p);
 
-  if (candidates.length === 0) {
-    // Ponto longe demais de qualquer célula da grade: varre tudo. Custa caro,
-    // mas só acontece quando o veículo está a quilômetros do percurso, o que
-    // por si só já é uma informação que o diretor precisa ver.
-    return bestOfSegments(index.track, p, 0, index.track.points.length - 2);
+  const projections =
+    candidates.length === 0
+      ? // Ponto longe demais de qualquer célula da grade: varre tudo. Custa
+        // caro, mas só acontece quando o veículo está a quilômetros do
+        // percurso, o que por si só já é informação que o diretor precisa ver.
+        projectRange(index.track, p, 0, index.track.points.length - 2)
+      : projectSegments(index.track, p, candidates);
+
+  const passages = clusterIntoPassages(projections);
+  if (passages.length === 0) return null;
+
+  // `passages` vem ordenado por offset, então a primeira que empata é a mais
+  // cedo no percurso — que é a escolha conservadora.
+  return pickAmongTies(passages, () => 0);
+}
+
+/**
+ * Agrupa projeções em "passagens": trechos distintos em que o percurso passa
+ * perto do ponto consultado. Segmentos vizinhos do mesmo trecho viram uma
+ * passagem só; a ida e a volta de um grampo viram duas.
+ */
+function clusterIntoPassages(projections: Candidate[]): Candidate[] {
+  if (projections.length === 0) return [];
+
+  const sorted = [...projections].sort((a, b) => a.offsetM - b.offsetM);
+
+  const passages: Candidate[] = [];
+  let currentBest = sorted[0]!;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const c = sorted[i]!;
+    if (c.offsetM - sorted[i - 1]!.offsetM > PASSAGE_CLUSTER_M) {
+      passages.push(currentBest);
+      currentBest = c;
+    } else if (c.distanceM < currentBest.distanceM) {
+      currentBest = c;
+    }
+  }
+  passages.push(currentBest);
+
+  return passages;
+}
+
+/**
+ * Escolhe entre passagens estatisticamente empatadas usando um critério de
+ * desempate externo (menor custo vence).
+ *
+ * Empate aqui significa "a diferença de distância perpendicular está dentro do
+ * erro do GPS" — nesse caso a geometria não tem mais nada a dizer, e insistir
+ * no mínimo numérico é seguir ruído. É o que produz jitter no ápice de um
+ * grampo, onde as duas pernas ficam a poucos metros uma da outra: a posição na
+ * prova oscilava mais de 150 m entre pings consecutivos de um veículo que
+ * estava simplesmente fazendo a curva.
+ */
+function pickAmongTies(
+  passages: Candidate[],
+  cost: (c: Candidate) => number,
+): Candidate {
+  const minDistance = Math.min(...passages.map((c) => c.distanceM));
+
+  let best = passages[0]!;
+  let bestCost = Infinity;
+
+  for (const passage of passages) {
+    if (passage.distanceM > minDistance + PASSAGE_TIE_TOLERANCE_M) continue;
+
+    const c = cost(passage);
+    if (c < bestCost) {
+      bestCost = c;
+      best = passage;
+    }
   }
 
-  let best: Candidate | null = null;
-  for (const segIdx of candidates) {
-    const c = projectOnSegment(index.track, p, segIdx);
-    if (c && (!best || c.distanceM < best.distanceM)) best = c;
-  }
   return best;
 }
 
-/** Melhor segmento cuja extensão intersecta a janela de offset dada. */
+interface MotionPrior {
+  /** Onde o veículo deveria estar, segundo a última posição e velocidade. */
+  expectedOffsetM: number;
+  /** Incerteza dessa previsão, em metros. */
+  sigmaMotionM: number;
+  /** Incerteza da medição de GPS, em metros. */
+  sigmaGpsM: number;
+}
+
+/**
+ * Melhor posição dentro da janela, combinando geometria e modelo de movimento.
+ *
+ * Escolher só pela menor distância perpendicular falha num caso que aparece em
+ * qualquer percurso real: quando a estrada entra e volta pela MESMA via — um
+ * waypoint fora da via principal, um retorno, um trecho sem saída. As duas
+ * passagens não estão "próximas": são a mesma geometria, a centímetros uma da
+ * outra. Nenhum agrupamento por offset as separa, porque os candidatos formam
+ * uma sequência contínua sem lacuna. A geometria simplesmente não tem a
+ * informação.
+ *
+ * O que tem a informação é a física: o veículo estava no offset X há 3 s
+ * viajando a 12 m/s, então está por volta de X+36 — não em X−200. Somando as
+ * duas evidências como custos quadráticos normalizados pelas respectivas
+ * incertezas (o mesmo princípio de um filtro de Kalman ou de map-matching por
+ * HMM), a resposta certa cai fora naturalmente:
+ *
+ *   custo = (distância_perpendicular / σ_gps)² + (desvio_do_previsto / σ_movimento)²
+ *
+ * O comportamento degrada bem nos dois extremos. Se o GPS está claramente mais
+ * perto de uma das opções, o primeiro termo domina e a geometria decide. Se as
+ * opções são geometricamente indistinguíveis, o segundo termo domina e a
+ * física decide. E se não há velocidade conhecida, σ_movimento cresce com o
+ * tempo decorrido e o termo simplesmente perde força — sem nunca travar o
+ * veículo no lugar.
+ */
 function searchOffsetWindow(
   track: RouteTrack,
   p: LatLng,
   startM: number,
   endM: number,
+  motion: MotionPrior,
 ): Candidate | null {
   const pts = track.points;
   const lo = Math.max(0, findSegmentIndex(track, Math.max(0, startM)));
@@ -207,21 +388,52 @@ function searchOffsetWindow(
 
   if (hi < lo) return null;
 
-  return bestOfSegments(track, p, lo, hi);
+  let best: Candidate | null = null;
+  let bestCost = Infinity;
+
+  for (let i = lo; i <= hi; i++) {
+    const c = projectOnSegment(track, p, i);
+    if (!c) continue;
+
+    const geometryTerm = c.distanceM / motion.sigmaGpsM;
+    const motionTerm =
+      (c.offsetM - motion.expectedOffsetM) / motion.sigmaMotionM;
+    const cost = geometryTerm * geometryTerm + motionTerm * motionTerm;
+
+    if (cost < bestCost) {
+      bestCost = cost;
+      best = c;
+    }
+  }
+
+  return best;
 }
 
-function bestOfSegments(
+function projectRange(
   track: RouteTrack,
   p: LatLng,
   fromIdx: number,
   toIdx: number,
-): Candidate | null {
-  let best: Candidate | null = null;
+): Candidate[] {
+  const out: Candidate[] = [];
   for (let i = fromIdx; i <= toIdx; i++) {
     const c = projectOnSegment(track, p, i);
-    if (c && (!best || c.distanceM < best.distanceM)) best = c;
+    if (c) out.push(c);
   }
-  return best;
+  return out;
+}
+
+function projectSegments(
+  track: RouteTrack,
+  p: LatLng,
+  segmentIndices: number[],
+): Candidate[] {
+  const out: Candidate[] = [];
+  for (const i of segmentIndices) {
+    const c = projectOnSegment(track, p, i);
+    if (c) out.push(c);
+  }
+  return out;
 }
 
 function projectOnSegment(
