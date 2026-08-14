@@ -11,6 +11,13 @@
  * não tradução literal. "Carro vassoura" é `voiture balai` em francês e
  * `Besenwagen` em alemão porque é assim que a função se chama nessas
  * federações — quem trabalha em prova reconhece o termo certo na hora.
+ *
+ * DOIS VEÍCULOS DIFERENTES, e confundi-los é o erro mais caro deste arquivo:
+ * o CARRO DE FECHAMENTO (`sweep_car`) encerra a interdição da via, e a VASSOURA
+ * (`broom_wagon`) é o último veículo, que recolhe quem abandona com a via já
+ * reaberta. A janela que o painel calcula é abertura ↔ FECHAMENTO — ela é o
+ * compromisso administrativo com a autoridade de trânsito. Ver o comentário de
+ * `PositionRole` em `src/lib/types.ts`.
  */
 
 export const ptBR = {
@@ -44,6 +51,7 @@ export const ptBR = {
     offline: "Sem conexão",
     online: "Conectado",
     language: "Idioma",
+    logout: "Sair",
   },
 
   roles: {
@@ -82,11 +90,69 @@ export const ptBR = {
     start: "Largada",
     positions: "Posições de apoio",
     route: "Percurso",
+    noStart: "Sem horário de largada",
+    details: "Dados da prova",
+    lapsTotal: "{laps} voltas = {distance} de prova.",
+    lap: "volta {lap}/{laps}",
+    lapUnknown: "volta ?",
+
+    form: {
+      nameLabel: "Nome da prova",
+      namePlaceholder: "Giro delle Langhe — 2ª etapa",
+      nameRequired: "Dê um nome à prova — é como você vai reconhecê-la na lista.",
+      nameTooLong: "Nome muito longo (máximo 200 caracteres).",
+      locationLabel: "Local",
+      locationHint: "Cidade ou região da largada. Aparece na lista de provas.",
+      locationPlaceholder: "Alba, Piemonte",
+      locationTooLong: "Local muito longo (máximo 200 caracteres).",
+      dateLabel: "Data da largada",
+      dateRequired: "Informe também a data da largada.",
+      timeLabel: "Horário da largada",
+      timeHint: "No relógio do local da prova.",
+      timeRequired: "Informe também o horário da largada.",
+      dateTimeInvalid: "Data ou horário inválidos. Confira os dois campos.",
+      timezoneLabel: "Fuso horário da prova",
+      timezoneHint:
+        "Tudo que a direção vê é convertido para este fuso, inclusive no celular do motorista.",
+      timezoneRequired: "Escolha o fuso horário do local da prova.",
+      timezoneUnknown: "Fuso horário desconhecido.",
+      lapsLabel: "Voltas sobre o percurso",
+      lapsHint:
+        "1 para prova ponto-a-ponto. Num circuito, a distância da prova é o traçado multiplicado pelas voltas.",
+      lapsRequired: "Informe o número de voltas.",
+      lapsInteger: "O número de voltas precisa ser inteiro.",
+      lapsMin: "A prova tem pelo menos 1 volta.",
+      lapsMax: "No máximo 50 voltas.",
+      gapHint:
+        "Quantos minutos a direção quer entre o carro de abertura e o de fechamento. É a partir daqui que o painel decide se o pelotão esticou ou comprimiu demais.",
+      targetLabel: "Janela alvo (minutos)",
+      targetRequired: "Informe a janela alvo em minutos.",
+      targetInteger: "A janela alvo precisa ser um número inteiro de minutos.",
+      targetMin: "A janela alvo precisa ser de pelo menos 1 minuto.",
+      targetMax: "A janela alvo não pode passar de 600 minutos (10 horas).",
+      minLabel: "Alerta abaixo de (minutos)",
+      minHint: "Pelotão comprimido demais.",
+      minInteger: "O limite mínimo precisa ser um número inteiro de minutos.",
+      minNegative: "O limite mínimo não pode ser negativo.",
+      minMax: "O limite mínimo não pode passar de 600 minutos.",
+      minAboveTarget: "O mínimo não pode ser maior que a janela alvo ({target} min).",
+      maxLabel: "Alerta acima de (minutos)",
+      maxHint: "Pelotão esticado demais.",
+      maxInteger: "O limite máximo precisa ser um número inteiro de minutos.",
+      maxMin: "O limite máximo precisa ser de pelo menos 1 minuto.",
+      maxMax: "O limite máximo não pode passar de 600 minutos.",
+      maxBelowMin: "O limite máximo precisa ser maior que o mínimo ({min} min).",
+      maxBelowTarget: "O máximo não pode ser menor que a janela alvo ({target} min).",
+      showLimits: "Definir limites de alerta",
+      saved: "Dados da prova atualizados",
+      afterSave: "Depois de salvar você vai direto para o percurso.",
+    },
   },
 
   gap: {
     title: "Janela abertura ↔ fechamento",
     short: "Janela",
+    targetLabel: "Janela alvo",
     target: "Alvo: {duration}",
     measured:
       "Medido pela diferença de horário na passagem dos dois veículos pelo mesmo ponto.",
@@ -104,6 +170,31 @@ export const ptBR = {
     stale: "Dado de {age} — pode não refletir a posição atual.",
     overTarget: "Acima da janela alvo",
     underTarget: "Abaixo da janela alvo",
+
+    timeSeparation: "separação no tempo",
+    alongRoad: "pela estrada",
+    methodMeasured: "Medido",
+    methodProjected: "Projetado",
+    methodNone: "Sem dado",
+    withinTarget: "Dentro da janela",
+    overTargetDetail: "esticou demais",
+    underTargetDetail: "comprimiu demais",
+    comparisonSuspended:
+      "Comparação com a janela alvo suspensa enquanto o dado não for confiável",
+    noLimits: "Sem limites definidos para esta prova",
+    clockSuspect:
+      "Relógio de um dos aparelhos de referência está fora de hora em relação ao servidor. Enquanto isso durar, a idade do dado e o cálculo medido não são confiáveis — confirme a posição pelo rádio.",
+    lapsUncertain:
+      "Prova em circuito de {laps} voltas: o histórico carregado não alcança a largada, então a contagem de voltas pode estar subestimada e a janela, maior do que aparece.",
+    onTarget: "Janela {gap}, combinado {target}. Nada a corrigir.",
+    verdictAhead: "Janela {gap}, combinado {target} — adiantado {drift}.",
+    verdictBehind: "Janela {gap}, combinado {target} — atrasado {drift}.",
+    remedyAhead: "Retarde o carro de fechamento.",
+    remedyBehind: "Acelere o carro de fechamento.",
+    costAhead:
+      "A via está reabrindo antes do previsto e quem ficou para trás perde a proteção cedo demais.",
+    costBehind:
+      "A interdição está passando do tempo autorizado pela autoridade de trânsito.",
   },
 
   alerts: {
@@ -141,6 +232,13 @@ export const ptBR = {
     noteLabel: "Descrição (opcional)",
     notePlaceholder: "O que aconteceu?",
 
+    storageFailedTitle: "ALERTA NÃO SALVO NESTE APARELHO — USE O RÁDIO AGORA.",
+    storageFailedBody:
+      "O armazenamento local recusou a gravação ({reason}). Nada será reenviado sozinho.",
+    retryCount: "{count} tentativa(s) sem sucesso. Avise pelo rádio.",
+    unknownFailure: "falha desconhecida",
+    nobodyDispatched: "Ninguém foi acionado para este alerta.",
+
     dispatch: {
       youWereCalled: "Você foi acionado",
       calling: "Acionando {position}",
@@ -159,6 +257,12 @@ export const ptBR = {
         "Nenhum apoio disponível para esta categoria. A direção precisa agir manualmente.",
       declineReason: "Motivo (opcional)",
       reassign: "Trocar apoio",
+      dispatch: "Acionar apoio",
+      auto: "automático",
+      fallbackNoPosition:
+        "Sem sugestão calculada e sem posição no percurso — ordem arbitrária. Confirme pelo rádio.",
+      fallbackReason:
+        "Sem sugestão calculada. {distance} de diferença no percurso, sem cálculo de retorno nem de tempo estimado.",
     },
 
     proximity: {
@@ -181,6 +285,7 @@ export const ptBR = {
       acknowledge: "Reconhecer",
       resolve: "Resolver",
       cancel: "Cancelar alerta",
+      confirmCancel: "confirmar? (alarme falso)",
       resolutionNote: "O que foi feito",
     },
   },
@@ -195,6 +300,8 @@ export const ptBR = {
     bindNotFound: "Código não encontrado ou já expirado. Fale com a direção.",
     bindTooManyAttempts:
       "Muitas tentativas. Aguarde um momento antes de tentar de novo.",
+    bindPasteHint:
+      "Pode colar. As letras O e I são lidas como 0 e 1 — o código não usa essas letras.",
     boundAs: "Você é {position} em {race}",
     unbind: "Desvincular este aparelho",
     unbindConfirm:
@@ -209,28 +316,100 @@ export const ptBR = {
       "Permissão de localização negada. Habilite nos ajustes do navegador e recarregue.",
     gpsUnavailable: "GPS indisponível neste aparelho.",
     gpsSearching: "Procurando sinal de GPS…",
+    gpsNoApi:
+      "Este navegador não fornece localização. Use o Chrome ou o Safari do celular.",
+    gpsNoFix:
+      "Sem sinal de GPS. Em túnel ou garagem isso é esperado; a captura volta sozinha.",
+    gpsTimeout: "GPS demorando para responder. Continuando a tentar.",
+    gpsFailed: "Falha ao obter posição. A captura continua tentando.",
+    gpsDeniedIOS:
+      "Localização bloqueada. No iPhone: Ajustes → Safari → Localização → Perguntar, depois recarregue esta página. Se usa o app do Chrome, é Ajustes → Chrome → Localização.",
+    gpsDeniedAndroid:
+      "Localização bloqueada. No Android: toque no cadeado ao lado do endereço → Permissões → Localização → Permitir, e recarregue a página.",
+    gpsDeniedBrowser:
+      "Localização bloqueada pelo navegador. Libere o acesso à localização nas permissões do site e recarregue a página.",
 
     transmitting: "Transmitindo",
     paused: "Pausado",
     queuedPings: "{count} pontos na fila",
+    queuedAlerts: "{count} alerta(s) ainda não entregue(s). Avise pelo rádio.",
+    pingRejected: "POSIÇÃO RECUSADA",
+    pingRejectedDetail:
+      "O servidor recusou {count} posição(ões): sua posição NÃO está aparecendo no mapa da direção.",
+    queueNotDurable:
+      "Armazenamento local indisponível: a fila se perde se o app fechar.",
     batteryWarning: "Bateria baixa — considere ligar o carregador.",
     keepAwake: "Mantendo a tela ligada",
+    keepScreenOpen:
+      "Mantenha esta tela aberta durante a prova. A posição é enviada automaticamente, mesmo com sinal ruim.",
   },
 
   director: {
     dashboard: "Painel",
     myRaces: "Minhas provas",
+    myRacesSubtitle:
+      "Cada prova tem seu percurso, suas posições de apoio e seus códigos.",
     newRace: "Nova prova",
+    newRaceSubtitle:
+      "Só o essencial agora. Percurso e posições vêm nos próximos passos e podem ser mexidos até a hora da largada.",
+    createAndContinue: "Criar prova e ir para o percurso",
     noRaces: "Você ainda não criou nenhuma prova.",
     noRacesAction: "Criar a primeira prova",
     setupChecklist: "Para a prova ir ao ar",
     needsRoute: "Carregar o percurso",
+    needsPositions: "Cadastrar posições de apoio",
     needsLead: "Definir o carro de abertura",
     needsSweep: "Definir o carro de fechamento",
     needsBinding: "{count} posição(ões) sem aparelho vinculado",
     ready: "Tudo pronto",
     goLive: "Iniciar prova",
     finish: "Encerrar prova",
+
+    steps: "Etapas da prova",
+    overview: "Resumo",
+    live: "Ao vivo",
+    resolveItem: "Resolver",
+    pendingCount: "{count} pendência(s)",
+    readOnly: "Somente leitura",
+    readOnlyRoute:
+      "Você participa desta prova como observador e não pode alterar o percurso.",
+    markReady: "Marcar prova como pronta",
+    marking: "Marcando…",
+    backToDraft: "Voltar para rascunho",
+    reverting: "Voltando…",
+    resolveBlockingFirst: "Resolva as pendências obrigatórias primeiro.",
+
+    checklist: {
+      routeLabel: "Percurso carregado",
+      routeHint:
+        "Suba o GPX da prova ou desenhe o traçado no mapa. Sem percurso não há cálculo de quilometragem nem de janela.",
+      positionsLabel: "Posições de apoio cadastradas",
+      positionsHint:
+        "Cadastre os veículos de apoio. Cada um recebe um código para o motorista digitar no celular.",
+      leadLabel: "Referência de abertura definida",
+      leadHint:
+        "Marque qual posição é o carro de abertura. É o começo da janela que a direção acompanha.",
+      sweepLabel: "Referência de fechamento definida",
+      sweepHint:
+        "Marque qual posição é o carro de fechamento. É a passagem dele que reabre a via e fecha a janela.",
+      startLabel: "Horário de largada",
+      startHint:
+        "Opcional, mas é o que faz o painel mostrar contagem regressiva em vez de só o relógio.",
+    },
+
+    empty: {
+      intro:
+        "Uma prova fica pronta para ir ao ar quando tem percurso, posições de apoio e as referências de abertura e fechamento marcadas. São três passos:",
+      step1Title: "Cadastre a prova",
+      step1Body:
+        "Nome, local, largada e a janela alvo entre o carro de abertura e o de fechamento. Um minuto.",
+      step2Title: "Carregue o percurso",
+      step2Body:
+        "Suba o GPX que você já tem, ou desenhe o traçado no mapa. É o que transforma posição de GPS em quilômetro de prova.",
+      step3Title: "Cadastre as posições e imprima os códigos",
+      step3Body:
+        "Cada moto, ambulância e carro de apoio ganha um código de 6 caracteres. O motorista digita no celular dele e pronto — sem instalar nada, sem criar conta.",
+    },
   },
 
   route: {
@@ -238,43 +417,169 @@ export const ptBR = {
     uploadSubtitle: "Envie o arquivo GPX da prova.",
     uploadAction: "Escolher arquivo GPX",
     uploadDrop: "Arraste o arquivo aqui",
+    uploadHint:
+      "Ou clique para escolher. Serve o que sai do Strava, Garmin Connect, RideWithGPS, Komoot ou do software de traçado da prova.",
+    uploadReading: "Arquivos grandes levam alguns segundos.",
     drawInstead: "Ou desenhe o percurso no mapa",
     drawTitle: "Desenhar o percurso",
     drawHint: "Clique no mapa para adicionar pontos. Arraste para ajustar.",
+    drawShortcuts:
+      "Delete apaga o vértice selecionado (ou clique com o botão direito). Ctrl+Z desfaz.",
     undo: "Desfazer",
     clear: "Limpar",
     chooseSegment: "O arquivo tem mais de um percurso. Escolha o da prova:",
+    chooseSegmentHint:
+      "O arquivo tem {count} traçados. Juntar todos criaria um salto no meio da prova, então escolha um.",
+    segmentName: "Traçado {number}",
+    kindTrack: "trilha gravada",
+    kindRoute: "rota planejada",
+    kindWaypoints: "waypoints soltos",
     replaceWarning:
       "Substituir o percurso recalcula todas as posições em prova. Faça isso antes da largada.",
     parseError: "Não foi possível ler o arquivo",
     pointCount: "{count} pontos",
     current: "Percurso atual",
     replace: "Substituir percurso",
+
+    purpose:
+      "É o traçado que transforma a coordenada de GPS de cada veículo em “quilômetro 42 da prova”. Sem ele não há cálculo de janela entre abertura e fechamento, nem sugestão de apoio mais próximo pela estrada.",
+    missingExplain:
+      "Sem percurso. Sem ele o sistema não consegue dizer em que quilômetro cada veículo está, nem calcular a janela.",
+    sourceGpx: "Importado de {filename}",
+    sourceDrawn: "Desenhado no mapa",
+    geometryPoints: "Pontos de geometria",
+    reviewTitle: "Conferindo antes de gravar",
+    warningsTitle: "{count} ponto(s) de atenção neste arquivo",
+    confirmUse: "Confirmar e usar este percurso",
+    chooseAnotherFile: "Escolher outro arquivo",
+    noFileYet: "Ainda não tem o arquivo do percurso?",
+    vertices: "Vértices",
+    saveDrawn: "Salvar percurso",
+    deleteVertex: "Apagar vértice",
+    closeLoop: "Fechar circuito",
+    tooManyVertices:
+      "{count} vértices é mais do que um traçado desenhado à mão deveria ter (limite {limit}). Se o percurso é mesmo longo, importe um GPX.",
+    oneVertex:
+      "Um vértice só não é percurso. Clique no mapa para marcar por onde a prova passa.",
+    savedTitle: "Percurso gravado",
+    savedReplaced: "o percurso anterior foi desativado.",
+    saveErrorTitle: "Não deu para gravar",
+    saveFailed:
+      "Não foi possível gravar o percurso. Verifique a conexão e tente de novo.",
+    saveConnectionLost:
+      "A conexão caiu no meio do envio. O percurso anterior continua valendo — tente de novo.",
+    fileUnreadable:
+      "Não foi possível ler o arquivo do disco. Copie-o para outra pasta e tente de novo.",
+    fileNotGpx:
+      "Não foi possível interpretar este arquivo. Confirme que é um .gpx e que ele abre em outro programa.",
+
+    uploadTooLarge:
+      "O percurso enviado é grande demais. Recorte o arquivo para o trecho da prova.",
+    uploadBadBody: "Corpo da requisição ilegível.",
+    uploadBadSource: "Origem do percurso desconhecida.",
+    uploadBadPoints: "Pontos do percurso inválidos.",
+    uploadTooManyVertices:
+      "Um percurso desenhado à mão não deveria ter mais de {limit} vértices.",
+    uploadBuildFailed: "Não foi possível montar o percurso com esses pontos.",
+    uploadReleaseFailed:
+      "Não foi possível liberar o percurso anterior. Recarregue a página e tente de novo.",
+    uploadInsertFailed:
+      "Não foi possível gravar o percurso. O percurso anterior continua valendo.",
   },
 
   positions: {
     title: "Posições de apoio",
+    intro:
+      "Cada veículo de apoio da prova vira uma posição com código próprio. O motorista digita o código no celular dele — sem instalar aplicativo, sem criar conta — e a partir daí o aparelho transmite a posição daquele veículo.",
     add: "Adicionar posição",
     addBulk: "Adicionar várias",
+    addHint:
+      "Cada posição nasce com um código de vínculo único e um nome que você pode trocar depois. O primeiro carro de abertura e o primeiro carro de fechamento já entram marcados como referência.",
     quantity: "Quantidade",
     label: "Identificação",
+    role: "Papel",
     driverName: "Motorista",
     driverPhone: "Telefone",
+    driverPhoneHint: "Com código do país se for de fora.",
+    noDriver: "Motorista não informado",
     plate: "Placa",
     referenceLead: "É o carro de abertura oficial",
     referenceSweep: "É o carro de fechamento oficial",
+    markLead: "Marcar como abertura",
+    markSweep: "Marcar como fechamento",
     dispatchable: "Pode ser acionado para atender alertas",
     code: "Código de vínculo",
+    codeRevoked: "revogado — gere outro",
+    codeExpired: "expirado — gere outro",
+    codeHidden: "Só quem edita a prova enxerga os códigos.",
+    copyCode: "Copiar código",
+    copied: "copiado",
     regenerateCode: "Gerar código novo",
     regenerateWarning:
       "O código atual deixa de funcionar. Se o motorista já estiver vinculado, ele continua transmitindo até ser desvinculado.",
+    moveUp: "Subir {position}",
+    moveDown: "Descer {position}",
+    confirmRemove: "Remover mesmo?",
+    orderHint: "a ordem da lista é a ordem em que elas aparecem no painel ao vivo.",
+    emptyTitle: "Nenhuma posição cadastrada",
+    emptyBody:
+      "Uma posição é um papel na prova (“Moto 3”, “Ambulância 1”), não um aparelho. O celular é vinculado depois, pelo código — e pode ser trocado no meio da prova se a bateria morrer, sem perder o histórico.",
+    emptyStart:
+      "Comece pelo carro de abertura e pelo de fechamento: são eles que definem a janela que a direção acompanha.",
+    missingRefsTitle: "Faltam referências da janela",
+    missingRefsBody:
+      "Sem as duas, o painel não consegue calcular o tempo entre a frente e o fim do pelotão.",
+    bound: "Vinculado",
+    notBound: "Aguardando vínculo",
+    revokeSession: "Desvincular aparelho",
+
     print: "Imprimir códigos",
     printTitle: "Códigos de vínculo — {race}",
     printHint:
       "Entregue cada código ao motorista da posição correspondente antes da largada.",
-    bound: "Vinculado",
-    notBound: "Aguardando vínculo",
-    revokeSession: "Desvincular aparelho",
+    printLost:
+      "Se um papel se perder, gere outro na tela de posições e o antigo para de valer na hora.",
+    printInstruction:
+      "Cada motorista abre {url} no celular e digita o código do bloco dele.",
+    printUrlMissing: "(endereço do app)",
+    printNoUrlTitle: "Endereço do app não configurado",
+    printNoUrlBody:
+      "A variável {variable} está vazia, então a folha sai sem o endereço que o motorista precisa abrir. Escreva o endereço à mão antes de distribuir.",
+    printMissing:
+      "{count} posição(ões) sem código válido ficaram de fora desta folha. Gere um código novo para elas na tela de posições.",
+    printExpired:
+      "{count} código(s) desta folha já passaram da validade e não vinculam mais nenhum celular. Gere códigos novos antes de imprimir.",
+    printNothingTitle: "Nada para imprimir",
+    printNothingBody: "Cadastre as posições de apoio primeiro.",
+    printFooter:
+      "o código vale só para esta prova e só para este veículo. Vincular um celular novo derruba o anterior.",
+
+    form: {
+      invalidData: "Dados inválidos.",
+      roleInvalid: "Escolha um papel válido.",
+      quantityInteger: "A quantidade precisa ser um número inteiro.",
+      quantityMin: "Adicione pelo menos 1 posição.",
+      quantityMax: "Adicione no máximo 40 posições de uma vez.",
+      labelRequired:
+        "A posição precisa de um nome — é o que a direção vai chamar no rádio.",
+      labelTooLong: "Nome muito longo (máximo 60 caracteres).",
+      driverNameTooLong: "Nome do motorista muito longo (máximo 120 caracteres).",
+      phoneTooLong: "Telefone muito longo.",
+      phoneInvalid:
+        "Telefone inválido. Use só números, com o código do país se for de fora.",
+      plateTooLong: "Placa muito longa.",
+      notFound: "Posição não encontrada. Recarregue a página.",
+      referenceCleared:
+        "Atenção: a prova está sem referência de {reference} agora — marque uma antes da largada.",
+      codeGenerationFailed:
+        "Não foi possível gerar códigos únicos agora. Tente de novo em alguns segundos.",
+      codeIssueUnavailable:
+        "Não foi possível emitir um código novo neste servidor.",
+      codeNoneFree:
+        "Não foi possível sortear um código livre. Tente de novo em alguns segundos.",
+      codeRevokedMeanwhile:
+        "O código anterior já foi revogado — esta posição está sem código até você tentar de novo.",
+    },
   },
 
   map: {
@@ -284,6 +589,151 @@ export const ptBR = {
     showAll: "Mostrar todos",
     noWebGL:
       "Este navegador não suporta WebGL. Os dados de posição continuam corretos nas listas.",
+    slowTitle: "O mapa não terminou de carregar.",
+    slowBody:
+      "Pode ser aba em segundo plano, WebGL indisponível ou os blocos do mapa bloqueados na rede. Os quilômetros, a janela e a lista de veículos ao lado continuam corretos.",
+  },
+
+  live: {
+    snapshotErrorTitle: "Não foi possível montar o painel ao vivo",
+    snapshotErrorBody:
+      "A prova existe, mas o estado ao vivo não pôde ser lido. Recarregue a página; se continuar, confira sua conexão com o banco.",
+    noRoute:
+      "Esta prova não tem percurso ativo. Sem ele não há mapa, não há quilometragem e não há janela abertura ↔ fechamento.",
+    clockNote:
+      "Idades medidas contra o relógio do servidor, não contra o deste computador. Horários no fuso da prova ({timezone}).",
+    unacknowledged: "{count} alerta(s) sem reconhecer.",
+    moreUnacknowledged: "+{count} sem reconhecer",
+    viewOnMap: "ver no mapa",
+
+    sortByRace: "Posição na prova",
+    sortByOrdinal: "Cadastro",
+    noSignalGroup: "Sem sinal ({count}) — a posição no mapa é uma lembrança",
+    noPositions: "Nenhuma posição cadastrada nesta prova.",
+    offRoute: "fora do percurso",
+    clockOff: "relógio fora de hora",
+    fromTrack: "{distance} do traçado",
+
+    panelOk: "Painel ao vivo",
+    panelDegraded: "Painel degradado",
+    panelDown: "PAINEL SEM CONEXÃO",
+    reconciled: "reconciliado {age}",
+    realtime: "tempo real: {state}",
+    realtimeOn: "ligado",
+    realtimeConnecting: "conectando…",
+    realtimeOff: "caído",
+    notPresent: "O que está na tela não é o presente. Confirme tudo pelo rádio.",
+    pollingOnly: "sem atualização instantânea; reconciliando a cada {interval}",
+    refreshNow: "atualizar agora",
+    refreshing: "atualizando…",
+    soundOff: "som desligado — ativar",
+    soundOn: "Aviso sonoro ativo",
+
+    showClosed: "{count} encerrados",
+    hideClosed: "ocultar encerrados",
+    showAllVehicles: "ver todos os veículos",
+    showFewer: "ver menos",
+    history: "histórico",
+    hideHistory: "ocultar histórico",
+    loadingHistory: "Carregando histórico…",
+    noEvents: "Nenhum evento registrado.",
+
+    startedAt: "largada às {time}",
+    finishedAt: "encerrada às {time}",
+    confirmStart: "confirmar largada",
+    confirmFinish: "confirmar encerramento",
+  },
+
+  auth: {
+    errorTitle: "Não deu para continuar",
+    noticeTitle: "Quase lá",
+    name: "Seu nome",
+    nameHint: "Aparece para a equipe da prova.",
+    namePlaceholder: "Marina Ferrero",
+    nameRequired: "Informe seu nome — é ele que aparece para a equipe da prova.",
+    nameTooLong: "Nome muito longo (máximo 80 caracteres).",
+    email: "E-mail",
+    emailPlaceholder: "direcao@suaprova.it",
+    emailRequired: "Informe o e-mail.",
+    emailInvalid: "Esse e-mail não parece válido. Confira se falta o @ ou o domínio.",
+    password: "Senha",
+    passwordHint: "Mínimo de 8 caracteres.",
+    passwordRequired: "Informe a senha.",
+    passwordTooShort: "A senha precisa ter pelo menos 8 caracteres.",
+    passwordTooLong: "A senha pode ter no máximo 72 caracteres.",
+    passwordRepeat: "Repita a senha",
+    passwordMismatch: "As duas senhas não são iguais. Digite de novo.",
+    submitting: "Aguarde…",
+    signIn: "Entrar no painel",
+    signUp: "Criar conta",
+    haveAccount: "Já tem conta?",
+    signInLink: "Entrar",
+    firstTime: "Primeira vez?",
+    signUpLink: "Criar conta de direção",
+
+    confirmSent:
+      "Conta criada. Enviamos um e-mail de confirmação para {email}. Confirme e volte aqui para entrar (confira também a caixa de spam).",
+    invalidCredentials:
+      "E-mail ou senha incorretos. Se você acabou de se cadastrar, confirme o e-mail antes de entrar.",
+    emailNotConfirmed:
+      "Este e-mail ainda não foi confirmado. Abra a mensagem que enviamos e clique no link (confira o spam).",
+    userExists:
+      "Já existe uma conta com este e-mail. Vá para a tela de entrar; se esqueceu a senha, peça a redefinição pelo Supabase.",
+    emailRejected:
+      "O servidor recusou este endereço de e-mail. Use um e-mail real que você consiga abrir agora — a confirmação chega nele.",
+    weakPassword:
+      "Senha fraca demais para o servidor. Use pelo menos 8 caracteres, misturando letras e números.",
+    rateLimited:
+      "Muitas tentativas em pouco tempo. Espere alguns minutos antes de tentar de novo.",
+    signupDisabled:
+      "O cadastro está desativado neste servidor. Peça a alguém da equipe para criar sua conta.",
+    genericFailure:
+      "Não foi possível concluir agora. Confira sua conexão e tente de novo.",
+  },
+
+  errors: {
+    forbidden: "Você não tem permissão para alterar esta prova.",
+    raceNotFound: "Prova não encontrada.",
+    invalidRace: "Prova inválida.",
+    sessionExpired: "Sua sessão expirou. Entre novamente.",
+    notStartable: "Só uma prova em rascunho ou pronta pode ser iniciada.",
+    listRaces:
+      "Recarregue a página. Se persistir, saia e entre de novo — sua sessão pode ter expirado.",
+    noChange:
+      "Nada mudou: o alerta pode já ter sido encerrado por outra pessoa, ou você não tem mais permissão nesta prova. Recarregue a página.",
+
+    db: {
+      saveFailed:
+        "Não foi possível salvar. Tente de novo; se continuar, recarregue a página.",
+      routeRaceConflict:
+        "Outro percurso foi ativado nesta prova enquanto você trabalhava. Recarregue a página e envie de novo — o percurso mais recente vence.",
+      bindCodeTaken:
+        "O código sorteado colidiu com um já em uso em outra prova. Clique em salvar de novo: um código novo será sorteado.",
+      oneLead:
+        "Esta prova já tem uma referência de abertura. Desmarque a atual antes de marcar outra.",
+      oneSweep:
+        "Esta prova já tem uma referência de fechamento. Desmarque a atual antes de marcar outra.",
+      ordinalConflict:
+        "Duas posições ficaram com a mesma ordem. Recarregue a página e refaça a reordenação.",
+      sessionTaken:
+        "Já existe um celular vinculado a esta posição. Revogue o vínculo atual antes de criar outro.",
+      leadSweepSame:
+        "A mesma posição não pode ser a referência de abertura e a de fechamento — o cálculo da janela compararia o veículo com ele mesmo.",
+      gapWindowIncoherent:
+        "O limite mínimo da janela precisa ser menor que o máximo.",
+      targetGapRange: "A janela alvo precisa estar entre 1 e 600 minutos.",
+      raceNameLength: "O nome da prova precisa ter entre 1 e 200 caracteres.",
+      positionLabelLength: "O nome da posição precisa ter entre 1 e 60 caracteres.",
+      bindCodeFormat: "O código gerado saiu fora do formato esperado. Tente novamente.",
+      trackDistance: "O percurso precisa ter comprimento maior que zero.",
+      trackPoints: "O percurso precisa de pelo menos 2 pontos.",
+      duplicate: "Esse registro já existe. Recarregue a página para ver o estado atual.",
+      checkViolation:
+        "Algum valor está fora do permitido. Revise os campos e tente de novo.",
+      missingRace: "A prova referenciada não existe mais. Volte para a lista de provas.",
+      notFound:
+        "Registro não encontrado — ele pode ter sido removido por outra pessoa. Recarregue a página.",
+    },
   },
 } as const;
 

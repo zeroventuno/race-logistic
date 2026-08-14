@@ -1,6 +1,12 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries/pt-BR";
 
-/** Italiano. Terminologia della Federazione Ciclistica Italiana. */
+/**
+ * Italiano. Terminologia della Federazione Ciclistica Italiana.
+ *
+ * `sweep_car` = AUTO FINE CORSA (chiude la corsa e riapre la strada).
+ * `broom_wagon` = AUTO SCOPA (ultimo mezzo, raccoglie chi si ritira).
+ * La finestra calcolata dal pannello è apripista ↔ fine corsa.
+ */
 export const it: Dictionary = {
   meta: {
     appName: "Flamme Rouge",
@@ -32,6 +38,7 @@ export const it: Dictionary = {
     offline: "Nessuna connessione",
     online: "Connesso",
     language: "Lingua",
+    logout: "Esci",
   },
 
   roles: {
@@ -68,28 +75,113 @@ export const it: Dictionary = {
     start: "Partenza",
     positions: "Mezzi di supporto",
     route: "Percorso",
+    noStart: "Nessun orario di partenza",
+    details: "Dati della gara",
+    lapsTotal: "{laps} giri = {distance} di gara.",
+    lap: "giro {lap}/{laps}",
+    lapUnknown: "giro ?",
+
+    form: {
+      nameLabel: "Nome della gara",
+      namePlaceholder: "Giro delle Langhe — 2ª tappa",
+      nameRequired: "Dai un nome alla gara — è così che la riconosci nell'elenco.",
+      nameTooLong: "Nome troppo lungo (massimo 200 caratteri).",
+      locationLabel: "Località",
+      locationHint: "Città o zona della partenza. Compare nell'elenco delle gare.",
+      locationPlaceholder: "Alba, Piemonte",
+      locationTooLong: "Località troppo lunga (massimo 200 caratteri).",
+      dateLabel: "Data della partenza",
+      dateRequired: "Indica anche la data della partenza.",
+      timeLabel: "Orario della partenza",
+      timeHint: "Ora locale del luogo di gara.",
+      timeRequired: "Indica anche l'orario della partenza.",
+      dateTimeInvalid: "Data o orario non validi. Controlla entrambi i campi.",
+      timezoneLabel: "Fuso orario della gara",
+      timezoneHint:
+        "Tutto ciò che la direzione vede è convertito in questo fuso, anche sul telefono del conducente.",
+      timezoneRequired: "Scegli il fuso orario del luogo di gara.",
+      timezoneUnknown: "Fuso orario sconosciuto.",
+      lapsLabel: "Giri sul percorso",
+      lapsHint:
+        "1 per una gara in linea. Su circuito, la distanza di gara è il tracciato moltiplicato per i giri.",
+      lapsRequired: "Indica il numero di giri.",
+      lapsInteger: "Il numero di giri deve essere intero.",
+      lapsMin: "La gara ha almeno 1 giro.",
+      lapsMax: "Massimo 50 giri.",
+      gapHint:
+        "Quanti minuti la direzione vuole tra l'auto apripista e quella di fine corsa. Da qui il pannello decide se il gruppo si è allungato o compattato troppo.",
+      targetLabel: "Finestra obiettivo (minuti)",
+      targetRequired: "Indica la finestra obiettivo in minuti.",
+      targetInteger: "La finestra obiettivo deve essere un numero intero di minuti.",
+      targetMin: "La finestra obiettivo deve essere di almeno 1 minuto.",
+      targetMax: "La finestra obiettivo non può superare i 600 minuti (10 ore).",
+      minLabel: "Avvisa sotto (minuti)",
+      minHint: "Gruppo troppo compatto.",
+      minInteger: "Il limite minimo deve essere un numero intero di minuti.",
+      minNegative: "Il limite minimo non può essere negativo.",
+      minMax: "Il limite minimo non può superare i 600 minuti.",
+      minAboveTarget:
+        "Il minimo non può essere maggiore della finestra obiettivo ({target} min).",
+      maxLabel: "Avvisa sopra (minuti)",
+      maxHint: "Gruppo troppo allungato.",
+      maxInteger: "Il limite massimo deve essere un numero intero di minuti.",
+      maxMin: "Il limite massimo deve essere di almeno 1 minuto.",
+      maxMax: "Il limite massimo non può superare i 600 minuti.",
+      maxBelowMin: "Il limite massimo deve essere maggiore del minimo ({min} min).",
+      maxBelowTarget:
+        "Il massimo non può essere minore della finestra obiettivo ({target} min).",
+      showLimits: "Imposta i limiti di allerta",
+      saved: "Dati della gara aggiornati",
+      afterSave: "Dopo il salvataggio si passa direttamente al percorso.",
+    },
   },
 
   gap: {
-    title: "Finestra apripista ↔ scopa",
+    title: "Finestra apripista ↔ fine corsa",
     short: "Finestra",
+    targetLabel: "Finestra obiettivo",
     target: "Obiettivo: {duration}",
     measured:
       "Misurata dalla differenza di orario di passaggio dei due mezzi nello stesso punto.",
     projected:
-      "Stimata: {distance} su strada, alla velocità media attuale della scopa ({speed}).",
+      "Stimata: {distance} su strada, alla velocità media attuale del fine corsa ({speed}).",
     noLead: "Auto apripista senza posizione. Collega il suo dispositivo.",
-    noSweep: "Auto scopa senza posizione. Collega il suo dispositivo.",
+    noSweep: "Auto fine corsa senza posizione. Collega il suo dispositivo.",
     noBoth: "In attesa della posizione dei due mezzi di riferimento.",
     sweepAhead:
-      "L'auto scopa è davanti all'apripista. Verifica che i ruoli non siano invertiti.",
+      "L'auto fine corsa è davanti all'apripista. Verifica che i ruoli non siano invertiti.",
     sweepStopped:
-      "Distanza su strada: {distance}. Auto scopa ferma — tempo indefinito.",
+      "Distanza su strada: {distance}. Auto fine corsa ferma — tempo indefinito.",
     noHistory:
       "Distanza su strada: {distance}. Storico insufficiente per convertirla in tempo.",
     stale: "Dato di {age} — potrebbe non riflettere la posizione attuale.",
     overTarget: "Oltre la finestra obiettivo",
     underTarget: "Sotto la finestra obiettivo",
+
+    timeSeparation: "separazione nel tempo",
+    alongRoad: "su strada",
+    methodMeasured: "Misurata",
+    methodProjected: "Stimata",
+    methodNone: "Nessun dato",
+    withinTarget: "Nella finestra",
+    overTargetDetail: "troppo allungata",
+    underTargetDetail: "troppo compatta",
+    comparisonSuspended:
+      "Confronto con la finestra obiettivo sospeso finché il dato non è affidabile",
+    noLimits: "Nessun limite definito per questa gara",
+    clockSuspect:
+      "L'orologio di uno dei dispositivi di riferimento non è allineato con il server. Finché dura, l'età del dato e la misura non sono affidabili — conferma la posizione via radio.",
+    lapsUncertain:
+      "Gara su circuito di {laps} giri: lo storico caricato non arriva alla partenza, quindi il conteggio dei giri può essere sottostimato e la finestra più ampia di quanto appare.",
+    onTarget: "Finestra {gap}, concordata {target}. Nulla da correggere.",
+    verdictAhead: "Finestra {gap}, concordata {target} — in anticipo di {drift}.",
+    verdictBehind: "Finestra {gap}, concordata {target} — in ritardo di {drift}.",
+    remedyAhead: "Rallenta l'auto fine corsa.",
+    remedyBehind: "Accelera l'auto fine corsa.",
+    costAhead:
+      "La strada riapre prima del previsto e chi è rimasto indietro perde la protezione troppo presto.",
+    costBehind:
+      "La chiusura della strada sta superando il tempo autorizzato dall'autorità di traffico.",
   },
 
   alerts: {
@@ -127,6 +219,13 @@ export const it: Dictionary = {
     noteLabel: "Descrizione (facoltativa)",
     notePlaceholder: "Cosa è successo?",
 
+    storageFailedTitle: "ALLERTA NON SALVATA SU QUESTO DISPOSITIVO — USA SUBITO LA RADIO.",
+    storageFailedBody:
+      "L'archivio locale ha rifiutato la scrittura ({reason}). Nulla verrà reinviato automaticamente.",
+    retryCount: "{count} tentativo/i senza esito. Avvisa via radio.",
+    unknownFailure: "errore sconosciuto",
+    nobodyDispatched: "Nessuno è stato inviato per questa allerta.",
+
     dispatch: {
       youWereCalled: "Sei stato chiamato",
       calling: "Invio {position}",
@@ -145,6 +244,12 @@ export const it: Dictionary = {
         "Nessun mezzo disponibile per questa categoria. La direzione deve intervenire manualmente.",
       declineReason: "Motivo (facoltativo)",
       reassign: "Cambia mezzo",
+      dispatch: "Invia un mezzo",
+      auto: "automatico",
+      fallbackNoPosition:
+        "Nessun suggerimento calcolato e nessuna posizione sul percorso — ordine arbitrario. Conferma via radio.",
+      fallbackReason:
+        "Nessun suggerimento calcolato. {distance} di differenza sul percorso, senza calcolo di inversione né di tempo stimato.",
     },
 
     proximity: {
@@ -167,6 +272,7 @@ export const it: Dictionary = {
       acknowledge: "Prendi in carico",
       resolve: "Risolvi",
       cancel: "Annulla allerta",
+      confirmCancel: "confermi? (falso allarme)",
       resolutionNote: "Cosa è stato fatto",
     },
   },
@@ -180,6 +286,8 @@ export const it: Dictionary = {
     bindInvalid: "Codice non valido. Controlla i 6 caratteri e riprova.",
     bindNotFound: "Codice inesistente o scaduto. Contatta la direzione.",
     bindTooManyAttempts: "Troppi tentativi. Attendi un momento prima di riprovare.",
+    bindPasteHint:
+      "Puoi incollare. Le lettere O e I vengono lette come 0 e 1 — il codice non usa queste lettere.",
     boundAs: "Sei {position} in {race}",
     unbind: "Scollega questo dispositivo",
     unbindConfirm:
@@ -194,28 +302,100 @@ export const it: Dictionary = {
       "Permesso di localizzazione negato. Abilitalo nelle impostazioni del browser e ricarica.",
     gpsUnavailable: "GPS non disponibile su questo dispositivo.",
     gpsSearching: "Ricerca del segnale GPS…",
+    gpsNoApi:
+      "Questo browser non fornisce la localizzazione. Usa Chrome o Safari da telefono.",
+    gpsNoFix:
+      "Nessun segnale GPS. In galleria o in garage è normale; la rilevazione riprende da sola.",
+    gpsTimeout: "Il GPS tarda a rispondere. Si continua a provare.",
+    gpsFailed: "Impossibile ottenere la posizione. La rilevazione continua a provare.",
+    gpsDeniedIOS:
+      "Localizzazione bloccata. Su iPhone: Impostazioni → Safari → Posizione → Chiedi, poi ricarica questa pagina. Se usi l'app Chrome: Impostazioni → Chrome → Posizione.",
+    gpsDeniedAndroid:
+      "Localizzazione bloccata. Su Android: tocca il lucchetto accanto all'indirizzo → Autorizzazioni → Posizione → Consenti, poi ricarica la pagina.",
+    gpsDeniedBrowser:
+      "Localizzazione bloccata dal browser. Consenti l'accesso alla posizione nelle autorizzazioni del sito e ricarica la pagina.",
 
     transmitting: "Trasmissione attiva",
     paused: "In pausa",
     queuedPings: "{count} punti in coda",
+    queuedAlerts: "{count} allerta/e non ancora consegnate. Avvisa via radio.",
+    pingRejected: "POSIZIONE RIFIUTATA",
+    pingRejectedDetail:
+      "Il server ha rifiutato {count} posizione/i: la tua posizione NON compare sulla mappa della direzione.",
+    queueNotDurable:
+      "Archivio locale non disponibile: la coda va persa se l'app viene chiusa.",
     batteryWarning: "Batteria scarica — collega il caricabatterie.",
     keepAwake: "Schermo mantenuto acceso",
+    keepScreenOpen:
+      "Tieni questa schermata aperta durante la gara. La posizione viene inviata da sola, anche con segnale debole.",
   },
 
   director: {
     dashboard: "Pannello",
     myRaces: "Le mie gare",
+    myRacesSubtitle:
+      "Ogni gara ha il suo percorso, i suoi mezzi di supporto e i suoi codici.",
     newRace: "Nuova gara",
+    newRaceSubtitle:
+      "Solo l'essenziale per ora. Percorso e mezzi arrivano nei passi successivi e restano modificabili fino alla partenza.",
+    createAndContinue: "Crea la gara e vai al percorso",
     noRaces: "Non hai ancora creato nessuna gara.",
     noRacesAction: "Crea la prima gara",
     setupChecklist: "Per mandare la gara in diretta",
     needsRoute: "Caricare il percorso",
+    needsPositions: "Registrare i mezzi di supporto",
     needsLead: "Definire l'auto apripista",
-    needsSweep: "Definire l'auto scopa",
+    needsSweep: "Definire l'auto fine corsa",
     needsBinding: "{count} mezzo/i senza dispositivo collegato",
     ready: "Tutto pronto",
     goLive: "Avvia gara",
     finish: "Concludi gara",
+
+    steps: "Fasi della gara",
+    overview: "Riepilogo",
+    live: "In diretta",
+    resolveItem: "Risolvi",
+    pendingCount: "{count} punto/i in sospeso",
+    readOnly: "Sola lettura",
+    readOnlyRoute:
+      "Partecipi a questa gara come osservatore e non puoi modificare il percorso.",
+    markReady: "Segna la gara come pronta",
+    marking: "Salvataggio…",
+    backToDraft: "Torna a bozza",
+    reverting: "Ripristino…",
+    resolveBlockingFirst: "Risolvi prima i punti obbligatori.",
+
+    checklist: {
+      routeLabel: "Percorso caricato",
+      routeHint:
+        "Carica il GPX della gara o disegna il tracciato sulla mappa. Senza percorso non c'è calcolo di chilometraggio né di finestra.",
+      positionsLabel: "Mezzi di supporto registrati",
+      positionsHint:
+        "Registra i mezzi di supporto. Ognuno riceve un codice che il conducente digita sul telefono.",
+      leadLabel: "Riferimento apripista definito",
+      leadHint:
+        "Indica quale mezzo è l'auto apripista. È l'inizio della finestra che la direzione controlla.",
+      sweepLabel: "Riferimento fine corsa definito",
+      sweepHint:
+        "Indica quale mezzo è l'auto fine corsa. È il suo passaggio che riapre la strada e chiude la finestra.",
+      startLabel: "Orario di partenza",
+      startHint:
+        "Facoltativo, ma è ciò che fa mostrare al pannello il conto alla rovescia invece del solo orologio.",
+    },
+
+    empty: {
+      intro:
+        "Una gara è pronta per andare in diretta quando ha percorso, mezzi di supporto e i riferimenti apripista e fine corsa impostati. Sono tre passi:",
+      step1Title: "Registra la gara",
+      step1Body:
+        "Nome, località, partenza e la finestra obiettivo tra l'auto apripista e quella di fine corsa. Un minuto.",
+      step2Title: "Carica il percorso",
+      step2Body:
+        "Carica il GPX che hai già, oppure disegna il tracciato sulla mappa. È ciò che trasforma una posizione GPS in un chilometro di gara.",
+      step3Title: "Registra i mezzi e stampa i codici",
+      step3Body:
+        "Ogni moto, ambulanza e auto di supporto riceve un codice di 6 caratteri. Il conducente lo digita sul suo telefono e basta — senza installare nulla, senza creare un account.",
+    },
   },
 
   route: {
@@ -223,43 +403,168 @@ export const it: Dictionary = {
     uploadSubtitle: "Invia il file GPX della gara.",
     uploadAction: "Scegli file GPX",
     uploadDrop: "Trascina qui il file",
+    uploadHint:
+      "Oppure clicca per scegliere. Va bene ciò che esce da Strava, Garmin Connect, RideWithGPS, Komoot o dal software di tracciamento della gara.",
+    uploadReading: "I file grandi richiedono qualche secondo.",
     drawInstead: "Oppure disegna il percorso sulla mappa",
     drawTitle: "Disegna il percorso",
     drawHint: "Clicca sulla mappa per aggiungere punti. Trascina per correggere.",
+    drawShortcuts:
+      "Canc elimina il vertice selezionato (oppure clicca con il tasto destro). Ctrl+Z annulla.",
     undo: "Annulla",
     clear: "Cancella",
     chooseSegment: "Il file contiene più percorsi. Scegli quello della gara:",
+    chooseSegmentHint:
+      "Il file contiene {count} tracciati. Unirli tutti creerebbe un salto in mezzo alla gara, quindi scegline uno.",
+    segmentName: "Tracciato {number}",
+    kindTrack: "traccia registrata",
+    kindRoute: "rotta pianificata",
+    kindWaypoints: "waypoint sciolti",
     replaceWarning:
       "Sostituire il percorso ricalcola tutte le posizioni in gara. Fallo prima della partenza.",
     parseError: "Impossibile leggere il file",
     pointCount: "{count} punti",
     current: "Percorso attuale",
     replace: "Sostituisci percorso",
+
+    purpose:
+      "È il tracciato che trasforma la coordinata GPS di ogni mezzo in “chilometro 42 della gara”. Senza, non c'è calcolo della finestra tra apripista e fine corsa, né suggerimento del mezzo più vicino su strada.",
+    missingExplain:
+      "Nessun percorso. Senza, il sistema non può dire a che chilometro si trova ogni mezzo, né calcolare la finestra.",
+    sourceGpx: "Importato da {filename}",
+    sourceDrawn: "Disegnato sulla mappa",
+    geometryPoints: "Punti di geometria",
+    reviewTitle: "Controllo prima di salvare",
+    warningsTitle: "{count} punto/i di attenzione in questo file",
+    confirmUse: "Conferma e usa questo percorso",
+    chooseAnotherFile: "Scegli un altro file",
+    noFileYet: "Non hai ancora il file del percorso?",
+    vertices: "Vertici",
+    saveDrawn: "Salva percorso",
+    deleteVertex: "Elimina vertice",
+    closeLoop: "Chiudi il circuito",
+    tooManyVertices:
+      "{count} vertici sono più di quanti dovrebbe averne un tracciato disegnato a mano (limite {limit}). Se il percorso è davvero lungo, importa un GPX.",
+    oneVertex:
+      "Un solo vertice non è un percorso. Clicca sulla mappa per segnare dove passa la gara.",
+    savedTitle: "Percorso salvato",
+    savedReplaced: "il percorso precedente è stato disattivato.",
+    saveErrorTitle: "Salvataggio non riuscito",
+    saveFailed:
+      "Impossibile salvare il percorso. Verifica la connessione e riprova.",
+    saveConnectionLost:
+      "La connessione è caduta durante l'invio. Il percorso precedente resta valido — riprova.",
+    fileUnreadable:
+      "Impossibile leggere il file dal disco. Copialo in un'altra cartella e riprova.",
+    fileNotGpx:
+      "Impossibile interpretare questo file. Verifica che sia un .gpx e che si apra in un altro programma.",
+
+    uploadTooLarge:
+      "Il percorso inviato è troppo grande. Ritaglia il file al tratto di gara.",
+    uploadBadBody: "Corpo della richiesta illeggibile.",
+    uploadBadSource: "Origine del percorso sconosciuta.",
+    uploadBadPoints: "Punti del percorso non validi.",
+    uploadTooManyVertices:
+      "Un percorso disegnato a mano non dovrebbe avere più di {limit} vertici.",
+    uploadBuildFailed: "Impossibile costruire il percorso con questi punti.",
+    uploadReleaseFailed:
+      "Impossibile liberare il percorso precedente. Ricarica la pagina e riprova.",
+    uploadInsertFailed:
+      "Impossibile salvare il percorso. Il percorso precedente resta valido.",
   },
 
   positions: {
     title: "Mezzi di supporto",
+    intro:
+      "Ogni mezzo di supporto della gara diventa una posizione con un codice proprio. Il conducente digita il codice sul suo telefono — senza installare app, senza creare account — e da quel momento il dispositivo trasmette la posizione di quel mezzo.",
     add: "Aggiungi mezzo",
     addBulk: "Aggiungi più mezzi",
+    addHint:
+      "Ogni posizione nasce con un codice di collegamento unico e un nome che puoi cambiare dopo. La prima auto apripista e la prima auto fine corsa entrano già segnate come riferimento.",
     quantity: "Quantità",
     label: "Identificativo",
+    role: "Ruolo",
     driverName: "Conducente",
     driverPhone: "Telefono",
+    driverPhoneHint: "Con il prefisso internazionale se è straniero.",
+    noDriver: "Conducente non indicato",
     plate: "Targa",
     referenceLead: "È l'auto apripista ufficiale",
-    referenceSweep: "È l'auto scopa ufficiale",
+    referenceSweep: "È l'auto fine corsa ufficiale",
+    markLead: "Segna come apripista",
+    markSweep: "Segna come fine corsa",
     dispatchable: "Può essere inviato in caso di allerta",
     code: "Codice di collegamento",
+    codeRevoked: "revocato — generane un altro",
+    codeExpired: "scaduto — generane un altro",
+    codeHidden: "Solo chi modifica la gara vede i codici.",
+    copyCode: "Copia codice",
+    copied: "copiato",
     regenerateCode: "Genera nuovo codice",
     regenerateWarning:
       "Il codice attuale smette di funzionare. Se il conducente è già collegato, continua a trasmettere finché non viene scollegato.",
+    moveUp: "Sposta su {position}",
+    moveDown: "Sposta giù {position}",
+    confirmRemove: "Rimuovere davvero?",
+    orderHint: "l'ordine dell'elenco è l'ordine in cui compaiono nel pannello in diretta.",
+    emptyTitle: "Nessun mezzo registrato",
+    emptyBody:
+      "Una posizione è un ruolo in gara (“Moto 3”, “Ambulanza 1”), non un dispositivo. Il telefono si collega dopo, con il codice — e può essere cambiato durante la gara se la batteria si scarica, senza perdere lo storico.",
+    emptyStart:
+      "Comincia dall'auto apripista e da quella di fine corsa: sono loro a definire la finestra che la direzione controlla.",
+    missingRefsTitle: "Mancano i riferimenti della finestra",
+    missingRefsBody:
+      "Senza entrambi, il pannello non può calcolare il tempo tra la testa e la coda del gruppo.",
+    bound: "Collegato",
+    notBound: "In attesa di collegamento",
+    revokeSession: "Scollega dispositivo",
+
     print: "Stampa codici",
     printTitle: "Codici di collegamento — {race}",
     printHint:
       "Consegna ogni codice al conducente del mezzo corrispondente prima della partenza.",
-    bound: "Collegato",
-    notBound: "In attesa di collegamento",
-    revokeSession: "Scollega dispositivo",
+    printLost:
+      "Se un foglio si perde, generane un altro nella schermata dei mezzi: il vecchio smette di valere all'istante.",
+    printInstruction:
+      "Ogni conducente apre {url} sul telefono e digita il codice del suo riquadro.",
+    printUrlMissing: "(indirizzo dell'app)",
+    printNoUrlTitle: "Indirizzo dell'app non configurato",
+    printNoUrlBody:
+      "La variabile {variable} è vuota, quindi il foglio esce senza l'indirizzo che il conducente deve aprire. Scrivi l'indirizzo a mano prima di distribuirlo.",
+    printMissing:
+      "{count} posizione/i senza codice valido sono rimaste fuori da questo foglio. Genera un nuovo codice nella schermata dei mezzi.",
+    printExpired:
+      "{count} codice/i di questo foglio sono scaduti e non collegano più alcun telefono. Genera codici nuovi prima di stampare.",
+    printNothingTitle: "Niente da stampare",
+    printNothingBody: "Registra prima i mezzi di supporto.",
+    printFooter:
+      "il codice vale solo per questa gara e solo per questo mezzo. Collegare un nuovo telefono scollega il precedente.",
+
+    form: {
+      invalidData: "Dati non validi.",
+      roleInvalid: "Scegli un ruolo valido.",
+      quantityInteger: "La quantità deve essere un numero intero.",
+      quantityMin: "Aggiungi almeno 1 mezzo.",
+      quantityMax: "Aggiungi al massimo 40 mezzi per volta.",
+      labelRequired:
+        "Il mezzo ha bisogno di un nome — è quello che la direzione chiama via radio.",
+      labelTooLong: "Nome troppo lungo (massimo 60 caratteri).",
+      driverNameTooLong: "Nome del conducente troppo lungo (massimo 120 caratteri).",
+      phoneTooLong: "Telefono troppo lungo.",
+      phoneInvalid:
+        "Telefono non valido. Usa solo numeri, con il prefisso internazionale se è straniero.",
+      plateTooLong: "Targa troppo lunga.",
+      notFound: "Mezzo non trovato. Ricarica la pagina.",
+      referenceCleared:
+        "Attenzione: la gara è ora senza riferimento {reference} — impostane uno prima della partenza.",
+      codeGenerationFailed:
+        "Impossibile generare codici unici adesso. Riprova tra qualche secondo.",
+      codeIssueUnavailable: "Impossibile emettere un nuovo codice su questo server.",
+      codeNoneFree:
+        "Impossibile estrarre un codice libero. Riprova tra qualche secondo.",
+      codeRevokedMeanwhile:
+        "Il codice precedente è già stato revocato — questo mezzo resta senza codice finché non riprovi.",
+    },
   },
 
   map: {
@@ -269,5 +574,153 @@ export const it: Dictionary = {
     showAll: "Mostra tutti",
     noWebGL:
       "Questo browser non supporta WebGL. I dati di posizione restano corretti negli elenchi.",
+    slowTitle: "La mappa non ha finito di caricare.",
+    slowBody:
+      "Può essere una scheda in secondo piano, WebGL non disponibile o le tessere della mappa bloccate dalla rete. I chilometri, la finestra e l'elenco dei mezzi qui accanto restano corretti.",
+  },
+
+  live: {
+    snapshotErrorTitle: "Impossibile costruire il pannello in diretta",
+    snapshotErrorBody:
+      "La gara esiste, ma lo stato in diretta non è stato letto. Ricarica la pagina; se persiste, controlla la connessione al database.",
+    noRoute:
+      "Questa gara non ha un percorso attivo. Senza, non c'è mappa, non c'è chilometraggio e non c'è finestra apripista ↔ fine corsa.",
+    clockNote:
+      "Le età sono misurate sull'orologio del server, non su quello di questo computer. Orari nel fuso della gara ({timezone}).",
+    unacknowledged: "{count} allerta/e non prese in carico.",
+    moreUnacknowledged: "+{count} non prese in carico",
+    viewOnMap: "vedi sulla mappa",
+
+    sortByRace: "Posizione in gara",
+    sortByOrdinal: "Registrazione",
+    noSignalGroup: "Nessun segnale ({count}) — la posizione sulla mappa è un ricordo",
+    noPositions: "Nessun mezzo registrato in questa gara.",
+    offRoute: "fuori percorso",
+    clockOff: "orologio non allineato",
+    fromTrack: "{distance} dal tracciato",
+
+    panelOk: "Pannello in diretta",
+    panelDegraded: "Pannello degradato",
+    panelDown: "PANNELLO SENZA CONNESSIONE",
+    reconciled: "riconciliato {age}",
+    realtime: "tempo reale: {state}",
+    realtimeOn: "attivo",
+    realtimeConnecting: "connessione…",
+    realtimeOff: "caduto",
+    notPresent:
+      "Quello che vedi non è il presente. Conferma tutto via radio.",
+    pollingOnly: "nessun aggiornamento istantaneo; riconciliazione ogni {interval}",
+    refreshNow: "aggiorna ora",
+    refreshing: "aggiornamento…",
+    soundOff: "audio disattivato — attiva",
+    soundOn: "Avviso sonoro attivo",
+
+    showClosed: "{count} chiuse",
+    hideClosed: "nascondi chiuse",
+    showAllVehicles: "vedi tutti i mezzi",
+    showFewer: "vedi meno",
+    history: "storico",
+    hideHistory: "nascondi storico",
+    loadingHistory: "Caricamento storico…",
+    noEvents: "Nessun evento registrato.",
+
+    startedAt: "partenza alle {time}",
+    finishedAt: "conclusa alle {time}",
+    confirmStart: "conferma partenza",
+    confirmFinish: "conferma chiusura",
+  },
+
+  auth: {
+    errorTitle: "Non è stato possibile continuare",
+    noticeTitle: "Ci siamo quasi",
+    name: "Il tuo nome",
+    nameHint: "Compare per la squadra della gara.",
+    namePlaceholder: "Marina Ferrero",
+    nameRequired:
+      "Indica il tuo nome — è quello che compare per la squadra della gara.",
+    nameTooLong: "Nome troppo lungo (massimo 80 caratteri).",
+    email: "E-mail",
+    emailPlaceholder: "direzione@tuagara.it",
+    emailRequired: "Indica l'e-mail.",
+    emailInvalid: "Questa e-mail non sembra valida. Controlla la @ o il dominio.",
+    password: "Password",
+    passwordHint: "Minimo 8 caratteri.",
+    passwordRequired: "Indica la password.",
+    passwordTooShort: "La password deve avere almeno 8 caratteri.",
+    passwordTooLong: "La password può avere al massimo 72 caratteri.",
+    passwordRepeat: "Ripeti la password",
+    passwordMismatch: "Le due password non coincidono. Digitale di nuovo.",
+    submitting: "Attendi…",
+    signIn: "Entra nel pannello",
+    signUp: "Crea account",
+    haveAccount: "Hai già un account?",
+    signInLink: "Entra",
+    firstTime: "Prima volta?",
+    signUpLink: "Crea un account di direzione",
+
+    confirmSent:
+      "Account creato. Abbiamo inviato un'e-mail di conferma a {email}. Conferma e torna qui per entrare (controlla anche la posta indesiderata).",
+    invalidCredentials:
+      "E-mail o password errati. Se ti sei appena registrato, conferma l'e-mail prima di entrare.",
+    emailNotConfirmed:
+      "Questa e-mail non è ancora confermata. Apri il messaggio che ti abbiamo inviato e clicca sul link (controlla la posta indesiderata).",
+    userExists:
+      "Esiste già un account con questa e-mail. Vai alla schermata di accesso; se hai dimenticato la password, chiedi la reimpostazione tramite Supabase.",
+    emailRejected:
+      "Il server ha rifiutato questo indirizzo e-mail. Usa un'e-mail reale che puoi aprire adesso — la conferma arriva lì.",
+    weakPassword:
+      "Password troppo debole per il server. Usa almeno 8 caratteri, mescolando lettere e numeri.",
+    rateLimited:
+      "Troppi tentativi in poco tempo. Attendi qualche minuto prima di riprovare.",
+    signupDisabled:
+      "La registrazione è disattivata su questo server. Chiedi a qualcuno della squadra di creare il tuo account.",
+    genericFailure:
+      "Operazione non riuscita adesso. Controlla la connessione e riprova.",
+  },
+
+  errors: {
+    forbidden: "Non hai il permesso di modificare questa gara.",
+    raceNotFound: "Gara non trovata.",
+    invalidRace: "Gara non valida.",
+    sessionExpired: "La sessione è scaduta. Accedi di nuovo.",
+    notStartable: "Solo una gara in bozza o pronta può essere avviata.",
+    listRaces:
+      "Ricarica la pagina. Se persiste, esci e rientra — la tua sessione può essere scaduta.",
+    noChange:
+      "Nulla è cambiato: l'allerta può essere già stata chiusa da un'altra persona, oppure non hai più i permessi su questa gara. Ricarica la pagina.",
+
+    db: {
+      saveFailed:
+        "Salvataggio non riuscito. Riprova; se persiste, ricarica la pagina.",
+      routeRaceConflict:
+        "Un altro percorso è stato attivato in questa gara mentre lavoravi. Ricarica la pagina e invia di nuovo — vince il percorso più recente.",
+      bindCodeTaken:
+        "Il codice estratto ha coinciso con uno già in uso in un'altra gara. Clicca di nuovo su salva: verrà estratto un codice nuovo.",
+      oneLead:
+        "Questa gara ha già un riferimento apripista. Togli quello attuale prima di impostarne un altro.",
+      oneSweep:
+        "Questa gara ha già un riferimento fine corsa. Togli quello attuale prima di impostarne un altro.",
+      ordinalConflict:
+        "Due mezzi hanno lo stesso ordine. Ricarica la pagina e rifai il riordino.",
+      sessionTaken:
+        "C'è già un telefono collegato a questo mezzo. Revoca il collegamento attuale prima di crearne un altro.",
+      leadSweepSame:
+        "Lo stesso mezzo non può essere sia riferimento apripista sia fine corsa — il calcolo della finestra confronterebbe il mezzo con sé stesso.",
+      gapWindowIncoherent:
+        "Il limite minimo della finestra deve essere inferiore al massimo.",
+      targetGapRange: "La finestra obiettivo deve essere tra 1 e 600 minuti.",
+      raceNameLength: "Il nome della gara deve avere tra 1 e 200 caratteri.",
+      positionLabelLength: "Il nome del mezzo deve avere tra 1 e 60 caratteri.",
+      bindCodeFormat: "Il codice generato è fuori formato. Riprova.",
+      trackDistance: "Il percorso deve avere una lunghezza maggiore di zero.",
+      trackPoints: "Il percorso ha bisogno di almeno 2 punti.",
+      duplicate:
+        "Questo record esiste già. Ricarica la pagina per vedere lo stato attuale.",
+      checkViolation:
+        "Un valore è fuori dai limiti consentiti. Rivedi i campi e riprova.",
+      missingRace: "La gara indicata non esiste più. Torna all'elenco delle gare.",
+      notFound:
+        "Record non trovato — può essere stato rimosso da un'altra persona. Ricarica la pagina.",
+    },
   },
 };

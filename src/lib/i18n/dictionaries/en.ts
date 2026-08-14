@@ -1,6 +1,12 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries/pt-BR";
 
-/** English. UCI / British Cycling commissaire terminology. */
+/**
+ * English. UCI / British Cycling commissaire terminology.
+ *
+ * `sweep_car` = CLOSING CAR (ends the rolling road closure).
+ * `broom_wagon` = BROOM WAGON (last vehicle, picks up abandons).
+ * The window the panel computes is lead ↔ closing car.
+ */
 export const en: Dictionary = {
   meta: {
     appName: "Flamme Rouge",
@@ -32,6 +38,7 @@ export const en: Dictionary = {
     offline: "No connection",
     online: "Connected",
     language: "Language",
+    logout: "Sign out",
   },
 
   roles: {
@@ -68,28 +75,113 @@ export const en: Dictionary = {
     start: "Start",
     positions: "Support vehicles",
     route: "Course",
+    noStart: "No start time set",
+    details: "Race details",
+    lapsTotal: "{laps} laps = {distance} of racing.",
+    lap: "lap {lap}/{laps}",
+    lapUnknown: "lap ?",
+
+    form: {
+      nameLabel: "Race name",
+      namePlaceholder: "Giro delle Langhe — stage 2",
+      nameRequired: "Give the race a name — it is how you will find it in the list.",
+      nameTooLong: "Name too long (200 characters maximum).",
+      locationLabel: "Location",
+      locationHint: "Town or area of the start. Shown in the race list.",
+      locationPlaceholder: "Alba, Piedmont",
+      locationTooLong: "Location too long (200 characters maximum).",
+      dateLabel: "Start date",
+      dateRequired: "Enter the start date as well.",
+      timeLabel: "Start time",
+      timeHint: "Local time at the race venue.",
+      timeRequired: "Enter the start time as well.",
+      dateTimeInvalid: "Invalid date or time. Check both fields.",
+      timezoneLabel: "Race time zone",
+      timezoneHint:
+        "Everything race control sees is converted to this zone, including on the driver's phone.",
+      timezoneRequired: "Choose the time zone of the race venue.",
+      timezoneUnknown: "Unknown time zone.",
+      lapsLabel: "Laps of the course",
+      lapsHint:
+        "1 for a point-to-point race. On a circuit, race distance is the course multiplied by the laps.",
+      lapsRequired: "Enter the number of laps.",
+      lapsInteger: "The number of laps must be a whole number.",
+      lapsMin: "A race has at least 1 lap.",
+      lapsMax: "50 laps maximum.",
+      gapHint:
+        "How many minutes race control wants between the lead car and the closing car. This is what the panel uses to decide whether the field has stretched or bunched up too much.",
+      targetLabel: "Target window (minutes)",
+      targetRequired: "Enter the target window in minutes.",
+      targetInteger: "The target window must be a whole number of minutes.",
+      targetMin: "The target window must be at least 1 minute.",
+      targetMax: "The target window cannot exceed 600 minutes (10 hours).",
+      minLabel: "Warn below (minutes)",
+      minHint: "Field bunched up too much.",
+      minInteger: "The lower limit must be a whole number of minutes.",
+      minNegative: "The lower limit cannot be negative.",
+      minMax: "The lower limit cannot exceed 600 minutes.",
+      minAboveTarget:
+        "The minimum cannot be greater than the target window ({target} min).",
+      maxLabel: "Warn above (minutes)",
+      maxHint: "Field stretched too far.",
+      maxInteger: "The upper limit must be a whole number of minutes.",
+      maxMin: "The upper limit must be at least 1 minute.",
+      maxMax: "The upper limit cannot exceed 600 minutes.",
+      maxBelowMin: "The upper limit must be greater than the minimum ({min} min).",
+      maxBelowTarget:
+        "The maximum cannot be lower than the target window ({target} min).",
+      showLimits: "Set warning limits",
+      saved: "Race details updated",
+      afterSave: "After saving you go straight to the course.",
+    },
   },
 
   gap: {
-    title: "Lead ↔ broom wagon window",
+    title: "Lead ↔ closing car window",
     short: "Window",
+    targetLabel: "Target window",
     target: "Target: {duration}",
     measured:
       "Measured from the time difference between the two vehicles passing the same point.",
     projected:
-      "Projected: {distance} along the course, at the broom wagon's current average speed ({speed}).",
+      "Projected: {distance} along the course, at the closing car's current average speed ({speed}).",
     noLead: "Lead car has no position. Link its device.",
-    noSweep: "Broom wagon has no position. Link its device.",
+    noSweep: "Closing car has no position. Link its device.",
     noBoth: "Waiting for both reference vehicles to report.",
     sweepAhead:
-      "The broom wagon is ahead of the lead car. Check whether the roles are swapped in the setup.",
+      "The closing car is ahead of the lead car. Check whether the roles are swapped in the setup.",
     sweepStopped:
-      "Distance along the course: {distance}. Broom wagon stopped — time undefined.",
+      "Distance along the course: {distance}. Closing car stopped — time undefined.",
     noHistory:
       "Distance along the course: {distance}. Not enough history to convert this into time.",
     stale: "Data from {age} — may not reflect the current position.",
     overTarget: "Over the target window",
     underTarget: "Under the target window",
+
+    timeSeparation: "separation in time",
+    alongRoad: "along the road",
+    methodMeasured: "Measured",
+    methodProjected: "Projected",
+    methodNone: "No data",
+    withinTarget: "Within the window",
+    overTargetDetail: "stretched too far",
+    underTargetDetail: "bunched up too much",
+    comparisonSuspended:
+      "Comparison with the target window suspended while the data is unreliable",
+    noLimits: "No limits set for this race",
+    clockSuspect:
+      "One of the reference devices has a clock out of step with the server. Until that clears, the data age and the measured figure are unreliable — confirm the position by radio.",
+    lapsUncertain:
+      "Circuit race of {laps} laps: the loaded history does not reach the start, so the lap count may be underestimated and the window wider than it looks.",
+    onTarget: "Window {gap}, agreed {target}. Nothing to correct.",
+    verdictAhead: "Window {gap}, agreed {target} — {drift} ahead of schedule.",
+    verdictBehind: "Window {gap}, agreed {target} — {drift} behind schedule.",
+    remedyAhead: "Slow the closing car down.",
+    remedyBehind: "Speed the closing car up.",
+    costAhead:
+      "The road is reopening earlier than planned and riders left behind lose their protection too soon.",
+    costBehind:
+      "The closure is running past the time authorised by the traffic authority.",
   },
 
   alerts: {
@@ -127,6 +219,13 @@ export const en: Dictionary = {
     noteLabel: "Description (optional)",
     notePlaceholder: "What happened?",
 
+    storageFailedTitle: "ALERT NOT SAVED ON THIS DEVICE — USE THE RADIO NOW.",
+    storageFailedBody:
+      "Local storage refused the write ({reason}). Nothing will be resent on its own.",
+    retryCount: "{count} attempt(s) failed. Report it by radio.",
+    unknownFailure: "unknown failure",
+    nobodyDispatched: "Nobody has been dispatched to this alert.",
+
     dispatch: {
       youWereCalled: "You have been dispatched",
       calling: "Dispatching {position}",
@@ -145,6 +244,12 @@ export const en: Dictionary = {
         "No vehicle available for this category. Race control must act manually.",
       declineReason: "Reason (optional)",
       reassign: "Change vehicle",
+      dispatch: "Dispatch a vehicle",
+      auto: "automatic",
+      fallbackNoPosition:
+        "No calculated suggestion and no position on the course — arbitrary order. Confirm by radio.",
+      fallbackReason:
+        "No calculated suggestion. {distance} apart along the course, with no turnaround or ETA calculation.",
     },
 
     proximity: {
@@ -167,6 +272,7 @@ export const en: Dictionary = {
       acknowledge: "Acknowledge",
       resolve: "Resolve",
       cancel: "Cancel alert",
+      confirmCancel: "confirm? (false alarm)",
       resolutionNote: "What was done",
     },
   },
@@ -180,6 +286,8 @@ export const en: Dictionary = {
     bindInvalid: "Invalid code. Check the 6 characters and try again.",
     bindNotFound: "Code not found or expired. Contact race control.",
     bindTooManyAttempts: "Too many attempts. Wait a moment before trying again.",
+    bindPasteHint:
+      "You can paste. The letters O and I are read as 0 and 1 — the code does not use those letters.",
     boundAs: "You are {position} in {race}",
     unbind: "Unlink this device",
     unbindConfirm:
@@ -193,28 +301,100 @@ export const en: Dictionary = {
       "Location permission denied. Enable it in your browser settings and reload.",
     gpsUnavailable: "GPS is not available on this device.",
     gpsSearching: "Looking for GPS signal…",
+    gpsNoApi:
+      "This browser does not provide location. Use Chrome or Safari on your phone.",
+    gpsNoFix:
+      "No GPS signal. In a tunnel or a car park this is expected; tracking resumes on its own.",
+    gpsTimeout: "GPS is slow to respond. Still trying.",
+    gpsFailed: "Could not get a position. Tracking keeps trying.",
+    gpsDeniedIOS:
+      "Location blocked. On iPhone: Settings → Safari → Location → Ask, then reload this page. If you use the Chrome app: Settings → Chrome → Location.",
+    gpsDeniedAndroid:
+      "Location blocked. On Android: tap the padlock next to the address → Permissions → Location → Allow, then reload the page.",
+    gpsDeniedBrowser:
+      "Location blocked by the browser. Allow location access in the site permissions and reload the page.",
 
     transmitting: "Transmitting",
     paused: "Paused",
     queuedPings: "{count} points queued",
+    queuedAlerts: "{count} alert(s) still undelivered. Report them by radio.",
+    pingRejected: "POSITION REJECTED",
+    pingRejectedDetail:
+      "The server rejected {count} position(s): your position is NOT showing on race control's map.",
+    queueNotDurable:
+      "Local storage unavailable: the queue is lost if the app closes.",
     batteryWarning: "Battery low — consider plugging in.",
     keepAwake: "Keeping the screen on",
+    keepScreenOpen:
+      "Keep this screen open during the race. Your position is sent automatically, even on a weak signal.",
   },
 
   director: {
     dashboard: "Control panel",
     myRaces: "My races",
+    myRacesSubtitle:
+      "Each race has its own course, its own support vehicles and its own codes.",
     newRace: "New race",
+    newRaceSubtitle:
+      "Just the essentials for now. Course and vehicles come in the next steps and stay editable right up to the start.",
+    createAndContinue: "Create race and go to the course",
     noRaces: "You haven't created any races yet.",
     noRacesAction: "Create the first race",
     setupChecklist: "Before the race can go live",
     needsRoute: "Load the course",
+    needsPositions: "Set up support vehicles",
     needsLead: "Set the lead car",
-    needsSweep: "Set the broom wagon",
+    needsSweep: "Set the closing car",
     needsBinding: "{count} vehicle(s) with no device linked",
     ready: "All set",
     goLive: "Start race",
     finish: "Finish race",
+
+    steps: "Race setup steps",
+    overview: "Overview",
+    live: "Live",
+    resolveItem: "Fix",
+    pendingCount: "{count} item(s) outstanding",
+    readOnly: "Read only",
+    readOnlyRoute:
+      "You are on this race as an observer and cannot change the course.",
+    markReady: "Mark race as ready",
+    marking: "Marking…",
+    backToDraft: "Back to draft",
+    reverting: "Reverting…",
+    resolveBlockingFirst: "Clear the required items first.",
+
+    checklist: {
+      routeLabel: "Course loaded",
+      routeHint:
+        "Upload the race GPX or draw the course on the map. Without a course there is no distance and no window calculation.",
+      positionsLabel: "Support vehicles set up",
+      positionsHint:
+        "Set up the support vehicles. Each one gets a code for its driver to type into their phone.",
+      leadLabel: "Lead reference set",
+      leadHint:
+        "Mark which vehicle is the lead car. It is the start of the window race control watches.",
+      sweepLabel: "Closing reference set",
+      sweepHint:
+        "Mark which vehicle is the closing car. Its passage is what reopens the road and closes the window.",
+      startLabel: "Start time",
+      startHint:
+        "Optional, but it is what makes the panel show a countdown instead of just a clock.",
+    },
+
+    empty: {
+      intro:
+        "A race is ready to go live once it has a course, support vehicles and the lead and closing references set. Three steps:",
+      step1Title: "Set up the race",
+      step1Body:
+        "Name, location, start and the target window between the lead car and the closing car. One minute.",
+      step2Title: "Load the course",
+      step2Body:
+        "Upload the GPX you already have, or draw the course on the map. It is what turns a GPS position into a race kilometre.",
+      step3Title: "Set up the vehicles and print the codes",
+      step3Body:
+        "Every moto, ambulance and support car gets a 6-character code. The driver types it into their own phone and that's it — nothing to install, no account to create.",
+    },
   },
 
   route: {
@@ -222,43 +402,167 @@ export const en: Dictionary = {
     uploadSubtitle: "Upload the race GPX file.",
     uploadAction: "Choose GPX file",
     uploadDrop: "Drop the file here",
+    uploadHint:
+      "Or click to choose one. Anything from Strava, Garmin Connect, RideWithGPS, Komoot or the race's own course software works.",
+    uploadReading: "Large files take a few seconds.",
     drawInstead: "Or draw the course on the map",
     drawTitle: "Draw the course",
     drawHint: "Click the map to add points. Drag to adjust.",
+    drawShortcuts:
+      "Delete removes the selected vertex (or right-click it). Ctrl+Z undoes.",
     undo: "Undo",
     clear: "Clear",
     chooseSegment: "The file contains more than one course. Pick the race one:",
+    chooseSegmentHint:
+      "The file contains {count} tracks. Joining them all would create a jump in the middle of the race, so pick one.",
+    segmentName: "Track {number}",
+    kindTrack: "recorded track",
+    kindRoute: "planned route",
+    kindWaypoints: "loose waypoints",
     replaceWarning:
       "Replacing the course recalculates every position in the race. Do it before the start.",
     parseError: "Could not read the file",
     pointCount: "{count} points",
     current: "Current course",
     replace: "Replace course",
+
+    purpose:
+      "This is the line that turns each vehicle's GPS coordinate into “kilometre 42 of the race”. Without it there is no window calculation between lead and closing car, and no suggestion of the nearest vehicle along the road.",
+    missingExplain:
+      "No course. Without one the system cannot say which kilometre each vehicle is at, nor calculate the window.",
+    sourceGpx: "Imported from {filename}",
+    sourceDrawn: "Drawn on the map",
+    geometryPoints: "Geometry points",
+    reviewTitle: "Checking before saving",
+    warningsTitle: "{count} thing(s) to look at in this file",
+    confirmUse: "Confirm and use this course",
+    chooseAnotherFile: "Choose another file",
+    noFileYet: "Don't have the course file yet?",
+    vertices: "Vertices",
+    saveDrawn: "Save course",
+    deleteVertex: "Delete vertex",
+    closeLoop: "Close the circuit",
+    tooManyVertices:
+      "{count} vertices is more than a hand-drawn course should have (limit {limit}). If the course really is that long, import a GPX.",
+    oneVertex:
+      "A single vertex is not a course. Click the map to mark where the race goes.",
+    savedTitle: "Course saved",
+    savedReplaced: "the previous course was deactivated.",
+    saveErrorTitle: "Could not save",
+    saveFailed: "Could not save the course. Check the connection and try again.",
+    saveConnectionLost:
+      "The connection dropped mid-upload. The previous course still applies — try again.",
+    fileUnreadable:
+      "Could not read the file from disk. Copy it to another folder and try again.",
+    fileNotGpx:
+      "Could not interpret this file. Confirm it is a .gpx and that it opens in another program.",
+
+    uploadTooLarge:
+      "The course you sent is too large. Trim the file down to the race section.",
+    uploadBadBody: "Request body unreadable.",
+    uploadBadSource: "Unknown course source.",
+    uploadBadPoints: "Invalid course points.",
+    uploadTooManyVertices:
+      "A hand-drawn course should not have more than {limit} vertices.",
+    uploadBuildFailed: "Could not build a course from these points.",
+    uploadReleaseFailed:
+      "Could not release the previous course. Reload the page and try again.",
+    uploadInsertFailed:
+      "Could not save the course. The previous course still applies.",
   },
 
   positions: {
     title: "Support vehicles",
+    intro:
+      "Every support vehicle in the race becomes a position with its own code. The driver types the code into their own phone — nothing to install, no account to create — and from then on the device transmits that vehicle's position.",
     add: "Add vehicle",
     addBulk: "Add several",
+    addHint:
+      "Every position starts with a unique link code and a name you can change later. The first lead car and the first closing car are marked as references automatically.",
     quantity: "Quantity",
     label: "Identifier",
+    role: "Role",
     driverName: "Driver",
     driverPhone: "Phone",
+    driverPhoneHint: "With the country code if it is a foreign number.",
+    noDriver: "No driver recorded",
     plate: "Plate",
     referenceLead: "This is the official lead car",
-    referenceSweep: "This is the official broom wagon",
+    referenceSweep: "This is the official closing car",
+    markLead: "Set as lead",
+    markSweep: "Set as closing",
     dispatchable: "Can be dispatched to alerts",
     code: "Link code",
+    codeRevoked: "revoked — generate another",
+    codeExpired: "expired — generate another",
+    codeHidden: "Only people who can edit the race see the codes.",
+    copyCode: "Copy code",
+    copied: "copied",
     regenerateCode: "Generate new code",
     regenerateWarning:
       "The current code stops working. If the driver is already linked, they keep transmitting until unlinked.",
+    moveUp: "Move {position} up",
+    moveDown: "Move {position} down",
+    confirmRemove: "Remove it?",
+    orderHint: "the list order is the order they appear in on the live panel.",
+    emptyTitle: "No vehicles set up",
+    emptyBody:
+      "A position is a role in the race (“Moto 3”, “Ambulance 1”), not a device. The phone is linked afterwards with the code — and it can be swapped mid-race if a battery dies, without losing the history.",
+    emptyStart:
+      "Start with the lead car and the closing car: they are what define the window race control watches.",
+    missingRefsTitle: "Window references missing",
+    missingRefsBody:
+      "Without both, the panel cannot calculate the time between the front and the back of the field.",
+    bound: "Linked",
+    notBound: "Awaiting link",
+    revokeSession: "Unlink device",
+
     print: "Print codes",
     printTitle: "Link codes — {race}",
     printHint:
       "Hand each code to the driver of the matching vehicle before the start.",
-    bound: "Linked",
-    notBound: "Awaiting link",
-    revokeSession: "Unlink device",
+    printLost:
+      "If a sheet goes missing, generate another one on the vehicles screen and the old code stops working at once.",
+    printInstruction:
+      "Each driver opens {url} on their phone and types the code from their block.",
+    printUrlMissing: "(app address)",
+    printNoUrlTitle: "App address not configured",
+    printNoUrlBody:
+      "The variable {variable} is empty, so the sheet prints without the address the driver has to open. Write the address in by hand before handing it out.",
+    printMissing:
+      "{count} position(s) with no valid code were left off this sheet. Generate a new code for them on the vehicles screen.",
+    printExpired:
+      "{count} code(s) on this sheet have passed their expiry and no longer link any phone. Generate new codes before printing.",
+    printNothingTitle: "Nothing to print",
+    printNothingBody: "Set up the support vehicles first.",
+    printFooter:
+      "the code is valid for this race only and for this vehicle only. Linking a new phone drops the previous one.",
+
+    form: {
+      invalidData: "Invalid data.",
+      roleInvalid: "Choose a valid role.",
+      quantityInteger: "The quantity must be a whole number.",
+      quantityMin: "Add at least 1 vehicle.",
+      quantityMax: "Add 40 vehicles at most in one go.",
+      labelRequired:
+        "The vehicle needs a name — it is what race control will call on the radio.",
+      labelTooLong: "Name too long (60 characters maximum).",
+      driverNameTooLong: "Driver name too long (120 characters maximum).",
+      phoneTooLong: "Phone number too long.",
+      phoneInvalid:
+        "Invalid phone number. Use digits only, with the country code if it is a foreign number.",
+      plateTooLong: "Plate too long.",
+      notFound: "Vehicle not found. Reload the page.",
+      referenceCleared:
+        "Note: the race now has no {reference} reference — set one before the start.",
+      codeGenerationFailed:
+        "Could not generate unique codes right now. Try again in a few seconds.",
+      codeIssueUnavailable: "Could not issue a new code on this server.",
+      codeNoneFree:
+        "Could not draw a free code. Try again in a few seconds.",
+      codeRevokedMeanwhile:
+        "The previous code has already been revoked — this vehicle has no code until you try again.",
+    },
   },
 
   map: {
@@ -268,5 +572,147 @@ export const en: Dictionary = {
     showAll: "Show all",
     noWebGL:
       "This browser does not support WebGL. Position data is still correct in the lists.",
+    slowTitle: "The map did not finish loading.",
+    slowBody:
+      "It may be a background tab, WebGL unavailable, or the map tiles blocked on the network. The distances, the window and the vehicle list beside it are still correct.",
+  },
+
+  live: {
+    snapshotErrorTitle: "Could not build the live panel",
+    snapshotErrorBody:
+      "The race exists, but the live state could not be read. Reload the page; if it persists, check your connection to the database.",
+    noRoute:
+      "This race has no active course. Without one there is no map, no distance and no lead ↔ closing car window.",
+    clockNote:
+      "Ages measured against the server clock, not this computer's. Times in the race time zone ({timezone}).",
+    unacknowledged: "{count} alert(s) not acknowledged.",
+    moreUnacknowledged: "+{count} not acknowledged",
+    viewOnMap: "show on map",
+
+    sortByRace: "Position in race",
+    sortByOrdinal: "Setup order",
+    noSignalGroup: "No signal ({count}) — the map position is a memory",
+    noPositions: "No vehicles set up for this race.",
+    offRoute: "off course",
+    clockOff: "clock out of step",
+    fromTrack: "{distance} off the line",
+
+    panelOk: "Panel live",
+    panelDegraded: "Panel degraded",
+    panelDown: "PANEL DISCONNECTED",
+    reconciled: "reconciled {age}",
+    realtime: "real time: {state}",
+    realtimeOn: "on",
+    realtimeConnecting: "connecting…",
+    realtimeOff: "down",
+    notPresent: "What is on screen is not the present. Confirm everything by radio.",
+    pollingOnly: "no instant updates; reconciling every {interval}",
+    refreshNow: "refresh now",
+    refreshing: "refreshing…",
+    soundOff: "sound off — enable",
+    soundOn: "Audible warning active",
+
+    showClosed: "{count} closed",
+    hideClosed: "hide closed",
+    showAllVehicles: "show all vehicles",
+    showFewer: "show fewer",
+    history: "history",
+    hideHistory: "hide history",
+    loadingHistory: "Loading history…",
+    noEvents: "No events recorded.",
+
+    startedAt: "started at {time}",
+    finishedAt: "finished at {time}",
+    confirmStart: "confirm start",
+    confirmFinish: "confirm finish",
+  },
+
+  auth: {
+    errorTitle: "Could not continue",
+    noticeTitle: "Almost there",
+    name: "Your name",
+    nameHint: "Shown to the race crew.",
+    namePlaceholder: "Marina Ferrero",
+    nameRequired: "Enter your name — it is what the race crew sees.",
+    nameTooLong: "Name too long (80 characters maximum).",
+    email: "Email",
+    emailPlaceholder: "control@yourrace.it",
+    emailRequired: "Enter your email.",
+    emailInvalid: "That email doesn't look valid. Check for a missing @ or domain.",
+    password: "Password",
+    passwordHint: "8 characters minimum.",
+    passwordRequired: "Enter your password.",
+    passwordTooShort: "The password needs at least 8 characters.",
+    passwordTooLong: "The password can have 72 characters at most.",
+    passwordRepeat: "Repeat the password",
+    passwordMismatch: "The two passwords don't match. Type them again.",
+    submitting: "Please wait…",
+    signIn: "Sign in to the panel",
+    signUp: "Create account",
+    haveAccount: "Already have an account?",
+    signInLink: "Sign in",
+    firstTime: "First time?",
+    signUpLink: "Create a race control account",
+
+    confirmSent:
+      "Account created. We sent a confirmation email to {email}. Confirm it and come back here to sign in (check your spam folder too).",
+    invalidCredentials:
+      "Wrong email or password. If you have just signed up, confirm your email before signing in.",
+    emailNotConfirmed:
+      "This email has not been confirmed yet. Open the message we sent and click the link (check your spam folder).",
+    userExists:
+      "An account with this email already exists. Go to the sign-in screen; if you have forgotten the password, request a reset through Supabase.",
+    emailRejected:
+      "The server rejected this email address. Use a real address you can open right now — the confirmation goes there.",
+    weakPassword:
+      "Password too weak for the server. Use at least 8 characters, mixing letters and digits.",
+    rateLimited:
+      "Too many attempts in a short time. Wait a few minutes before trying again.",
+    signupDisabled:
+      "Sign-up is disabled on this server. Ask someone on the team to create your account.",
+    genericFailure: "Could not finish just now. Check your connection and try again.",
+  },
+
+  errors: {
+    forbidden: "You do not have permission to change this race.",
+    raceNotFound: "Race not found.",
+    invalidRace: "Invalid race.",
+    sessionExpired: "Your session expired. Sign in again.",
+    notStartable: "Only a race in draft or ready can be started.",
+    listRaces:
+      "Reload the page. If it persists, sign out and back in — your session may have expired.",
+    noChange:
+      "Nothing changed: the alert may already have been closed by someone else, or you no longer have permission on this race. Reload the page.",
+
+    db: {
+      saveFailed: "Could not save. Try again; if it persists, reload the page.",
+      routeRaceConflict:
+        "Another course was activated on this race while you were working. Reload the page and send again — the most recent course wins.",
+      bindCodeTaken:
+        "The drawn code collided with one already in use on another race. Click save again: a new code will be drawn.",
+      oneLead:
+        "This race already has a lead reference. Clear the current one before setting another.",
+      oneSweep:
+        "This race already has a closing reference. Clear the current one before setting another.",
+      ordinalConflict:
+        "Two vehicles ended up in the same order. Reload the page and redo the reordering.",
+      sessionTaken:
+        "A phone is already linked to this vehicle. Revoke the current link before creating another.",
+      leadSweepSame:
+        "The same vehicle cannot be both the lead and the closing reference — the window calculation would compare the vehicle with itself.",
+      gapWindowIncoherent: "The window's lower limit must be below the upper limit.",
+      targetGapRange: "The target window must be between 1 and 600 minutes.",
+      raceNameLength: "The race name must be between 1 and 200 characters.",
+      positionLabelLength: "The vehicle name must be between 1 and 60 characters.",
+      bindCodeFormat: "The generated code came out in the wrong format. Try again.",
+      trackDistance: "The course must be longer than zero.",
+      trackPoints: "The course needs at least 2 points.",
+      duplicate: "That record already exists. Reload the page to see the current state.",
+      checkViolation:
+        "Some value is outside what is allowed. Review the fields and try again.",
+      missingRace: "The race referenced no longer exists. Go back to the race list.",
+      notFound:
+        "Record not found — it may have been removed by someone else. Reload the page.",
+    },
   },
 };
