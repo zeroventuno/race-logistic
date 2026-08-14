@@ -5,12 +5,13 @@ import { NextResponse } from "next/server";
 import { driverError, driverJson, readJsonBody } from "@/app/api/driver/_lib/http";
 import {
   estimateClockSkewMs,
+  prepareRows,
   validatePingBatch,
-  type ValidatedPing,
+  type PreparedPingRow,
 } from "@/app/api/driver/_lib/ingest";
 import { authenticateDriver, touchSession } from "@/app/api/driver/_lib/session";
 import { rollingSpeedMps, type OffsetSample } from "@/lib/route/gap";
-import { snapToRoute, type SnapPrevious } from "@/lib/route/snap";
+import type { SnapPrevious } from "@/lib/route/snap";
 import { loadRaceRoute } from "@/lib/route/store";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { PingBatchResponse } from "@/lib/types";
@@ -22,7 +23,7 @@ export const dynamic = "force-dynamic";
  *
  * Este é o caminho quente do sistema: um veículo manda um lote a cada poucos
  * segundos, durante seis horas, e qualquer erro aqui aparece como um marcador
- * pulando pelo mapa da direção. Quatro invariantes sustentam a rota:
+ * pulando pelo mapa da direção. Cinco invariantes sustentam a rota:
  *
  *  1. ORDEM CRONOLÓGICA, NÃO ORDEM DE CHEGADA. Quando o celular recupera sinal
  *     ele descarrega a fila offline junto com os pings novos. Processar na
@@ -34,13 +35,17 @@ export const dynamic = "force-dynamic";
  *     NOTHING` sobre (position_id, client_ping_id) transforma reenvio em
  *     no-op — nunca em ponto duplicado no histórico.
  *
- *  3. CONTINUIDADE ALIMENTADA COM VELOCIDADE. Cada ping entrega ao próximo o
- *     offset E a velocidade. Sem velocidade, o modelo de movimento do snap
- *     assume veículo parado e erra sistematicamente para trás nos trechos em
- *     que a estrada volta por si mesma — o erro se acumula ping a ping, e um
- *     lote offline inteiro é reconstruído com o modelo degradado.
+ *  3. CONTINUIDADE COMPLETA. Cada ping entrega ao próximo o offset, a VOLTA e
+ *     a velocidade. Faltando qualquer um dos três a reconstrução degrada: sem
+ *     velocidade o erro chega a 537 m num trecho de retorno; sem volta, um
+ *     circuito de 3 voltas grava 10,9 km dos 120,7 km percorridos.
  *
- *  4. `position_state` SÓ AVANÇA. Um ping antigo que chega atrasado entra no
+ *  4. A QUALIDADE DA ÂNCORA É GRAVADA JUNTO. `snap_confidence`,
+ *     `snap_ambiguous` e `snap_method` viajam para o banco. Sem eles, uma
+ *     âncora escolhida por desempate — que pode estar 37 km fora — é
+ *     indistinguível de uma posição perfeita.
+ *
+ *  5. `position_state` SÓ AVANÇA. Um ping antigo que chega atrasado entra no
  *     histórico, mas não pode puxar o marcador do veículo para trás no mapa.
  */
 
@@ -53,6 +58,8 @@ const ROLLING_LOOKBACK_MS = 300_000;
 interface StateRow {
   recorded_at: string;
   route_offset_m: number | null;
+  absolute_offset_m: number | null;
+  lap: number;
   off_route: boolean;
   rolling_speed_mps: number | null;
   total_pings: number;
@@ -62,27 +69,7 @@ interface PreviousPingRow {
   recorded_at: string;
   route_offset_m: number | null;
   speed_mps: number | null;
-}
-
-interface PreparedRow {
-  race_id: string;
-  position_id: string;
-  session_id: string;
-  lat: number;
-  lng: number;
-  accuracy_m: number | null;
-  altitude_m: number | null;
-  speed_mps: number | null;
-  heading_deg: number | null;
-  recorded_at: string;
-  clock_skew_ms: number | null;
-  route_offset_m: number | null;
-  snap_distance_m: number | null;
-  off_route: boolean;
-  client_seq: number;
-  client_ping_id: string;
-  battery_pct: number | null;
-  queued_offline: boolean;
+  lap: number | null;
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -94,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const body = await readJsonBody(request);
   if (!body.ok) {
-    return driverError("bad_request", "Corpo da requisição não é JSON válido.");
+    return driverError("bad_request", body.reason);
   }
 
   const serverNowMs = Date.now();
@@ -108,12 +95,14 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { data: stateBefore } = await admin
     .from("position_state")
-    .select("recorded_at, route_offset_m, off_route, rolling_speed_mps, total_pings")
+    .select(
+      "recorded_at, route_offset_m, absolute_offset_m, lap, off_route, rolling_speed_mps, total_pings",
+    )
     .eq("position_id", session.positionId)
     .maybeSingle<StateRow>();
 
   const route = await loadRouteSafely(session.raceId);
-  const totalDistanceM = route?.track.totalDistanceM ?? null;
+  const raceDistanceM = route?.raceDistanceM ?? null;
 
   if (accepted.length === 0) {
     return driverJson<PingBatchResponse>({
@@ -122,7 +111,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       state: {
         routeOffsetM: stateBefore?.route_offset_m ?? null,
         offRoute: stateBefore?.off_route ?? false,
-        totalDistanceM,
+        totalDistanceM: raceDistanceM,
       },
       serverTime: new Date(serverNowMs).toISOString(),
     });
@@ -145,7 +134,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       positionId: session.positionId,
       sessionId: session.sessionId,
     },
-    route,
+    route: route
+      ? {
+          index: route.index,
+          totalDistanceM: route.track.totalDistanceM,
+          laps: route.laps,
+        }
+      : null,
     previous,
     clockSkewMs,
     rollingSpeedFallbackMps: stateBefore?.rolling_speed_mps ?? null,
@@ -164,6 +159,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (insertError) {
     // 500 de propósito: o app TEM que manter estes pings na fila e tentar de
     // novo. Responder 200 aqui apagaria o trecho do histórico para sempre.
+    console.error("[driver/ping] falha ao gravar pings:", insertError.message);
     return driverError(
       "server_error",
       "Falha ao gravar os pings. Mantenha na fila e tente de novo.",
@@ -174,7 +170,11 @@ export async function POST(request: Request): Promise<NextResponse> {
   const newestMs = Date.parse(last.recorded_at);
 
   const rolling = route
-    ? await computeRollingSpeed(session.positionId, newestMs)
+    ? await computeRollingSpeed(
+        session.positionId,
+        newestMs,
+        route.track.totalDistanceM,
+      )
     : null;
 
   const advanced = await advancePositionState({
@@ -184,6 +184,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       sessionId: session.sessionId,
     },
     row: last,
+    absoluteOffsetM: prepared.last?.absoluteOffsetM ?? null,
     rollingSpeedMps: rolling,
     totalPings: Number(stateBefore?.total_pings ?? 0) + prepared.rows.length,
     hadState: stateBefore != null,
@@ -208,7 +209,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         ? (stateBefore?.route_offset_m ?? null)
         : last.route_offset_m,
       offRoute: stateIsNewer ? (stateBefore?.off_route ?? false) : last.off_route,
-      totalDistanceM,
+      totalDistanceM: raceDistanceM,
     },
     serverTime: new Date().toISOString(),
   });
@@ -238,6 +239,10 @@ async function loadRouteSafely(raceId: string) {
  * absoluto. A diferença aparece quando a fila offline descarrega: os pings do
  * buraco de cobertura precisam continuar de onde o veículo estava quando o
  * sinal caiu, e não do ponto onde ele reapareceu.
+ *
+ * A VOLTA vem junto. Sem ela, o cursor diz "km 3" e o snap entende "km 3 da
+ * primeira volta" — o veículo na terceira volta é jogado 100 km para trás a
+ * cada lote.
  */
 async function loadSnapCursor(
   positionId: string,
@@ -246,7 +251,7 @@ async function loadSnapCursor(
 ): Promise<SnapPrevious | null> {
   const { data } = await supabaseAdmin()
     .from("location_pings")
-    .select("recorded_at, route_offset_m, speed_mps")
+    .select("recorded_at, route_offset_m, speed_mps, lap")
     .eq("position_id", positionId)
     .not("route_offset_m", "is", null)
     .lte("recorded_at", firstRecordedAtIso)
@@ -258,121 +263,30 @@ async function loadSnapCursor(
 
   return {
     offsetM: data.route_offset_m,
+    lap: data.lap ?? 0,
     recordedAtMs: Date.parse(data.recorded_at),
     speedMps: data.speed_mps ?? rollingSpeedFallbackMps,
   };
 }
 
-interface PrepareParams {
-  accepted: ValidatedPing[];
-  session: { raceId: string; positionId: string; sessionId: string };
-  route: Awaited<ReturnType<typeof loadRaceRoute>>;
-  previous: SnapPrevious | null;
-  clockSkewMs: number | null;
-  rollingSpeedFallbackMps: number | null;
-}
-
-function prepareRows(params: PrepareParams): { rows: PreparedRow[] } {
-  const rows: PreparedRow[] = [];
-  let cursor = params.previous;
-
-  for (const ping of params.accepted) {
-    let routeOffsetM: number | null = null;
-    let snapDistanceM: number | null = null;
-    let offRoute = false;
-
-    if (params.route) {
-      const snapped = snapToRoute(
-        params.route.index,
-        { lat: ping.lat, lng: ping.lng },
-        {
-          previous: cursor,
-          recordedAtMs: ping.recordedAtMs,
-          // A precisão informada pelo GPS afina o peso da geometria contra o
-          // modelo de movimento: fixo ruim, geometria vale menos.
-          accuracyM: ping.accuracyM,
-          expectedSpeedMps: ping.speedMps ?? cursor?.speedMps ?? null,
-        },
-      );
-
-      routeOffsetM = snapped.offsetM;
-      snapDistanceM = snapped.snapDistanceM;
-      offRoute = snapped.offRoute;
-
-      // Cada ping alimenta o próximo. É isto que faz um lote de 40 pings
-      // acumulados offline ser reconstruído com a mesma qualidade de um fluxo
-      // ao vivo, em vez de ser todo resolvido pela busca global.
-      cursor = {
-        offsetM: snapped.offsetM,
-        recordedAtMs: ping.recordedAtMs,
-        speedMps: derivedSpeedMps(ping, cursor, snapped.offsetM, params.rollingSpeedFallbackMps),
-      };
-    }
-
-    rows.push({
-      race_id: params.session.raceId,
-      position_id: params.session.positionId,
-      session_id: params.session.sessionId,
-      lat: ping.lat,
-      lng: ping.lng,
-      accuracy_m: ping.accuracyM,
-      altitude_m: ping.altitudeM,
-      speed_mps: ping.speedMps,
-      heading_deg: ping.headingDeg,
-      recorded_at: ping.recordedAtIso,
-      clock_skew_ms: clampSkew(params.clockSkewMs),
-      route_offset_m: routeOffsetM,
-      snap_distance_m: snapDistanceM,
-      off_route: offRoute,
-      client_seq: ping.clientSeq,
-      client_ping_id: ping.clientPingId,
-      battery_pct: ping.batteryPct,
-      queued_offline: ping.queuedOffline,
-    });
-  }
-
-  return { rows };
-}
-
 /**
- * Velocidade a entregar ao próximo ping, em ordem de confiabilidade:
- * a do GPS, a média móvel já conhecida, e — só se as duas faltarem — a
- * derivada dos próprios offsets, que é a menos confiável porque herda qualquer
- * erro do snap anterior.
+ * Velocidade média ao longo da PROVA, em escala absoluta.
+ *
+ * Usar `route_offset_m` cru aqui faria a passagem pela linha de largada
+ * (offset volta a zero) virar velocidade negativa gigante, e o `Math.max(0)`
+ * de `rollingSpeedMps` transformaria isso em "parado" — o veículo mais rápido
+ * do circuito reportado como imóvel a cada volta.
  */
-function derivedSpeedMps(
-  ping: ValidatedPing,
-  cursor: SnapPrevious | null,
-  newOffsetM: number,
-  rollingFallbackMps: number | null,
-): number | null {
-  if (ping.speedMps != null) return ping.speedMps;
-  if (rollingFallbackMps != null) return rollingFallbackMps;
-
-  if (!cursor) return null;
-
-  const dtSeconds = (ping.recordedAtMs - cursor.recordedAtMs) / 1000;
-  if (dtSeconds <= 0 || dtSeconds > 120) return null;
-
-  return Math.max(0, (newOffsetM - cursor.offsetM) / dtSeconds);
-}
-
-/** `clock_skew_ms` é bigint no banco, mas absurdos não têm valor diagnóstico. */
-function clampSkew(skewMs: number | null): number | null {
-  if (skewMs == null) return null;
-  const limit = 30 * 24 * 60 * 60_000;
-  return Math.max(-limit, Math.min(limit, skewMs));
-}
-
 async function computeRollingSpeed(
   positionId: string,
   newestMs: number,
+  trackTotalM: number,
 ): Promise<number | null> {
   const since = new Date(newestMs - ROLLING_LOOKBACK_MS).toISOString();
 
   const { data } = await supabaseAdmin()
     .from("location_pings")
-    .select("recorded_at, route_offset_m")
+    .select("recorded_at, route_offset_m, lap")
     .eq("position_id", positionId)
     .not("route_offset_m", "is", null)
     .gte("recorded_at", since)
@@ -382,7 +296,7 @@ async function computeRollingSpeed(
   if (!data || data.length < 2) return null;
 
   const history: OffsetSample[] = data.map((r) => ({
-    offsetM: r.route_offset_m as number,
+    offsetM: (Number(r.lap ?? 0) || 0) * trackTotalM + (r.route_offset_m as number),
     atMs: Date.parse(r.recorded_at as string),
   }));
 
@@ -391,7 +305,8 @@ async function computeRollingSpeed(
 
 interface AdvanceParams {
   session: { raceId: string; positionId: string; sessionId: string };
-  row: PreparedRow;
+  row: PreparedPingRow;
+  absoluteOffsetM: number | null;
   rollingSpeedMps: number | null;
   totalPings: number;
   hadState: boolean;
@@ -420,8 +335,12 @@ async function advancePositionState(params: AdvanceParams): Promise<boolean> {
     recorded_at: row.recorded_at,
     received_at: new Date().toISOString(),
     route_offset_m: row.route_offset_m,
+    absolute_offset_m: params.absoluteOffsetM,
+    lap: row.lap,
     snap_distance_m: row.snap_distance_m,
     off_route: row.off_route,
+    snap_confidence: row.snap_confidence,
+    snap_ambiguous: row.snap_ambiguous,
     rolling_speed_mps: params.rollingSpeedMps,
     battery_pct: row.battery_pct,
     total_pings: params.totalPings,

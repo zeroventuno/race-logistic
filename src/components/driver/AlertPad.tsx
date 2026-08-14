@@ -32,15 +32,18 @@ import { ALERT_CATEGORY_META, type AlertCategory } from "@/lib/types";
 
 const CONFIRM_TIMEOUT_MS = 6000;
 
+export type RaiseResult = { ok: true } | { ok: false; error: string };
+
 export interface AlertPadProps {
   snapshot: DriverSnapshot;
-  onRaise: (category: AlertCategory) => Promise<void>;
+  onRaise: (category: AlertCategory) => Promise<RaiseResult>;
 }
 
 export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
   const t = useT();
   const [confirming, setConfirming] = useState<AlertCategory | null>(null);
   const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     if (!confirming) return;
@@ -48,15 +51,30 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
     return () => clearTimeout(timer);
   }, [confirming]);
 
+  /**
+   * Dispara e — se não der para nem enfileirar — GRITA.
+   *
+   * O `catch` aqui não é higiene: sem ele, uma rejeição em `onRaise` (o
+   * IndexedDB recusando escrita) era engolida pelo `try/finally`, o botão
+   * piscava, e o alerta nunca existia. Nenhuma linha na lista, nenhum erro,
+   * nada. É a falha silenciosa que este app inteiro existe para não ter.
+   */
   async function fire(category: AlertCategory) {
     setBusy(true);
     setConfirming(null);
+    setFailure(null);
+
     try {
-      await onRaise(category);
+      const result = await onRaise(category);
+      if (!result.ok) setFailure(result.error);
+    } catch (error) {
+      setFailure((error as Error)?.message ?? "falha desconhecida");
     } finally {
       setBusy(false);
     }
   }
+
+  const storageFailure = failure ?? snapshot.alertStorageError;
 
   function handlePress(category: AlertCategory) {
     // Só a categoria crítica passa pela confirmação.
@@ -69,6 +87,20 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
 
   return (
     <section aria-label={t("alerts.title")} className="flex flex-col gap-2 p-3">
+      {storageFailure ? (
+        /* i18n: precisa de chave — falha de gravação local do alerta */
+        <p
+          role="alert"
+          className="alert-pulse rounded-lg border-2 border-critical bg-critical px-3 py-3 text-sm font-bold text-white"
+        >
+          ALERTA NÃO SALVO NESTE APARELHO — USE O RÁDIO AGORA.
+          <span className="mt-1 block text-xs font-normal opacity-90">
+            O armazenamento local recusou a gravação ({storageFailure}). Nada
+            será reenviado sozinho.
+          </span>
+        </p>
+      ) : null}
+
       <MyAlerts snapshot={snapshot} />
 
       <div className="grid gap-2">
@@ -174,8 +206,33 @@ function MyAlerts({ snapshot }: { snapshot: DriverSnapshot }) {
 
 type Translate = ReturnType<typeof useT>;
 
+/**
+ * Monta a lista dos MEUS alertas a partir de três fontes, nesta ordem de
+ * precedência: fila local (não chegou), estado do servidor (autoritativo), e
+ * confirmação guardada no aparelho.
+ *
+ * A terceira fonte existe por causa de um caso muito comum e muito ruim: o
+ * alerta é confirmado, sai da fila, e o `/state` seguinte não chega porque o
+ * sinal caiu logo depois. Sem ela, a linha SUMIA da tela — o motorista não via
+ * "na fila", não via "recebido", não via nada.
+ */
 function buildLines(snapshot: DriverSnapshot, t: Translate): Line[] {
   const lines = new Map<string, Line>();
+
+  for (const ack of snapshot.ackedAlerts) {
+    lines.set(ack.clientAlertId, {
+      key: ack.alertId,
+      category: ack.category,
+      createdAt: ack.createdAt,
+      tone: ack.dispatchFailed ? "pending" : "delivered",
+      label: t("alerts.delivered"),
+      detail: ack.dispatchFailed
+        ? t("alerts.dispatch.noneAvailable")
+        : ack.dispatchLabel
+          ? t("alerts.dispatch.called", { position: ack.dispatchLabel })
+          : null,
+    });
+  }
 
   for (const alert of snapshot.state?.alerts ?? []) {
     if (!alert.raisedBySelf) continue;

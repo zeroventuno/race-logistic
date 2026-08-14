@@ -72,13 +72,17 @@ export function DispatchTakeover({
           {t(`alerts.categories.${alert.category}.label`)}
         </h2>
 
+        {/* Sentido junto com a distância: "1,2 km" sozinho não diz se o
+            motorista segue em frente ou dá meia-volta, e essa é a primeira
+            decisão que ele precisa tomar. */}
         <p className="tnum mt-3 text-center text-2xl font-semibold text-ink">
           {distanceM == null
             ? t("common.unknown")
-            : t("alerts.proximity.ahead", {
-                category: t(`alerts.categories.${alert.category}.short`),
-                distance: fmt.distance(Math.abs(distanceM)),
-              })}
+            : `${fmt.distance(Math.abs(distanceM))} ${
+                distanceM >= 0
+                  ? t("alerts.dispatch.ahead")
+                  : t("alerts.dispatch.behind")
+              }`}
         </p>
 
         {alert.raisedBy ? (
@@ -183,7 +187,11 @@ export function DispatchBanner({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">
           {t("alerts.dispatch.youWereCalled")}
-          {distanceM != null ? ` · ${fmt.distance(Math.abs(distanceM))}` : ""}
+          {distanceM != null
+            ? ` · ${fmt.distance(Math.abs(distanceM))} ${
+                distanceM >= 0 ? t("alerts.dispatch.ahead") : t("alerts.dispatch.behind")
+              }`
+            : ""}
         </p>
         {pendingAnswer ? (
           <p className="text-xs text-warn">{t("alerts.queued")}</p>

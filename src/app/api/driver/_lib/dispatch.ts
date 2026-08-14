@@ -2,6 +2,10 @@ import "server-only";
 
 import { unwrapEmbed } from "@/app/api/driver/_lib/http";
 import {
+  OCCUPYING_STATUSES as OCCUPYING,
+  dispatchRetryDelayMs as retryDelayMs,
+} from "@/app/api/driver/_lib/policy";
+import {
   computeNearestSupport,
   type NearestCandidate,
   type NearestOrigin,
@@ -9,6 +13,12 @@ import {
 } from "@/lib/alerts/nearest";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { AlertCategory, PositionRole } from "@/lib/types";
+
+export {
+  CATEGORY_VISIBILITY,
+  OCCUPYING_STATUSES,
+  dispatchRetryDelayMs,
+} from "@/app/api/driver/_lib/policy";
 
 /**
  * Acionamento automático do socorro.
@@ -25,32 +35,6 @@ import type { AlertCategory, PositionRole } from "@/lib/types";
  * banco, sem veículo designado — e essa ausência é reportada de forma visível,
  * nunca em silêncio.
  */
-
-/**
- * Raio de aviso de proximidade e tempo de vida no mapa, por categoria.
- *
- * O raio é distância AO LONGO DO PERCURSO até o ponto do alerta. Os valores
- * saem da velocidade típica de um veículo de apoio (~60 km/h = 1 km/min):
- *
- *  - medical, 3 km ≈ 3 minutos de aviso. É o que dá tempo de reduzir a
- *    velocidade e chegar preparado numa cena de acidente, em vez de aparecer em
- *    cima dela numa curva.
- *  - mechanical, 1,5 km ≈ 1,5 minuto. Um carro parado no acostamento precisa
- *    ser evitado, não antecipado de longe.
- *  - other, 2 km. Meio-termo: pode ser estrada bloqueada, pode ser nada.
- *
- * A validade no mapa segue a mesma lógica: um socorro médico continua relevante
- * por horas; uma parada mecânica se resolve em minutos e vira poluição visual
- * se ficar. Alerta resolvido some antes disso, de qualquer forma.
- */
-export const CATEGORY_VISIBILITY: Record<
-  AlertCategory,
-  { proximityRadiusM: number; visibleForMs: number }
-> = {
-  medical: { proximityRadiusM: 3000, visibleForMs: 3 * 60 * 60_000 },
-  mechanical: { proximityRadiusM: 1500, visibleForMs: 45 * 60_000 },
-  other: { proximityRadiusM: 2000, visibleForMs: 2 * 60 * 60_000 },
-};
 
 export interface DispatchTarget {
   positionId: string;
@@ -70,6 +54,9 @@ interface StateEmbed {
   lat: number;
   lng: number;
   route_offset_m: number | null;
+  absolute_offset_m: number | null;
+  lap: number | null;
+  snap_ambiguous: boolean | null;
   rolling_speed_mps: number | null;
   recorded_at: string;
 }
@@ -95,7 +82,8 @@ export async function loadPositions(raceId: string): Promise<LoadedPosition[]> {
     .from("race_positions")
     .select(
       "id, label, role, is_dispatchable, " +
-        "position_state!position_id(lat, lng, route_offset_m, rolling_speed_mps, recorded_at)",
+        "position_state!position_id(lat, lng, route_offset_m, absolute_offset_m, lap, " +
+        "snap_ambiguous, rolling_speed_mps, recorded_at)",
     )
     .eq("race_id", raceId)
     .returns<CandidateRow[]>();
@@ -111,6 +99,29 @@ export async function loadPositions(raceId: string): Promise<LoadedPosition[]> {
   }));
 }
 
+/**
+ * Veículos que já estão a caminho de outro alerta ativo.
+ *
+ * Consultado no INSTANTE do acionamento, não em cache: entre um acidente e
+ * outro podem passar segundos, e o índice único do banco recusa a segunda
+ * gravação de qualquer forma. Melhor escolher outro veículo do que descobrir
+ * pelo erro.
+ */
+export async function busyPositions(raceId: string): Promise<string[]> {
+  const { data, error } = await supabaseAdmin()
+    .from("alerts")
+    .select("dispatched_position_id")
+    .eq("race_id", raceId)
+    .not("dispatched_position_id", "is", null)
+    .in("status", OCCUPYING as unknown as string[]);
+
+  if (error) throw new Error(`falha ao consultar acionamentos ativos: ${error.message}`);
+
+  return (data ?? [])
+    .map((row) => row.dispatched_position_id as string | null)
+    .filter((id): id is string => Boolean(id));
+}
+
 export function toCandidates(positions: LoadedPosition[]): NearestCandidate[] {
   return positions.map((p) => ({
     positionId: p.positionId,
@@ -119,7 +130,13 @@ export function toCandidates(positions: LoadedPosition[]): NearestCandidate[] {
     isDispatchable: p.isDispatchable,
     lat: p.state?.lat ?? null,
     lng: p.state?.lng ?? null,
-    routeOffsetM: p.state?.route_offset_m ?? null,
+    // Offset ABSOLUTO: num circuito é o único número comparável entre dois
+    // veículos. `absolute_offset_m` pode ser nulo em linhas antigas, e aí o
+    // offset local com a volta reconstruída é a melhor aproximação.
+    routeOffsetM:
+      p.state?.absolute_offset_m ??
+      (p.state?.route_offset_m != null ? p.state.route_offset_m : null),
+    ambiguous: p.state?.snap_ambiguous ?? false,
     rollingSpeedMps: p.state?.rolling_speed_mps ?? null,
     recordedAtMs: p.state ? Date.parse(p.state.recorded_at) : null,
   }));
@@ -132,6 +149,8 @@ export interface AutoDispatchParams {
   origin: NearestOrigin;
   /** Quem NÃO pode ser acionado: o próprio autor e quem já recusou. */
   excludePositionIds: string[];
+  /** Já acionados para outro alerta ativo. Consultado se não vier pronto. */
+  busyPositionIds?: string[];
   positions?: LoadedPosition[];
   /** Numa reacionação as sugestões antigas já estão gravadas. */
   persistSuggestions: boolean;
@@ -149,83 +168,143 @@ export async function autoDispatch(params: AutoDispatchParams): Promise<Dispatch
 
   const positions = params.positions ?? (await loadPositions(params.raceId));
   const excluded = new Set(params.excludePositionIds);
+  const busy = params.busyPositionIds ?? (await busyPositions(params.raceId));
 
-  const result = computeNearestSupport({
-    category: params.category,
-    origin: params.origin,
-    candidates: toCandidates(positions).filter((c) => !excluded.has(c.positionId)),
-    nowMs: Date.now(),
-    maxResults: 5,
-  });
+  const candidates = toCandidates(positions).filter((c) => !excluded.has(c.positionId));
 
-  if (params.persistSuggestions && result.suggestions.length > 0) {
-    // `ignoreDuplicates` porque uma reacionação recalcula a mesma lista: a
-    // tabela tem unique (alert_id, position_id) e o snapshot original é o que
-    // interessa para a revisão pós-prova.
-    const { error } = await admin.from("alert_suggestions").upsert(
-      result.suggestions.map((s) => ({
+  // O laço existe por causa da corrida entre dois acidentes simultâneos: entre
+  // consultar quem está livre e gravar o acionamento, outro alerta pode ter
+  // tomado o mesmo veículo. O índice único do banco recusa, e aí tentamos o
+  // próximo da lista em vez de devolver um alerta sem dono.
+  const takenNow = new Set(busy);
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const result = computeNearestSupport({
+      category: params.category,
+      origin: params.origin,
+      candidates,
+      nowMs: Date.now(),
+      maxResults: 5,
+      busyPositionIds: [...takenNow],
+    });
+
+    if (attempt === 0 && params.persistSuggestions && result.suggestions.length > 0) {
+      // `ignoreDuplicates` porque uma reacionação recalcula a mesma lista: a
+      // tabela tem unique (alert_id, position_id) e o snapshot original é o que
+      // interessa para a revisão pós-prova.
+      const { error } = await admin.from('alert_suggestions').upsert(
+        result.suggestions.map((s) => ({
+          alert_id: params.alertId,
+          position_id: s.positionId,
+          rank: s.rank,
+          route_distance_m: s.routeDistanceM,
+          straight_distance_m: s.straightDistanceM,
+          eta_seconds: s.etaSeconds,
+          is_ahead: s.isAhead,
+          reason: s.reason,
+        })),
+        { onConflict: 'alert_id,position_id', ignoreDuplicates: true },
+      );
+
+      if (error) throw new Error(`gravação das sugestões falhou: ${error.message}`);
+    }
+
+    const top = result.suggestions[0];
+
+    if (!top) {
+      return { dispatched: null, suggestions: result.suggestions, note: result.note };
+    }
+
+    const reason = describeDispatch(top);
+
+    const { data, error: updateError } = await admin
+      .from('alerts')
+      .update({
+        dispatched_position_id: top.positionId,
+        dispatched_at: new Date().toISOString(),
+        dispatch_mode: 'auto',
+        dispatch_reason: reason,
+        status: 'dispatched',
+        // Um acionamento novo começa limpo: a recusa anterior vive em
+        // `alert_events`, que é a trilha que ninguém sobrescreve.
+        dispatch_acknowledged_at: null,
+        dispatch_declined_at: null,
+        dispatch_decline_reason: null,
+        dispatch_retry_after: null,
+      })
+      .eq('id', params.alertId)
+      .select('id');
+
+    if (updateError) {
+      // 23505 = o índice `alerts_one_active_dispatch_per_vehicle` recusou:
+      // este veículo acabou de ser acionado para outro alerta entre a consulta
+      // e a gravação. Tentamos o próximo da lista.
+      if (updateError.code === '23505') {
+        takenNow.add(top.positionId);
+        continue;
+      }
+      throw new Error(`falha ao gravar acionamento: ${updateError.message}`);
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error('acionamento não gravado: alerta não encontrado.');
+    }
+
+    await admin.from('alert_notifications').upsert(
+      {
         alert_id: params.alertId,
-        position_id: s.positionId,
-        rank: s.rank,
-        route_distance_m: s.routeDistanceM,
-        straight_distance_m: s.straightDistanceM,
-        eta_seconds: s.etaSeconds,
-        is_ahead: s.isAhead,
-        reason: s.reason,
-      })),
-      { onConflict: "alert_id,position_id", ignoreDuplicates: true },
+        position_id: top.positionId,
+        race_id: params.raceId,
+        kind: 'dispatch',
+      },
+      { onConflict: 'alert_id,position_id,kind', ignoreDuplicates: true },
     );
 
-    if (error) throw new Error(`gravação das sugestões falhou: ${error.message}`);
+    return {
+      dispatched: {
+        positionId: top.positionId,
+        label: top.label,
+        role: top.role,
+        reason,
+        etaSeconds: top.etaSeconds,
+      },
+      suggestions: result.suggestions,
+      note: result.note,
+    };
   }
-
-  const top = result.suggestions[0];
-
-  if (!top) {
-    return { dispatched: null, suggestions: result.suggestions, note: result.note };
-  }
-
-  const reason = describeDispatch(top);
-
-  const { error: updateError } = await admin
-    .from("alerts")
-    .update({
-      dispatched_position_id: top.positionId,
-      dispatched_at: new Date().toISOString(),
-      dispatch_mode: "auto",
-      dispatch_reason: reason,
-      status: "dispatched",
-      // Um acionamento novo começa limpo: a recusa anterior vive em
-      // `alert_events`, que é a trilha que ninguém sobrescreve.
-      dispatch_acknowledged_at: null,
-      dispatch_declined_at: null,
-      dispatch_decline_reason: null,
-    })
-    .eq("id", params.alertId);
-
-  if (updateError) throw new Error(`falha ao gravar acionamento: ${updateError.message}`);
-
-  await admin.from("alert_notifications").upsert(
-    {
-      alert_id: params.alertId,
-      position_id: top.positionId,
-      race_id: params.raceId,
-      kind: "dispatch",
-    },
-    { onConflict: "alert_id,position_id,kind", ignoreDuplicates: true },
-  );
 
   return {
-    dispatched: {
-      positionId: top.positionId,
-      label: top.label,
-      role: top.role,
-      reason,
-      etaSeconds: top.etaSeconds,
-    },
-    suggestions: result.suggestions,
-    note: result.note,
+    dispatched: null,
+    suggestions: [],
+    note: 'Todos os candidatos foram tomados por outros alertas durante o acionamento.',
   };
+}
+
+/**
+ * Marca o alerta para nova tentativa de acionamento.
+ *
+ * Sem isto, o cenário do túnel é permanente: se todos os despacháveis estavam
+ * sem sinal no instante do alerta, ninguém é acionado e NADA reconsidera —
+ * trinta segundos depois a ambulância volta a transmitir e o alerta continua
+ * órfão pelo resto da prova.
+ */
+export async function scheduleDispatchRetry(
+  alertId: string,
+  attempts: number,
+): Promise<void> {
+  const { error } = await supabaseAdmin()
+    .from('alerts')
+    .update({
+      dispatch_attempts: attempts + 1,
+      dispatch_retry_after: new Date(
+        Date.now() + retryDelayMs(attempts),
+      ).toISOString(),
+    })
+    .eq('id', alertId);
+
+  if (error) {
+    console.warn('[driver/alert] falha ao agendar retentativa:', error.message);
+  }
 }
 
 /** Texto que o diretor lê para entender (e contestar) a escolha do sistema. */
@@ -266,7 +345,7 @@ export async function declinedPositions(alertId: string): Promise<string[]> {
   const out: string[] = [];
   for (const row of data ?? []) {
     const id = (row.payload as { positionId?: string } | null)?.positionId;
-    if (id) out.push(id);
+    if (typeof id === "string" && id) out.push(id);
   }
   return out;
 }

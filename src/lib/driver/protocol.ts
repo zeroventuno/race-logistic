@@ -197,6 +197,12 @@ export interface DriverAlertAck extends Omit<AlertAckResponse, "status"> {
    * interface TEM que gritar isso: significa que ninguém está a caminho.
    */
   dispatchFailed: boolean;
+  /**
+   * Consertos que o servidor precisou fazer no que o app mandou (categoria
+   * desconhecida, horário inválido). Vazio no caminho normal. Existe para o
+   * app poder dizer que o alerta chegou DIFERENTE do que foi enviado.
+   */
+  repairs: string[];
 }
 
 export type DispatchResponseAction = "on_my_way" | "arrived" | "decline";

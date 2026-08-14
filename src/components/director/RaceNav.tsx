@@ -55,6 +55,24 @@ export function RaceNav({
           </Link>
         );
       })}
+
+      {/* O painel operacional não é uma etapa de preparação: ele é o destino de
+          tudo que as outras abas montam. Fica separado por uma borda e sem o
+          ponto de "concluído", porque não existe estado em que ele esteja
+          pronto — ele só está ligado ou não. */}
+      <Link
+        href={`${base}/ao-vivo`}
+        aria-current={pathname.startsWith(`${base}/ao-vivo`) ? "page" : undefined}
+        className={`ml-2 flex min-h-11 shrink-0 items-center gap-2 border-b-2 border-l border-l-border pl-4 pr-4 text-sm transition ${
+          pathname.startsWith(`${base}/ao-vivo`)
+            ? "border-b-info font-semibold text-ink"
+            : "border-b-transparent text-ink-muted hover:border-b-border-strong hover:text-ink"
+        }`}
+      >
+        <span aria-hidden>◉</span>
+        {/* i18n: precisa de chave — "Ao vivo" (aba do painel operacional) */}
+        Ao vivo
+      </Link>
     </nav>
   );
 }

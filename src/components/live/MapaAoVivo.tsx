@@ -1,0 +1,579 @@
+"use client";
+
+import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { MapCanvas } from "@/components/map/MapCanvas";
+import { useT } from "@/lib/i18n/client";
+import {
+  ALERT_CATEGORY_META,
+  ROLE_META,
+  SIGNAL_META,
+  type SignalHealth,
+} from "@/lib/types";
+
+import {
+  alertIsActive,
+  alertNeedsAttention,
+  vehicleAgeSeconds,
+  vehicleSignal,
+  type LiveAlertView,
+  type LiveVehicleView,
+} from "./protocol";
+
+/**
+ * O mapa da direção.
+ *
+ * Diferente do mapa do motorista em duas coisas, e as duas vêm de quem olha:
+ * aqui ninguém está dirigindo, então a câmera NUNCA se move sozinha — o diretor
+ * enquadra o trecho que lhe interessa e ele fica lá, mesmo com 15 veículos
+ * andando. E aqui todos os veículos importam igualmente, então nenhum é o
+ * centro.
+ *
+ * A REGRA QUE GOVERNA O DESENHO DOS MARCADORES: um veículo sem sinal há três
+ * minutos não pode parecer um veículo ao vivo. O marcador dele no mapa é uma
+ * LEMBRANÇA, não uma posição — a 40 km/h, três minutos são dois quilômetros de
+ * estrada em que ele pode estar em qualquer ponto. Por isso ele não some (some
+ * seria dizer "não existe", que é pior), mas fica apagado, com contorno
+ * tracejado, e ganha a idade escrita em cima. Quem olhar de relance tem que
+ * conseguir separar as duas coisas sem ler nada.
+ *
+ * MARCADORES EM DOM, não em camada de símbolo: o estilo base é raster e não tem
+ * `glyphs`, então camada com texto não renderiza. Com algumas dezenas de
+ * veículos, marcador HTML é mais simples e ainda permite emoji, contorno e
+ * animação de CSS.
+ */
+
+export interface MapaAoVivoProps {
+  renderPoints: [number, number][];
+  vehicles: LiveVehicleView[];
+  alerts: LiveAlertView[];
+  /** Trecho de estrada entre fechamento e abertura. `null` = não dá para saber. */
+  occupiedSegment: [number, number][] | null;
+  nowMs: number;
+  selecionado: string | null;
+  onSelecionar: (positionId: string | null) => void;
+  /** Muda o `token` para reenquadrar no mesmo ponto de novo. */
+  focar: { lng: number; lat: number; token: number } | null;
+  className?: string;
+}
+
+type Translate = ReturnType<typeof useT>;
+
+export function MapaAoVivo({
+  renderPoints,
+  vehicles,
+  alerts,
+  occupiedSegment,
+  nowMs,
+  selecionado,
+  onSelecionar,
+  focar,
+  className,
+}: MapaAoVivoProps) {
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const prontoRef = useRef(false);
+  const veiculoMarkers = useRef(new Map<string, maplibregl.Marker>());
+  const alertaMarkers = useRef(new Map<string, maplibregl.Marker>());
+  const enquadradoRef = useRef(false);
+  const focoRef = useRef<number>(-1);
+  const [pronto, setPronto] = useState(false);
+  const [demorou, setDemorou] = useState(false);
+  const t = useT();
+
+  /**
+   * O mapa pode nunca ficar pronto — e um mapa vazio parece uma prova sem
+   * veículos.
+   *
+   * O evento `load` do MapLibre só dispara depois do primeiro quadro
+   * renderizado. Numa aba de fundo o navegador congela o `requestAnimationFrame`
+   * e esse quadro nunca acontece; com WebGL indisponível ou o estilo bloqueado
+   * por um proxy corporativo, também não. Nesses casos os marcadores não são
+   * criados, e o painel exibe um retângulo vazio sobre o qual ninguém consegue
+   * dizer se está errado ou se a prova ainda não começou.
+   *
+   * Depois de alguns segundos sem `load`, a tela passa a dizer isso em cima do
+   * mapa. Os números e a lista de veículos continuam corretos — e é justamente
+   * essa a frase que o diretor precisa ler.
+   */
+  useEffect(() => {
+    if (pronto) return;
+    const id = setTimeout(() => setDemorou(true), 8000);
+    return () => clearTimeout(id);
+  }, [pronto]);
+
+  const selecionarRef = useRef(onSelecionar);
+  selecionarRef.current = onSelecionar;
+
+  // --- Percurso ------------------------------------------------------------
+
+  const aplicarPercurso = useCallback(
+    (map: MapLibreMap, pontos: [number, number][]) => {
+      if (pontos.length < 2) return;
+
+      const geo: GeoJSON.Feature<GeoJSON.LineString> = {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: pontos },
+      };
+
+      const fonte = map.getSource("percurso");
+      if (fonte) {
+        (fonte as maplibregl.GeoJSONSource).setData(geo);
+      } else {
+        map.addSource("percurso", { type: "geojson", data: geo });
+        map.addLayer({
+          id: "percurso-halo",
+          type: "line",
+          source: "percurso",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#0a0c10", "line-width": 8, "line-opacity": 0.9 },
+        });
+        map.addLayer({
+          id: "percurso-linha",
+          type: "line",
+          source: "percurso",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#38bdf8", "line-width": 3 },
+        });
+      }
+
+      if (!enquadradoRef.current) {
+        enquadradoRef.current = true;
+        enquadrar(map, pontos);
+      }
+    },
+    [],
+  );
+
+  /**
+   * O trecho que ainda está ocupado pela prova.
+   *
+   * Desenhado ACIMA da linha do percurso e mais grosso: é a tradução visual da
+   * janela abertura ↔ fechamento, e responde a pergunta que o número sozinho
+   * não responde — qual rua ainda não pode abrir. Quando o servidor não tem
+   * certeza (dado velho, relógio suspeito, offsets faltando), ele manda `null`
+   * e a faixa some por inteiro. Uma faixa desatualizada seria pior que nenhuma:
+   * ela afirma exatamente a coisa que faria alguém liberar cedo demais.
+   */
+  const aplicarOcupado = useCallback(
+    (map: MapLibreMap, pontos: [number, number][] | null) => {
+      const geo: GeoJSON.Feature<GeoJSON.LineString> = {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "LineString",
+          coordinates: pontos && pontos.length >= 2 ? pontos : [],
+        },
+      };
+
+      const fonte = map.getSource("trecho-ocupado");
+      if (fonte) {
+        (fonte as maplibregl.GeoJSONSource).setData(geo);
+        return;
+      }
+
+      map.addSource("trecho-ocupado", { type: "geojson", data: geo });
+      map.addLayer({
+        id: "trecho-ocupado-linha",
+        type: "line",
+        source: "trecho-ocupado",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#ffa726",
+          "line-width": 9,
+          "line-opacity": 0.35,
+        },
+      });
+    },
+    [],
+  );
+
+  // --- Marcadores ----------------------------------------------------------
+
+  const sincronizarVeiculos = useCallback(
+    (
+      map: MapLibreMap,
+      lista: LiveVehicleView[],
+      agoraMs: number,
+      selecionadoId: string | null,
+      tr: Translate,
+    ) => {
+      const vistos = new Set<string>();
+
+      for (const v of lista) {
+        if (v.lat === null || v.lng === null) continue;
+        vistos.add(v.positionId);
+
+        let marker = veiculoMarkers.current.get(v.positionId);
+
+        if (!marker) {
+          const el = document.createElement("div");
+          el.style.cursor = "pointer";
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selecionarRef.current(v.positionId);
+          });
+          marker = new maplibregl.Marker({ element: el, anchor: "center" });
+          marker.setLngLat([v.lng, v.lat]).addTo(map);
+          veiculoMarkers.current.set(v.positionId, marker);
+        } else {
+          marker.setLngLat([v.lng, v.lat]);
+        }
+
+        pintarVeiculo(
+          marker.getElement(),
+          v,
+          vehicleSignal(v, agoraMs),
+          vehicleAgeSeconds(v, agoraMs),
+          v.positionId === selecionadoId,
+          tr,
+        );
+      }
+
+      for (const [id, marker] of veiculoMarkers.current) {
+        if (!vistos.has(id)) {
+          marker.remove();
+          veiculoMarkers.current.delete(id);
+        }
+      }
+    },
+    [],
+  );
+
+  const sincronizarAlertas = useCallback(
+    (map: MapLibreMap, lista: LiveAlertView[]) => {
+      const vistos = new Set<string>();
+
+      for (const a of lista) {
+        if (a.lat === null || a.lng === null) continue;
+        if (!alertIsActive(a)) continue;
+        vistos.add(a.alertId);
+
+        let marker = alertaMarkers.current.get(a.alertId);
+
+        if (!marker) {
+          const el = document.createElement("div");
+          marker = new maplibregl.Marker({ element: el, anchor: "bottom" });
+          marker.setLngLat([a.lng, a.lat]).addTo(map);
+          alertaMarkers.current.set(a.alertId, marker);
+        } else {
+          marker.setLngLat([a.lng, a.lat]);
+        }
+
+        pintarAlerta(marker.getElement(), a);
+      }
+
+      for (const [id, marker] of alertaMarkers.current) {
+        if (!vistos.has(id)) {
+          marker.remove();
+          alertaMarkers.current.delete(id);
+        }
+      }
+    },
+    [],
+  );
+
+  // --- Ciclo de vida -------------------------------------------------------
+
+  const aoPronto = useCallback(
+    (map: MapLibreMap) => {
+      mapRef.current = map;
+      prontoRef.current = true;
+      setPronto(true);
+
+      map.on("click", () => selecionarRef.current(null));
+
+      aplicarPercurso(map, renderPoints);
+      aplicarOcupado(map, occupiedSegment);
+      sincronizarVeiculos(map, vehicles, nowMs, selecionado, t);
+      sincronizarAlertas(map, alerts);
+    },
+    // Montagem única: o mapa é criado uma vez e tudo depois é imperativo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  useEffect(() => {
+    if (prontoRef.current && mapRef.current) {
+      aplicarPercurso(mapRef.current, renderPoints);
+    }
+  }, [renderPoints, aplicarPercurso]);
+
+  useEffect(() => {
+    if (prontoRef.current && mapRef.current) {
+      aplicarOcupado(mapRef.current, occupiedSegment);
+    }
+  }, [occupiedSegment, aplicarOcupado]);
+
+  useEffect(() => {
+    if (prontoRef.current && mapRef.current) {
+      sincronizarVeiculos(mapRef.current, vehicles, nowMs, selecionado, t);
+    }
+  }, [vehicles, nowMs, selecionado, sincronizarVeiculos, t]);
+
+  useEffect(() => {
+    if (prontoRef.current && mapRef.current) {
+      sincronizarAlertas(mapRef.current, alerts);
+    }
+  }, [alerts, sincronizarAlertas]);
+
+  // A câmera só se move por ação EXPLÍCITA (clique numa linha da lista ou no km
+  // de um alerta). O `token` permite repetir o enquadramento no mesmo ponto —
+  // clicar duas vezes na mesma linha tem que voltar a centrar, não virar nada.
+  useEffect(() => {
+    if (!focar || !prontoRef.current || !mapRef.current) return;
+    if (focar.token === focoRef.current) return;
+    focoRef.current = focar.token;
+
+    mapRef.current.easeTo({
+      center: [focar.lng, focar.lat],
+      zoom: Math.max(mapRef.current.getZoom(), 13.5),
+      duration: 600,
+    });
+  }, [focar]);
+
+  useEffect(() => {
+    const veiculos = veiculoMarkers.current;
+    const alertas = alertaMarkers.current;
+    return () => {
+      for (const m of veiculos.values()) m.remove();
+      veiculos.clear();
+      for (const m of alertas.values()) m.remove();
+      alertas.clear();
+    };
+  }, []);
+
+  return (
+    <div className={`relative ${className ?? ""}`}>
+      <MapCanvas onReady={aoPronto} className="h-full w-full" initialZoom={12} />
+
+      {!pronto && demorou ? (
+        <div className="pointer-events-none absolute inset-x-3 top-3 rounded-lg border border-warn/60 bg-surface-1/95 px-3 py-2 text-sm text-warn">
+          {/* i18n: precisa de chave — mapa não terminou de carregar */}
+          <p className="font-semibold">O mapa não terminou de carregar.</p>
+          <p className="mt-0.5 text-ink-muted">
+            Pode ser aba em segundo plano, WebGL indisponível ou os blocos do
+            mapa bloqueados na rede. Os quilômetros, a janela e a lista de
+            veículos ao lado continuam corretos.
+          </p>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => {
+          if (mapRef.current && renderPoints.length >= 2) {
+            enquadrar(mapRef.current, renderPoints);
+          }
+        }}
+        className="absolute bottom-3 right-3 rounded-lg border border-border-strong bg-surface-2/95 px-3 py-2 text-xs font-medium text-ink shadow-lg hover:border-info"
+      >
+        {t("map.fitRoute")}
+      </button>
+
+      <LegendaSinal />
+    </div>
+  );
+}
+
+function LegendaSinal() {
+  const t = useT();
+  const estados: SignalHealth[] = ["live", "delayed", "stale", "lost"];
+
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-x-3 gap-y-1 rounded-lg border border-border bg-surface-1/90 px-3 py-2 text-[11px] text-ink-muted">
+      {estados.map((s) => (
+        <span key={s} className="flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="inline-block h-3 w-3 rounded-full border-2"
+            style={{
+              borderColor: SIGNAL_META[s].color,
+              borderStyle: s === "stale" || s === "lost" ? "dashed" : "solid",
+              background: "var(--color-surface-3)",
+              opacity: s === "lost" ? 0.5 : 1,
+            }}
+          />
+          {t(`signal.${s}`)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function enquadrar(map: MapLibreMap, pontos: [number, number][]): void {
+  const primeiro = pontos[0];
+  if (!primeiro) return;
+
+  const limites = new maplibregl.LngLatBounds(primeiro, primeiro);
+  for (const p of pontos) limites.extend(p);
+
+  map.fitBounds(limites, { padding: 56, animate: true, duration: 500 });
+}
+
+/**
+ * Pinta o marcador de um veículo.
+ *
+ * A hierarquia visual está em três canais independentes de propósito, para
+ * sobreviver a daltonismo e a projetor ruim: COR do preenchimento diz o papel,
+ * COR e ESTILO do contorno dizem a saúde do sinal, e OPACIDADE + selo de idade
+ * dizem "este ponto é uma lembrança". Um veículo perdido perde brilho, ganha
+ * tracejado e ganha texto — três motivos para não ser confundido com um ao
+ * vivo, e nenhum deles depende de distinguir verde de vermelho.
+ */
+function pintarVeiculo(
+  raiz: HTMLElement,
+  v: LiveVehicleView,
+  sinal: SignalHealth,
+  idadeSegundos: number | null,
+  selecionado: boolean,
+  t: Translate,
+): void {
+  const meta = ROLE_META[v.role];
+  const referencia = v.isReferenceLead || v.isReferenceSweep;
+  const tamanho = referencia ? 38 : 30;
+  const apagado = sinal === "stale" || sinal === "lost" || sinal === "never";
+
+  raiz.style.display = "flex";
+  raiz.style.flexDirection = "column";
+  raiz.style.alignItems = "center";
+  raiz.style.gap = "2px";
+  raiz.style.userSelect = "none";
+
+  let chip = raiz.querySelector<HTMLDivElement>("[data-chip]");
+  let selo = raiz.querySelector<HTMLSpanElement>("[data-selo]");
+  let rotulo = raiz.querySelector<HTMLSpanElement>("[data-rotulo]");
+
+  if (!chip) {
+    chip = document.createElement("div");
+    chip.dataset.chip = "1";
+    chip.style.position = "relative";
+    chip.style.display = "flex";
+    chip.style.alignItems = "center";
+    chip.style.justifyContent = "center";
+    chip.style.borderRadius = "9999px";
+    chip.style.lineHeight = "1";
+
+    selo = document.createElement("span");
+    selo.dataset.selo = "1";
+    selo.style.position = "absolute";
+    selo.style.top = "-7px";
+    selo.style.right = "-12px";
+    selo.style.borderRadius = "9999px";
+    selo.style.padding = "0 4px";
+    selo.style.fontSize = "9px";
+    selo.style.fontWeight = "700";
+    selo.style.lineHeight = "14px";
+    selo.style.border = "1px solid #0a0c10";
+    chip.appendChild(selo);
+
+    rotulo = document.createElement("span");
+    rotulo.dataset.rotulo = "1";
+    rotulo.style.maxWidth = "110px";
+    rotulo.style.overflow = "hidden";
+    rotulo.style.textOverflow = "ellipsis";
+    rotulo.style.whiteSpace = "nowrap";
+    rotulo.style.borderRadius = "4px";
+    rotulo.style.padding = "1px 4px";
+    rotulo.style.fontSize = "10px";
+    rotulo.style.fontWeight = "600";
+    rotulo.style.background = "rgb(10 12 16 / .78)";
+    rotulo.style.color = "#e8ecf2";
+
+    raiz.appendChild(chip);
+    raiz.appendChild(rotulo);
+  }
+
+  if (!selo || !rotulo) return;
+
+  chip.style.width = `${tamanho}px`;
+  chip.style.height = `${tamanho}px`;
+  chip.style.fontSize = referencia ? "17px" : "14px";
+  chip.style.background = meta.color;
+  chip.style.borderWidth = referencia ? "3px" : "2px";
+  chip.style.borderStyle = apagado ? "dashed" : "solid";
+  chip.style.borderColor = SIGNAL_META[sinal].color;
+  chip.style.opacity = sinal === "lost" || sinal === "never" ? "0.45" : apagado ? "0.7" : "1";
+  chip.style.filter = sinal === "lost" || sinal === "never" ? "grayscale(0.55)" : "none";
+  chip.style.boxShadow = selecionado
+    ? "0 0 0 3px #e8ecf2, 0 0 0 6px rgb(56 189 248 / .5)"
+    : "0 1px 4px rgb(0 0 0 / .6)";
+
+  // O emoji fica num nó de texto próprio para não apagar o selo a cada pintura.
+  let icone = chip.querySelector<HTMLSpanElement>("[data-icone]");
+  if (!icone) {
+    icone = document.createElement("span");
+    icone.dataset.icone = "1";
+    chip.insertBefore(icone, selo);
+  }
+  icone.textContent = meta.icon;
+
+  // O selo só existe quando há o que confessar: idade que já compromete a
+  // posição, veículo fora do percurso, ou aparelho nunca vinculado.
+  if (sinal === "never") {
+    selo.textContent = "?";
+    selo.style.display = "block";
+    selo.style.background = SIGNAL_META.never.color;
+    selo.style.color = "#0a0c10";
+  } else if (apagado && idadeSegundos !== null) {
+    selo.textContent = idadeCurta(idadeSegundos);
+    selo.style.display = "block";
+    selo.style.background = SIGNAL_META[sinal].color;
+    selo.style.color = "#0a0c10";
+  } else if (v.offRoute) {
+    selo.textContent = "⟂";
+    selo.style.display = "block";
+    selo.style.background = "var(--color-warn)";
+    selo.style.color = "#0a0c10";
+  } else {
+    selo.style.display = "none";
+  }
+
+  rotulo.textContent = v.label;
+  rotulo.style.opacity = apagado ? "0.75" : "1";
+  rotulo.style.borderLeft = v.isReferenceLead
+    ? "3px solid var(--role-lead)"
+    : v.isReferenceSweep
+      ? "3px solid var(--role-sweep)"
+      : "none";
+
+  const descricao = `${v.label} · ${t(`roles.${v.role}.short`)} · ${t(`signal.${sinal}`)}`;
+  raiz.title =
+    idadeSegundos === null
+      ? descricao
+      : `${descricao} · ${Math.round(idadeSegundos)} s`;
+  raiz.setAttribute("aria-label", descricao);
+}
+
+function pintarAlerta(el: HTMLElement, a: LiveAlertView): void {
+  const meta = ALERT_CATEGORY_META[a.category];
+  const gritando = alertNeedsAttention(a);
+
+  el.style.display = "flex";
+  el.style.alignItems = "center";
+  el.style.justifyContent = "center";
+  el.style.width = gritando ? "44px" : "36px";
+  el.style.height = gritando ? "44px" : "36px";
+  el.style.borderRadius = "10px";
+  el.style.fontSize = gritando ? "22px" : "18px";
+  el.style.border = "2px solid #0a0c10";
+  el.style.background =
+    a.category === "medical" ? "var(--color-critical)" : "var(--color-warn)";
+  el.textContent = meta.icon;
+
+  // O mesmo pulso do painel de alertas. Um acidente que ninguém reconheceu tem
+  // que se mexer no mapa exatamente como se mexe na lista — são a mesma coisa
+  // vista de dois lugares, e dar a elas ênfases diferentes ensina o olho a
+  // confiar em uma e ignorar a outra.
+  el.classList.toggle("alert-pulse", gritando);
+
+  el.title = a.note ?? meta.label;
+}
+
+/** Idade em duas ou três letras, para caber num selo de 9 px. */
+function idadeCurta(segundos: number): string {
+  if (segundos < 60) return `${Math.round(segundos)}s`;
+  if (segundos < 3600) return `${Math.round(segundos / 60)}m`;
+  return `${Math.round(segundos / 3600)}h`;
+}

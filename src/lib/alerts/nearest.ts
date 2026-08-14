@@ -108,6 +108,15 @@ const PREFERENCE_STEP_SECONDS = 120;
  */
 const OFF_SPECIALTY_PENALTY_SECONDS = 3600;
 
+/**
+ * Penalidade para candidato cuja âncora o snap marcou como ambígua.
+ *
+ * 10 minutos equivalentes: o suficiente para um veículo com posição confiável
+ * vencer quase sempre, e pequeno o bastante para não esconder o único
+ * candidato disponível quando todos estão ambíguos.
+ */
+const UNCERTAIN_POSITION_PENALTY_SECONDS = 600;
+
 export interface NearestCandidate {
   positionId: string;
   label: string;
@@ -116,7 +125,19 @@ export interface NearestCandidate {
   /** Última posição conhecida. `null` se o veículo nunca transmitiu. */
   lat: number | null;
   lng: number | null;
+  /**
+   * Metros percorridos de PROVA, contando as voltas (`absolute_offset_m`).
+   *
+   * Nunca o offset dentro do traçado: num circuito, o veículo na volta 3 e o
+   * acidente na volta 1 ocupam o mesmo ponto do mapa e estão a duas voltas de
+   * distância. Comparar offsets locais devolve "0 m" com toda a confiança.
+   */
   routeOffsetM: number | null;
+  /**
+   * A âncora deste veículo foi escolhida por desempate, não por geometria?
+   * Se sim, `routeOffsetM` pode estar a quilômetros do lugar certo.
+   */
+  ambiguous?: boolean;
   rollingSpeedMps: number | null;
   /** Epoch ms do último ping. `null` = nunca transmitiu. */
   recordedAtMs: number | null;
@@ -125,7 +146,10 @@ export interface NearestCandidate {
 export interface NearestOrigin {
   lat: number | null;
   lng: number | null;
+  /** Offset ABSOLUTO do alerta (com voltas). */
   routeOffsetM: number | null;
+  /** A âncora do alerta é ambígua? Contamina a comparação com todos. */
+  ambiguous?: boolean;
 }
 
 export interface NearestInput {
@@ -136,6 +160,15 @@ export interface NearestInput {
   maxResults?: number;
   /** Quem disparou o alerta não é sugerido para atender a si mesmo. */
   excludePositionId?: string | null;
+  /**
+   * Veículos que JÁ estão acionados para outro alerta ativo.
+   *
+   * Sem esta lista, o mesmo veículo é escolhido para vários acidentes ao mesmo
+   * tempo: medido, três acidentes simultâneos acionaram a MESMA ambulância nos
+   * três, e os motoristas de dois deles viam "Ambulância 1 acionada" — sinal
+   * verde — sem ninguém a caminho.
+   */
+  busyPositionIds?: readonly string[];
 }
 
 export type NearestMethod = "route" | "straight_fallback";
@@ -159,6 +192,11 @@ export interface NearestSuggestion {
   etaEstimated: boolean;
   /** Este papel não é a especialidade da categoria — é escalonamento. */
   offSpecialty: boolean;
+  /**
+   * A posição usada (do candidato ou do alerta) veio de âncora ambígua. Este
+   * número pode estar a quilômetros do certo; quem despacha precisa saber.
+   */
+  positionUncertain: boolean;
 }
 
 export interface NearestResult {
@@ -191,11 +229,23 @@ export function computeNearestSupport(input: NearestInput): NearestResult {
   const scored: Scored[] = [];
   let ignoredNoSignal = 0;
   let ignoredRole = 0;
+  let ignoredBusy = 0;
+  let uncertainCount = 0;
+
+  const busy = new Set(input.busyPositionIds ?? []);
 
   for (const c of input.candidates) {
     if (c.positionId === input.excludePositionId) continue;
     if (!c.isDispatchable) {
       ignoredRole++;
+      continue;
+    }
+
+    // Já está indo para outro acidente. Acionar de novo produziria dois
+    // motoristas esperando o mesmo veículo, e o índice único do banco recusaria
+    // a segunda gravação de qualquer forma.
+    if (busy.has(c.positionId)) {
+      ignoredBusy++;
       continue;
     }
 
@@ -220,7 +270,16 @@ export function computeNearestSupport(input: NearestInput): NearestResult {
       ? haversineMeters(originPoint, candidatePoint)
       : Number.POSITIVE_INFINITY;
 
-    const canUseRoute = origin.routeOffsetM != null && c.routeOffsetM != null;
+    // ÂNCORA AMBÍGUA NÃO É POSIÇÃO. Quando o snap avisa que escolheu por
+    // desempate, o offset pode estar a dezenas de quilômetros do lugar certo —
+    // e usá-lo como distância pela estrada produz exatamente o erro medido:
+    // ambulância a 200 m anunciada a 37,6 km. Nesse caso a comparação cai para
+    // a linha reta (que ao menos vem do GPS bruto) e o candidato é penalizado.
+    const uncertain = Boolean(c.ambiguous) || Boolean(origin.ambiguous);
+    if (uncertain) uncertainCount++;
+
+    const canUseRoute =
+      origin.routeOffsetM != null && c.routeOffsetM != null && !uncertain;
 
     const routeDistanceM = canUseRoute
       ? Math.abs(c.routeOffsetM! - origin.routeOffsetM!)
@@ -267,7 +326,10 @@ export function computeNearestSupport(input: NearestInput): NearestResult {
       etaSeconds +
       (handles
         ? preferenceRank * PREFERENCE_STEP_SECONDS
-        : OFF_SPECIALTY_PENALTY_SECONDS);
+        : OFF_SPECIALTY_PENALTY_SECONDS) +
+      // Quem tem âncora ambígua perde para quem tem posição confiável, mesmo
+      // parecendo mais perto. Só ganha se for a única opção — e aí sai marcado.
+      (uncertain ? UNCERTAIN_POSITION_PENALTY_SECONDS : 0);
 
     scored.push({
       positionId: c.positionId,
@@ -282,6 +344,7 @@ export function computeNearestSupport(input: NearestInput): NearestResult {
       signal,
       etaEstimated: measuredSpeed === null || !canUseRoute,
       offSpecialty: !handles,
+      positionUncertain: uncertain,
       reason: buildReason({
         method,
         isAhead,
@@ -293,6 +356,7 @@ export function computeNearestSupport(input: NearestInput): NearestResult {
         ageSeconds,
         handles,
         category: input.category,
+        uncertain,
       }),
       adjustedCostSeconds,
     });
@@ -310,7 +374,17 @@ export function computeNearestSupport(input: NearestInput): NearestResult {
     return { ...rest, rank: i + 1 };
   });
 
-  return { suggestions, note: buildNote(suggestions, ignoredNoSignal, ignoredRole, input.category) };
+  return {
+    suggestions,
+    note: buildNote({
+      suggestions,
+      ignoredNoSignal,
+      ignoredRole,
+      ignoredBusy,
+      uncertainCount,
+      category: input.category,
+    }),
+  };
 }
 
 interface ReasonInput {
@@ -324,10 +398,17 @@ interface ReasonInput {
   ageSeconds: number | null;
   handles: boolean;
   category: AlertCategory;
+  uncertain: boolean;
 }
 
 function buildReason(r: ReasonInput): string {
   const parts: string[] = [];
+
+  if (r.uncertain) {
+    parts.push(
+      "POSIÇÃO INCERTA: a âncora no percurso foi escolhida por desempate — confirme por rádio antes de contar com esta distância",
+    );
+  }
 
   if (r.method === "route" && r.routeDistanceM != null) {
     parts.push(
@@ -360,20 +441,39 @@ function buildReason(r: ReasonInput): string {
   return parts.join(" · ");
 }
 
-function buildNote(
-  suggestions: NearestSuggestion[],
-  ignoredNoSignal: number,
-  ignoredRole: number,
-  category: AlertCategory,
-): string {
+interface NoteInput {
+  suggestions: NearestSuggestion[];
+  ignoredNoSignal: number;
+  ignoredRole: number;
+  ignoredBusy: number;
+  uncertainCount: number;
+  category: AlertCategory;
+}
+
+function buildNote(input: NoteInput): string {
+  const { suggestions, ignoredNoSignal, ignoredRole, ignoredBusy, category } = input;
+
   if (suggestions.length === 0) {
-    if (ignoredNoSignal > 0) {
-      return `Nenhum apoio sugerido: ${ignoredNoSignal} veículo(s) despachável(is) estão sem sinal.`;
+    const reasons: string[] = [];
+    if (ignoredNoSignal > 0) reasons.push(`${ignoredNoSignal} sem sinal`);
+    if (ignoredBusy > 0) reasons.push(`${ignoredBusy} já acionado(s) para outro alerta`);
+
+    if (reasons.length > 0) {
+      return `Nenhum apoio sugerido: ${reasons.join(", ")}.`;
     }
     return "Nenhum veículo despachável cadastrado nesta prova.";
   }
 
   const parts = [`${suggestions.length} sugestão(ões) para categoria "${category}".`];
+
+  if (input.uncertainCount > 0) {
+    parts.push(
+      `${input.uncertainCount} candidato(s) com âncora ambígua — distância não confiável.`,
+    );
+  }
+  if (ignoredBusy > 0) {
+    parts.push(`${ignoredBusy} já acionado(s) para outro alerta.`);
+  }
 
   // Escalonamento tem que gritar. Um alerta médico atendido por uma moto é uma
   // decisão consciente do sistema, e quem lê o histórico depois precisa ver que

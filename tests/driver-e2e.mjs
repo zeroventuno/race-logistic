@@ -295,7 +295,7 @@ async function seed(track) {
     positions[vehicle.key] = { ...vehicle, id: rows[0].id, code };
   }
 
-  return { raceId, positions };
+  return { raceId, positions, createdBy };
 }
 
 // ---------------------------------------------------------------------------
@@ -323,6 +323,148 @@ function makePing(track, offsetM, atMs, { queuedOffline = false, speedMps = 12 }
   };
 }
 
+/**
+ * Prova em CIRCUITO: 3 voltas sobre o mesmo traçado.
+ *
+ * O caso que estava completamente quebrado: `previous.lap` nunca era devolvido
+ * ao cursor, então todo lote reinterpretava o veículo como se ele estivesse na
+ * primeira volta. Medido antes da correção: 120,7 km percorridos, 10,9 km
+ * gravados — 109,7 km de prova que não existiam para o sistema, e um vassoura
+ * uma volta atrás do abertura aparecendo com gap ZERO.
+ */
+async function runLapsScenario(track, createdBy) {
+  const LAPS = 3;
+  const stamp = Date.now();
+
+  const { rows: raceRows } = await client.query(
+    `insert into races (name, location, status, timezone, target_gap_minutes, laps, created_by)
+     values ($1, 'Circuito', 'live', 'Europe/Rome', 20, $2, $3) returning id`,
+    [`E2E motorista circuito ${stamp}`, LAPS, createdBy],
+  );
+  const lapRaceId = raceRows[0].id;
+
+  const renderPoints = track.points.filter((_, i) => i % 5 === 0).map(([lng, lat]) => [lng, lat]);
+
+  await client.query(
+    `insert into route_tracks
+       (race_id, name, source, total_distance_m, point_count, bbox, points, render_points, is_active)
+     values ($1, 'Circuito Langhe', 'gpx', $2, $3, $4, $5, $6, true)`,
+    [
+      lapRaceId,
+      track.totalDistanceM,
+      track.points.length,
+      JSON.stringify(track.bbox),
+      JSON.stringify(track.points),
+      JSON.stringify(renderPoints),
+    ],
+  );
+
+  const codes = {};
+  for (const [i, spec] of [
+    { key: "lead", role: "lead_car", label: "Abertura circuito", lead: true },
+    { key: "sweep", role: "sweep_car", label: "Vassoura circuito", sweep: true },
+  ].entries()) {
+    const code = bindCode(stamp + 100 + i);
+    await client.query(
+      `insert into race_positions
+         (race_id, role, label, ordinal, is_reference_lead, is_reference_sweep, is_dispatchable, bind_code)
+       values ($1, $2, $3, $4, $5, $6, false, $7)`,
+      [lapRaceId, spec.role, spec.label, i + 1, Boolean(spec.lead), Boolean(spec.sweep), code],
+    );
+    codes[spec.key] = code;
+  }
+
+  const lapTokens = {};
+  for (const key of Object.keys(codes)) {
+    const response = await api("/api/driver/bind", {
+      method: "POST",
+      body: { code: codes[key], deviceLabel: `Circuito ${key}` },
+    });
+    lapTokens[key] = response.json?.token;
+  }
+
+  /** Dirige `metros` de prova a partir de `deM`, em lotes de 40 pings. */
+  async function drive(token, deM, ateM, baseMs) {
+    const STEP_M = 300;
+    let seq = 0;
+    let batch = [];
+
+    for (let absolute = deM; absolute <= ateM; absolute += STEP_M) {
+      const local = absolute % track.totalDistanceM;
+      const point = positionAtOffset(track, local);
+      const noisy = destination(point, Math.random() * 360, Math.random() * 6);
+
+      batch.push({
+        clientPingId: randomUUID(),
+        clientSeq: ++seq,
+        lat: noisy.lat,
+        lng: noisy.lng,
+        accuracyM: 8,
+        altitudeM: 300,
+        speedMps: 12,
+        headingDeg: null,
+        recordedAt: new Date(baseMs + (absolute - deM) * 25).toISOString(),
+        batteryPct: 80,
+        queuedOffline: false,
+      });
+
+      if (batch.length === 40) {
+        await api("/api/driver/ping", { method: "POST", token, body: { pings: batch } });
+        batch = [];
+      }
+    }
+
+    if (batch.length > 0) {
+      await api("/api/driver/ping", { method: "POST", token, body: { pings: batch } });
+    }
+  }
+
+  const raceDistance = track.totalDistanceM * LAPS;
+  const now = Date.now();
+
+  // Abertura: quase a prova inteira (fim da 3ª volta).
+  await drive(lapTokens.lead, 0, raceDistance - 2_000, now - 40 * 60_000);
+  // Vassoura: mesmo PONTO DO MAPA do abertura, mas duas voltas atrás.
+  await drive(lapTokens.sweep, 0, track.totalDistanceM - 2_000, now - 30 * 60_000);
+
+  const { rows: lapStates } = await client.query(
+    `select p.label, s.lap, round(s.route_offset_m::numeric, 0) as local,
+            round(s.absolute_offset_m::numeric, 0) as absoluto
+       from position_state s join race_positions p on p.id = s.position_id
+      where s.race_id = $1 order by p.ordinal`,
+    [lapRaceId],
+  );
+
+  const lead = lapStates.find((r) => r.label === "Abertura circuito");
+  const sweep = lapStates.find((r) => r.label === "Vassoura circuito");
+
+  check(
+    "abertura reconhecido na 3ª volta",
+    lead?.lap === LAPS - 1,
+    `volta ${lead?.lap}, local ${lead?.local} m`,
+  );
+
+  check(
+    "distância de prova gravada é a REAL, não a de uma volta",
+    Number(lead?.absoluto) > raceDistance * 0.9,
+    `${(Number(lead?.absoluto) / 1000).toFixed(1)} km de ${(raceDistance / 1000).toFixed(1)} km`,
+  );
+
+  check(
+    "vassoura duas voltas atrás não é confundido com o abertura",
+    Math.abs(Number(lead?.absoluto) - Number(sweep?.absoluto)) > track.totalDistanceM * 1.5,
+    `separação ${((Number(lead?.absoluto) - Number(sweep?.absoluto)) / 1000).toFixed(1)} km ` +
+      `(pelo offset local seriam ${(Math.abs(Number(lead?.local) - Number(sweep?.local)) / 1000).toFixed(2)} km)`,
+  );
+
+  const gapState = await api("/api/driver/state", { token: lapTokens.sweep });
+  check(
+    "gap não é zero entre veículos em voltas diferentes",
+    Math.abs(gapState.json?.gap?.gapM ?? 0) > track.totalDistanceM,
+    `${((gapState.json?.gap?.gapM ?? 0) / 1000).toFixed(1)} km, método ${gapState.json?.gap?.method}`,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Roteiro
 // ---------------------------------------------------------------------------
@@ -337,7 +479,7 @@ async function main() {
     `  Percurso: ${(track.totalDistanceM / 1000).toFixed(1)} km, ${track.points.length} pontos`,
   );
 
-  const { raceId, positions } = await seed(track);
+  const { raceId, positions, createdBy } = await seed(track);
   console.log(`  Prova ${raceId} criada com ${Object.keys(positions).length} posições\n`);
 
   // --- 1. Vínculo --------------------------------------------------------
@@ -861,7 +1003,7 @@ async function main() {
   );
 
   const { rows: repaired } = await client.query(
-    "select category, lat, created_at from alerts where id = $1",
+    "select category, priority, lat, created_at from alerts where id = $1",
     [malformed.json?.alertId],
   );
   check(
@@ -869,6 +1011,167 @@ async function main() {
     repaired[0]?.category === "other" && repaired[0]?.lat === null,
     `categoria ${repaired[0]?.category}`,
   );
+  check(
+    "categoria desconhecida NÃO rebaixa a urgência",
+    repaired[0]?.priority === "critical",
+    `prioridade ${repaired[0]?.priority}`,
+  );
+  check(
+    "o app é avisado do que foi consertado",
+    Array.isArray(malformed.json?.repairs) && malformed.json.repairs.length > 0,
+    (malformed.json?.repairs ?? []).join(" | "),
+  );
+
+  const bigBody = await api("/api/driver/alert", {
+    method: "POST",
+    token: tokens.mec,
+    body: {
+      clientAlertId: randomUUID(),
+      category: "other",
+      note: "x".repeat(2_000_000),
+      createdAt: new Date().toISOString(),
+    },
+  });
+  check(
+    "corpo gigante é recusado antes de ser processado",
+    bigBody.status === 400,
+    `status ${bigBody.status}`,
+  );
+
+  // --- 9b. Três acidentes ao mesmo tempo ---------------------------------
+  section("9b. Acidentes simultâneos não acionam o mesmo veículo");
+
+  const simultaneous = [];
+  for (let i = 0; i < 3; i++) {
+    const point = positionAtOffset(track, offsets.sweep + i * 400);
+    simultaneous.push(
+      await api("/api/driver/alert", {
+        method: "POST",
+        token: tokens.sweep,
+        body: {
+          clientAlertId: randomUUID(),
+          category: "medical",
+          note: `acidente simultâneo ${i + 1}`,
+          lat: point.lat,
+          lng: point.lng,
+          accuracyM: 8,
+          createdAt: new Date().toISOString(),
+        },
+      }),
+    );
+  }
+
+  const dispatchedTo = simultaneous
+    .map((r) => r.json?.dispatch?.positionId)
+    .filter(Boolean);
+
+  check(
+    "cada acidente recebeu um veículo diferente (ou nenhum)",
+    new Set(dispatchedTo).size === dispatchedTo.length,
+    dispatchedTo
+      .map((id) => Object.values(positions).find((p) => p.id === id)?.label)
+      .join(", ") || "nenhum acionado",
+  );
+
+  const { rows: doubleBooked } = await client.query(
+    `select dispatched_position_id, count(*)::int as n
+       from alerts
+      where race_id = $1 and dispatched_position_id is not null
+        and status in ('dispatched', 'en_route', 'on_scene')
+      group by dispatched_position_id having count(*) > 1`,
+    [raceId],
+  );
+  check(
+    "nenhum veículo com dois acionamentos ativos no banco",
+    doubleBooked.length === 0,
+    `${doubleBooked.length} veículo(s) duplicado(s)`,
+  );
+
+  const semAcionamento = simultaneous.filter((r) => r.json?.dispatchFailed);
+  check(
+    "quem não conseguiu socorro é avisado explicitamente",
+    semAcionamento.every((r) => r.json?.dispatch === null),
+    `${semAcionamento.length} de 3 sem acionamento`,
+  );
+
+  // --- 9c. Alerta órfão é reprocessado -----------------------------------
+  section("9c. Alerta sem ninguém disponível é reconsiderado");
+
+  const orphan = simultaneous.find((r) => r.json?.dispatchFailed);
+
+  if (orphan) {
+    const { rows: retryRow } = await client.query(
+      "select dispatch_retry_after, dispatch_attempts from alerts where id = $1",
+      [orphan.json.alertId],
+    );
+    check(
+      "alerta órfão fica marcado para nova tentativa",
+      retryRow[0]?.dispatch_retry_after !== null,
+      `tentativas: ${retryRow[0]?.dispatch_attempts}`,
+    );
+
+    // Força a hora da retentativa e libera um veículo para provar que a
+    // varredura do /state realmente reprocessa.
+    await client.query(
+      "update alerts set dispatch_retry_after = now() - interval '1 minute' where id = $1",
+      [orphan.json.alertId],
+    );
+    await client.query(
+      `update alerts set status = 'resolved', resolved_at = now()
+        where race_id = $1 and id <> $2 and dispatched_position_id is not null`,
+      [raceId, orphan.json.alertId],
+    );
+
+    // A varredura é limitada a uma por prova a cada 10 s — senão doze
+    // motoristas consultando ao mesmo tempo disparariam doze varreduras
+    // idênticas. O teste respeita o intervalo em vez de contorná-lo.
+    await new Promise((resolve) => setTimeout(resolve, 11_000));
+    await api("/api/driver/state", { token: tokens.lead });
+
+    const { rows: afterSweep } = await client.query(
+      "select dispatched_position_id, status from alerts where id = $1",
+      [orphan.json.alertId],
+    );
+    check(
+      "a varredura aciona alguém assim que há veículo livre",
+      afterSweep[0]?.dispatched_position_id !== null,
+      `status ${afterSweep[0]?.status}`,
+    );
+  } else {
+    check("alerta órfão fica marcado para nova tentativa", true, "nenhum órfão neste cenário");
+    check("a varredura aciona alguém assim que há veículo livre", true, "não aplicável");
+  }
+
+  // --- 9d. Relógio adiantado ---------------------------------------------
+  section("9d. Relógio do aparelho 20 minutos adiantado");
+
+  const skewed = await api("/api/driver/ping", {
+    method: "POST",
+    token: tokens.mec,
+    body: {
+      pings: Array.from({ length: 5 }, (_, i) =>
+        makePing(track, offsets.mec + i * 36, Date.now() + 20 * 60_000 + i * 3000),
+      ),
+    },
+  });
+
+  check(
+    "servidor recusa e EXPLICA cada ping do futuro",
+    skewed.status === 200 &&
+      skewed.json?.rejected?.length === 5 &&
+      skewed.json.rejected.every((r) => /futuro/.test(r.reason)),
+    skewed.json?.rejected?.[0]?.reason,
+  );
+  check(
+    "nenhum ping do futuro foi aceito",
+    skewed.json?.accepted?.length === 0,
+    `${skewed.json?.accepted?.length} aceitos`,
+  );
+
+  // --- 9e. Circuito de 3 voltas ------------------------------------------
+  section("9e. Circuito de 3 voltas");
+
+  await runLapsScenario(track, createdBy);
 
   // --- 10. Rate limiting -------------------------------------------------
   section("10. Força bruta no código de vínculo");

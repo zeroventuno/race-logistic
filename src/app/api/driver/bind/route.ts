@@ -167,9 +167,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     return driverError("server_error", "Falha ao carregar a prova deste código.");
   }
 
-  // Aqui a mensagem SAI do padrão indistinguível de propósito. Um código de
-  // prova encerrada não serve para atacante nenhum, e o motorista que pegou o
-  // papel errado precisa saber disso em vez de ficar tentando digitar melhor.
+  // Prova encerrada responde EXATAMENTE como código inexistente.
+  //
+  // A versão anterior explicava a situação ("a prova X já foi encerrada") e era
+  // um oráculo: confirmava que o código existe, entregava o nome da prova, e
+  // respondia rápido enquanto os códigos inválidos passavam pelo atraso — três
+  // sinais diferentes para separar acerto de erro. A ajuda que o motorista
+  // perde aqui a direção dá por rádio em cinco segundos; o oráculo, não se
+  // desfaz.
   if (race.status === "finished" || race.status === "archived") {
     await recordAttempt({
       ...attempt,
@@ -177,10 +182,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       positionId: position.id,
       raceId: race.id,
     });
-    return driverError(
-      "race_over",
-      `A prova "${race.name}" já foi encerrada. Confirme com a direção qual é o código de hoje.`,
-    );
+    await slowDown();
+    return invalidCode();
   }
 
   const bound = await bindSession({

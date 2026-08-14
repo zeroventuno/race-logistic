@@ -2,8 +2,16 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
+import {
+  autoDispatch,
+  busyPositions,
+  declinedPositions,
+  logAlertEvent,
+  scheduleDispatchRetry,
+} from "@/app/api/driver/_lib/dispatch";
 import { driverError, sha256Hex, unwrapEmbed } from "@/app/api/driver/_lib/http";
 import { authenticateDriver, touchSession } from "@/app/api/driver/_lib/session";
+import { loadRaceRoute } from "@/lib/route/store";
 import {
   ACTIVE_ALERT_STATUSES,
   type AlertProximity,
@@ -64,11 +72,26 @@ const GAP_CACHE_TTL_MS = 5_000;
 
 const gapCache = new Map<string, { atMs: number; value: GapResult }>();
 
+/**
+ * Intervalo mínimo entre varreduras de alertas órfãos, por prova.
+ *
+ * A varredura pega carona no polling: com 12 motoristas consultando a cada
+ * 10 s, ela roda no máximo uma vez a cada 10 s por prova, independentemente de
+ * quantos aparelhos estão conectados. Não é um cron — é o batimento que já
+ * existe, usado para uma coisa a mais.
+ */
+const RETRY_SWEEP_INTERVAL_MS = 10_000;
+
+const lastSweepAtMs = new Map<string, number>();
+
 interface StateEmbed {
   lat: number;
   lng: number;
   recorded_at: string;
   route_offset_m: number | null;
+  absolute_offset_m: number | null;
+  lap: number | null;
+  snap_ambiguous: boolean | null;
   off_route: boolean;
   rolling_speed_mps: number | null;
   battery_pct: number | null;
@@ -95,6 +118,10 @@ interface AlertRow {
   lat: number | null;
   lng: number | null;
   route_offset_m: number | null;
+  absolute_offset_m: number | null;
+  route_offset_ambiguous: boolean;
+  dispatch_attempts: number;
+  dispatch_retry_after: string | null;
   proximity_radius_m: number;
   raised_by_position_id: string | null;
   dispatched_position_id: string | null;
@@ -116,12 +143,19 @@ export async function GET(request: Request): Promise<NextResponse> {
   const admin = supabaseAdmin();
   const nowIso = new Date().toISOString();
 
+  // Antes de montar a resposta: reconsidera alertas que ficaram sem ninguém.
+  // Um veículo que estava num túnel quando o acidente aconteceu volta a
+  // transmitir segundos depois, e sem esta varredura o alerta continuaria
+  // órfão pelo resto da prova.
+  await sweepOrphanDispatches(session.raceId);
+
   const [positionsResult, activeAlertsResult, ownAlertsResult] = await Promise.all([
     admin
       .from("race_positions")
       .select(
         "id, label, role, ordinal, is_reference_lead, is_reference_sweep, " +
-          "position_state!position_id(lat, lng, recorded_at, route_offset_m, off_route, rolling_speed_mps, battery_pct)",
+          "position_state!position_id(lat, lng, recorded_at, route_offset_m, absolute_offset_m, " +
+          "lap, snap_ambiguous, off_route, rolling_speed_mps, battery_pct)",
       )
       .eq("race_id", session.raceId)
       .order("ordinal", { ascending: true })
@@ -167,13 +201,15 @@ export async function GET(request: Request): Promise<NextResponse> {
       lat: state?.lat ?? null,
       lng: state?.lng ?? null,
       recordedAt: state?.recorded_at ?? null,
-      routeOffsetM: state?.route_offset_m ?? null,
+      routeOffsetM: state?.absolute_offset_m ?? state?.route_offset_m ?? null,
       offRoute: state?.off_route ?? false,
       rollingSpeedMps: state?.rolling_speed_mps ?? null,
       batteryPct: state?.battery_pct ?? null,
     };
   });
 
+  // Offset ABSOLUTO (com voltas). Comparar offsets locais num circuito diz que
+  // o veículo na volta 3 e o acidente na volta 1 estão a 0 m um do outro.
   const selfOffsetM = vehicles.find((v) => v.isSelf)?.routeOffsetM ?? null;
 
   const alertRows = mergeAlerts(activeAlertsResult.data ?? [], ownAlertsResult.data ?? []);
@@ -193,7 +229,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       note: a.note,
       lat: a.lat,
       lng: a.lng,
-      routeOffsetM: a.route_offset_m,
+      routeOffsetM: a.absolute_offset_m ?? a.route_offset_m,
       raisedBy: raiser
         ? { positionId: raiser.id, label: raiser.label, role: raiser.role }
         : null,
@@ -279,7 +315,8 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 const ALERT_COLUMNS =
   "id, client_alert_id, category, status, created_at, received_at, note, lat, lng, " +
-  "route_offset_m, proximity_radius_m, raised_by_position_id, dispatched_position_id, " +
+  "route_offset_m, absolute_offset_m, route_offset_ambiguous, dispatch_attempts, " +
+  "dispatch_retry_after, proximity_radius_m, raised_by_position_id, dispatched_position_id, " +
   "dispatch_mode, dispatch_reason, dispatched_at, dispatch_acknowledged_at, " +
   "dispatch_declined_at, on_scene_at, acknowledged_at, resolved_at";
 
@@ -290,6 +327,93 @@ function mergeAlerts(active: AlertRow[], own: AlertRow[]): AlertRow[] {
   return [...byId.values()].sort(
     (a, b) => Date.parse(b.received_at) - Date.parse(a.received_at),
   );
+}
+
+/**
+ * Reprocessa os alertas ativos que estão sem veículo acionado.
+ *
+ * Nunca lança: é um efeito colateral de uma rota de leitura, e nenhum motorista
+ * pode ficar sem o estado da prova porque uma retentativa de acionamento
+ * falhou. O trabalho é limitado a poucos alertas por passada.
+ */
+async function sweepOrphanDispatches(raceId: string): Promise<void> {
+  const now = Date.now();
+  const last = lastSweepAtMs.get(raceId) ?? 0;
+  if (now - last < RETRY_SWEEP_INTERVAL_MS) return;
+  lastSweepAtMs.set(raceId, now);
+
+  try {
+    const admin = supabaseAdmin();
+
+    const { data } = await admin
+      .from("alerts")
+      .select(
+        "id, category, lat, lng, route_offset_m, absolute_offset_m, route_offset_ambiguous, " +
+          "raised_by_position_id, dispatch_attempts",
+      )
+      .eq("race_id", raceId)
+      .is("dispatched_position_id", null)
+      .in("status", ["open", "acknowledged"])
+      .not("dispatch_retry_after", "is", null)
+      .lte("dispatch_retry_after", new Date(now).toISOString())
+      .limit(5)
+      .returns<
+        Array<{
+          id: string;
+          category: AlertCategory;
+          lat: number | null;
+          lng: number | null;
+          route_offset_m: number | null;
+          absolute_offset_m: number | null;
+          route_offset_ambiguous: boolean;
+          raised_by_position_id: string | null;
+          dispatch_attempts: number;
+        }>
+      >();
+
+    if (!data || data.length === 0) return;
+
+    const busy = await busyPositions(raceId);
+
+    for (const alert of data) {
+      const excluded = new Set(await declinedPositions(alert.id));
+      if (alert.raised_by_position_id) excluded.add(alert.raised_by_position_id);
+
+      const outcome = await autoDispatch({
+        alertId: alert.id,
+        raceId,
+        category: alert.category,
+        origin: {
+          lat: alert.lat,
+          lng: alert.lng,
+          routeOffsetM: alert.absolute_offset_m ?? alert.route_offset_m,
+          ambiguous: alert.route_offset_ambiguous,
+        },
+        excludePositionIds: [...excluded],
+        busyPositionIds: busy,
+        persistSuggestions: true,
+      });
+
+      await logAlertEvent(
+        alert.id,
+        outcome.dispatched ? "dispatch_retry_succeeded" : "dispatch_retry_failed",
+        "system",
+        {
+          attempts: alert.dispatch_attempts,
+          note: outcome.note,
+          dispatchedTo: outcome.dispatched?.positionId ?? null,
+        },
+      );
+
+      if (outcome.dispatched) {
+        busy.push(outcome.dispatched.positionId);
+      } else {
+        await scheduleDispatchRetry(alert.id, alert.dispatch_attempts);
+      }
+    }
+  } catch (error) {
+    console.warn("[driver/state] varredura de acionamento falhou:", (error as Error).message);
+  }
 }
 
 interface ConfirmationCounts {
@@ -346,13 +470,16 @@ async function computeProximity(params: ProximityParams): Promise<AlertProximity
   if (params.selfOffsetM == null) return [];
 
   const candidates = params.alerts.filter((a) => {
-    if (a.route_offset_m == null) return false;
+    if (a.absolute_offset_m == null && a.route_offset_m == null) return false;
+    // Âncora ambígua não vira aviso de proximidade: acordar o motorista para um
+    // acidente que pode estar 37 km longe ensina ele a ignorar o aviso.
+    if (a.route_offset_ambiguous) return false;
     // Meu próprio alerta e o que já foi acionado para mim aparecem na tela por
     // outros caminhos, muito mais destacados. Repetir aqui é ruído.
     if (a.raised_by_position_id === params.positionId) return false;
     if (a.dispatched_position_id === params.positionId) return false;
 
-    const ahead = a.route_offset_m - params.selfOffsetM!;
+    const ahead = (a.absolute_offset_m ?? a.route_offset_m!) - params.selfOffsetM!;
     return ahead >= 0 && ahead <= a.proximity_radius_m;
   });
 
@@ -386,11 +513,19 @@ async function computeProximity(params: ProximityParams): Promise<AlertProximity
   return candidates.map((a) => ({
     alertId: a.id,
     category: a.category,
-    distanceAheadM: a.route_offset_m! - params.selfOffsetM!,
+    distanceAheadM: (a.absolute_offset_m ?? a.route_offset_m!) - params.selfOffsetM!,
     firstNotice: !notified.has(a.id),
   }));
 }
 
+/**
+ * Janela abertura ↔ fechamento, sempre em offset ABSOLUTO.
+ *
+ * Num circuito de 3 voltas, o abertura na volta 3 e o vassoura na volta 1
+ * ocupam o mesmo ponto do traçado. Comparar `route_offset_m` devolve gap ZERO
+ * com toda a confiança — o diretor lê "os dois estão juntos" e libera a rua com
+ * o pelotão duas voltas atrás.
+ */
 async function loadGap(raceId: string, rows: PositionRow[]): Promise<GapResult> {
   const cached = gapCache.get(raceId);
   if (cached && Date.now() - cached.atMs < GAP_CACHE_TTL_MS) {
@@ -405,24 +540,42 @@ async function loadGap(raceId: string, rows: PositionRow[]): Promise<GapResult> 
   const leadState = leadRow ? unwrapEmbed(leadRow.position_state) : null;
   const sweepState = sweepRow ? unwrapEmbed(sweepRow.position_state) : null;
 
+  // O comprimento de UMA volta reconstrói o offset absoluto do histórico, que
+  // guarda `lap` e `route_offset_m` separados.
+  let trackTotalM: number | null = null;
+  try {
+    const route = await loadRaceRoute(raceId);
+    trackTotalM = route?.track.totalDistanceM ?? null;
+  } catch {
+    // Sem o percurso o histórico fica em escala local. É pior, mas o gap com
+    // uma volta só continua correto — e é o caso da esmagadora maioria.
+  }
+
   const histories = await loadHistories(
     [leadRow?.id, sweepRow?.id].filter((id): id is string => Boolean(id)),
     nowMs,
+    trackTotalM,
   );
+
+  const absolute = (state: StateEmbed | null): number | null =>
+    state?.absolute_offset_m ?? state?.route_offset_m ?? null;
+
+  const leadOffset = absolute(leadState);
+  const sweepOffset = absolute(sweepState);
 
   const value = computeGap({
     lead:
-      leadRow && leadState && leadState.route_offset_m != null
+      leadRow && leadState && leadOffset != null
         ? {
-            offsetM: leadState.route_offset_m,
+            offsetM: leadOffset,
             atMs: Date.parse(leadState.recorded_at),
             history: histories.get(leadRow.id) ?? [],
           }
         : null,
     sweep:
-      sweepRow && sweepState && sweepState.route_offset_m != null
+      sweepRow && sweepState && sweepOffset != null
         ? {
-            offsetM: sweepState.route_offset_m,
+            offsetM: sweepOffset,
             atMs: Date.parse(sweepState.recorded_at),
             history: histories.get(sweepRow.id) ?? [],
           }
@@ -445,13 +598,14 @@ async function loadGap(raceId: string, rows: PositionRow[]): Promise<GapResult> 
 async function loadHistories(
   positionIds: string[],
   nowMs: number,
+  trackTotalM: number | null,
 ): Promise<Map<string, OffsetSample[]>> {
   const out = new Map<string, OffsetSample[]>();
   if (positionIds.length === 0) return out;
 
   const { data } = await supabaseAdmin()
     .from("location_pings")
-    .select("position_id, recorded_at, route_offset_m")
+    .select("position_id, recorded_at, route_offset_m, lap")
     .in("position_id", positionIds)
     .not("route_offset_m", "is", null)
     .gte("recorded_at", new Date(nowMs - GAP_HISTORY_MS).toISOString())
@@ -461,8 +615,12 @@ async function loadHistories(
   for (const row of data ?? []) {
     const id = row.position_id as string;
     const list = out.get(id) ?? [];
+    const lap = Number(row.lap ?? 0) || 0;
     list.push({
-      offsetM: row.route_offset_m as number,
+      // Mesma escala do estado atual: sem somar as voltas, o histórico do
+      // abertura "volta ao km 0" a cada passagem pela largada e o método
+      // medido do gap procura um instante que não existe.
+      offsetM: (trackTotalM ? lap * trackTotalM : 0) + (row.route_offset_m as number),
       atMs: Date.parse(row.recorded_at as string),
     });
     out.set(id, list);

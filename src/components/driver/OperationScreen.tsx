@@ -54,24 +54,39 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
   const state = snapshot.state;
   const selfOffsetM = state?.self.routeOffsetM ?? null;
 
+  /**
+   * TODOS os acionamentos meus, não o primeiro que aparecer.
+   *
+   * A lista vem ordenada por `received_at` decrescente, então um `.find()`
+   * devolvia o acionamento mais RECENTE — e o que a motorista já tinha aceitado
+   * sumia da tela dela no instante em que um segundo acidente acontecia. Com
+   * dois chamados abertos ela via um só, e não sabia qual.
+   */
   const dispatchedToMe = useMemo(
-    () => (state?.alerts ?? []).find((a) => a.dispatchedToSelf && isOpenForMe(a)),
+    () =>
+      (state?.alerts ?? [])
+        .filter((a) => a.dispatchedToSelf && isOpenForMe(a))
+        .sort((a, b) => Date.parse(a.receivedAt) - Date.parse(b.receivedAt)),
     [state],
   );
 
-  const pendingAnswer = dispatchedToMe
-    ? snapshot.queuedActions.some(
-        (a) => a.alertId === dispatchedToMe.alertId && a.kind === "dispatch_response",
-      )
-    : false;
+  const answeredIds = new Set(
+    snapshot.queuedActions
+      .filter((a) => a.kind === "dispatch_response")
+      .map((a) => a.alertId),
+  );
 
-  // A tela cheia é só até o motorista responder. Depois disso ele está
-  // dirigindo até lá e precisa do mapa; o acionamento continua visível na
-  // faixa. Uma resposta ainda na fila conta como respondida — ele já decidiu, e
-  // prendê-lo numa tela cheia porque a rede caiu seria punir o sinal ruim.
-  const answered = Boolean(dispatchedToMe?.dispatch?.acknowledgedAt) || pendingAnswer;
-  const takeover = dispatchedToMe && !answered ? dispatchedToMe : null;
-  const enRoute = dispatchedToMe && answered ? dispatchedToMe : null;
+  const isAnswered = (alert: DriverAlertView) =>
+    Boolean(alert.dispatch?.acknowledgedAt) || answeredIds.has(alert.alertId);
+
+  // A tela cheia é só até o motorista responder, e só para UM acionamento por
+  // vez — o mais antigo, que é o que está esperando há mais tempo. Depois disso
+  // ele está dirigindo até lá e precisa do mapa; os acionamentos aceitos
+  // continuam visíveis nas faixas. Uma resposta ainda na fila conta como
+  // respondida: ele já decidiu, e prendê-lo numa tela cheia porque a rede caiu
+  // seria punir o sinal ruim.
+  const takeover = dispatchedToMe.find((a) => !isAnswered(a)) ?? null;
+  const enRoute = dispatchedToMe.filter((a) => isAnswered(a));
 
   const distanceToAlert = (alert: DriverAlertView | null) =>
     alert && alert.routeOffsetM != null && selfOffsetM != null
@@ -84,16 +99,17 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
     <div className="flex h-dvh flex-col bg-surface-0">
       <StatusBar snapshot={snapshot} session={session} onUnbind={onUnbind} />
 
-      {enRoute ? (
+      {enRoute.map((alert) => (
         <DispatchBanner
-          alert={enRoute}
-          distanceM={distanceToAlert(enRoute)}
-          pendingAnswer={pendingAnswer}
+          key={alert.alertId}
+          alert={alert}
+          distanceM={distanceToAlert(alert)}
+          pendingAnswer={answeredIds.has(alert.alertId) && !alert.dispatch?.acknowledgedAt}
           onRespond={(action, reason) =>
-            void runtime.respondToDispatch(enRoute.alertId, action, reason)
+            void runtime.respondToDispatch(alert.alertId, action, reason)
           }
         />
-      ) : null}
+      ))}
 
       {state ? <GapStrip gap={state.gap} /> : null}
 
@@ -117,14 +133,20 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
 
       <AlertPad
         snapshot={snapshot}
-        onRaise={(category: AlertCategory) => runtime.raiseAlert(category, null).then(() => undefined)}
+        onRaise={(category: AlertCategory) =>
+          runtime
+            .raiseAlert(category, null)
+            .then((result) =>
+              result.ok ? ({ ok: true } as const) : ({ ok: false, error: result.error } as const),
+            )
+        }
       />
 
       {takeover ? (
         <DispatchTakeover
           alert={takeover}
           distanceM={distanceToAlert(takeover)}
-          pendingAnswer={pendingAnswer}
+          pendingAnswer={answeredIds.has(takeover.alertId)}
           onRespond={(action, reason) =>
             void runtime.respondToDispatch(takeover.alertId, action, reason)
           }
@@ -173,15 +195,25 @@ function StatusBar({
   const t = useT();
   const [menu, setMenu] = useState(false);
 
-  const connectionTone =
-    snapshot.connection === "online"
+  // Ping recusado é falha DURA, e mais traiçoeira que ficar sem rede: a
+  // conexão está ótima, o servidor responde 200, e nenhuma posição é gravada.
+  // Com o relógio do aparelho adiantado isso são seis horas de prova sem um
+  // ponto no mapa — e a versão anterior desta barra mostrava verde e
+  // "transmitindo" o tempo todo.
+  const rejecting = snapshot.rejectedPings !== null;
+
+  const connectionTone = rejecting
+    ? "bg-critical"
+    : snapshot.connection === "online"
       ? "bg-ok"
       : snapshot.connection === "sending"
         ? "bg-info"
         : "bg-warn";
 
-  const connectionLabel =
-    snapshot.connection === "online"
+  const connectionLabel = rejecting
+    ? /* i18n: precisa de chave — posição recusada pelo servidor */
+      "POSIÇÃO RECUSADA"
+    : snapshot.connection === "online"
       ? t("driver.transmitting")
       : snapshot.connection === "sending"
         ? t("alerts.sending")
@@ -224,7 +256,25 @@ function StatusBar({
         </div>
       </div>
 
-      {(snapshot.queuedPings > 0 || gpsLabel || !snapshot.durableQueue) && (
+      {snapshot.rejectedPings ? (
+        /* i18n: precisa de chave — pings recusados e o motivo do servidor */
+        <p
+          role="alert"
+          className="border-t border-critical bg-critical-dim/50 px-3 py-2 text-xs font-semibold text-ink"
+        >
+          O servidor recusou {snapshot.rejectedPings.count} posição(ões): sua
+          posição NÃO está aparecendo no mapa da direção.
+          <span className="mt-0.5 block font-normal text-ink-muted">
+            {snapshot.rejectedPings.reason}
+          </span>
+        </p>
+      ) : null}
+
+      {(snapshot.queuedPings > 0 ||
+        gpsLabel ||
+        !snapshot.durableQueue ||
+        snapshot.stateError ||
+        snapshot.lastSyncError) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-3 py-1.5 text-xs">
           {snapshot.queuedPings > 0 ? (
             <span className="tnum text-warn">
@@ -247,6 +297,13 @@ function StatusBar({
             /* i18n: precisa de chave — fila apenas em memória */
             <span className="text-warn">
               Armazenamento local indisponível: a fila se perde se o app fechar.
+            </span>
+          ) : null}
+          {/* i18n: precisa de chave — último erro de comunicação. Sem isto o
+              motorista não tem como saber que o app está falando sozinho. */}
+          {snapshot.lastSyncError || snapshot.stateError ? (
+            <span className="text-ink-faint">
+              {snapshot.lastSyncError ?? snapshot.stateError}
             </span>
           ) : null}
         </div>

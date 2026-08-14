@@ -12,6 +12,8 @@
  * veículo pular pelo mapa.
  */
 
+import { snapToRoute, SnapInputError, type SnapPrevious } from "@/lib/route/snap";
+import type { RouteIndex } from "@/lib/route/track";
 import type { ClientPing } from "@/lib/types";
 
 /** Um lote maior que isto é bug do cliente, não fila offline legítima. */
@@ -239,6 +241,206 @@ export function estimateClockSkewMs(
   if (!freshest) return null;
 
   return Math.round(serverNowMs - freshest.recordedAtMs);
+}
+
+// ---------------------------------------------------------------------------
+// Ancoragem do lote
+// ---------------------------------------------------------------------------
+
+/** Linha pronta para `location_pings`. */
+export interface PreparedPingRow {
+  race_id: string;
+  position_id: string;
+  session_id: string;
+  lat: number;
+  lng: number;
+  accuracy_m: number | null;
+  altitude_m: number | null;
+  speed_mps: number | null;
+  heading_deg: number | null;
+  recorded_at: string;
+  clock_skew_ms: number | null;
+  route_offset_m: number | null;
+  snap_distance_m: number | null;
+  off_route: boolean;
+  snap_confidence: "high" | "medium" | "low" | null;
+  snap_ambiguous: boolean;
+  snap_method: string | null;
+  lap: number;
+  client_seq: number;
+  client_ping_id: string;
+  battery_pct: number | null;
+  queued_offline: boolean;
+}
+
+export interface PrepareParams {
+  accepted: ValidatedPing[];
+  session: { raceId: string; positionId: string; sessionId: string };
+  /** `null` quando a prova não tem percurso ativo — os pings entram sem âncora. */
+  route: { index: RouteIndex; totalDistanceM: number; laps: number } | null;
+  previous: SnapPrevious | null;
+  clockSkewMs: number | null;
+  rollingSpeedFallbackMps: number | null;
+}
+
+export interface PrepareResult {
+  rows: PreparedPingRow[];
+  /** Estado do último ping do lote, para atualizar `position_state`. */
+  last: {
+    absoluteOffsetM: number | null;
+    lap: number;
+    ambiguous: boolean;
+    confidence: "high" | "medium" | "low" | null;
+  } | null;
+}
+
+/**
+ * Ancora cada ping e monta as linhas do banco.
+ *
+ * Duas coisas que a versão anterior desta função jogava fora, e que o banco
+ * agora tem colunas para guardar:
+ *
+ *  1. QUALIDADE DA ÂNCORA (`confidence`, `ambiguous`, `method`). O snap SABE
+ *     quando escolheu por desempate em vez de por geometria. Descartar esse
+ *     aviso transformava palpite em fato: medido, 12 min sem sinal numa perna
+ *     de retorno jogaram a âncora 37 km para trás, gravada com
+ *     `off_route = false` e `snap_distance_m = 0` — indistinguível de uma
+ *     posição perfeita, e a ambulância a 200 m do ciclista foi anunciada a
+ *     37,6 km.
+ *
+ *  2. VOLTA (`lap`) e OFFSET ABSOLUTO. Num circuito, o mesmo ponto do mapa
+ *     pertence a todas as voltas. Sem devolver `lap` ao cursor, todo ping
+ *     volta a ser interpretado como primeira volta: medido, 120,7 km
+ *     percorridos viraram 10,9 km gravados.
+ *
+ * Pura de propósito — recebe o índice do percurso pronto e não toca em banco.
+ */
+export function prepareRows(params: PrepareParams): PrepareResult {
+  const rows: PreparedPingRow[] = [];
+  let cursor = params.previous;
+  let last: PrepareResult["last"] = null;
+
+  for (const ping of params.accepted) {
+    let routeOffsetM: number | null = null;
+    let snapDistanceM: number | null = null;
+    let offRoute = false;
+    let confidence: "high" | "medium" | "low" | null = null;
+    let ambiguous = false;
+    let method: string | null = null;
+    let lap = 0;
+
+    if (params.route) {
+      try {
+        const snapped = snapToRoute(
+          params.route.index,
+          { lat: ping.lat, lng: ping.lng },
+          {
+            previous: cursor,
+            recordedAtMs: ping.recordedAtMs,
+            // A precisão informada pelo GPS afina o peso da geometria contra o
+            // modelo de movimento: fixo ruim, geometria vale menos.
+            accuracyM: ping.accuracyM,
+            expectedSpeedMps: ping.speedMps ?? cursor?.speedMps ?? null,
+          },
+        );
+
+        routeOffsetM = snapped.offsetM;
+        snapDistanceM = snapped.snapDistanceM;
+        offRoute = snapped.offRoute;
+        confidence = snapped.confidence;
+        ambiguous = snapped.ambiguous;
+        method = snapped.method;
+        // A volta não pode passar do que a prova tem. Ruído no fim da última
+        // volta não pode inventar uma volta que não existe.
+        lap = Math.min(snapped.lap, Math.max(0, params.route.laps - 1));
+
+        // Cada ping alimenta o próximo — offset, VOLTA e velocidade. É isto
+        // que faz um lote acumulado offline ser reconstruído com a mesma
+        // qualidade de um fluxo ao vivo, em vez de ser resolvido pela busca
+        // global (que, num circuito, não tem como saber a volta).
+        cursor = {
+          offsetM: snapped.offsetM,
+          lap,
+          recordedAtMs: ping.recordedAtMs,
+          speedMps: derivedSpeedMps(
+            ping,
+            cursor,
+            snapped.offsetM,
+            params.rollingSpeedFallbackMps,
+          ),
+        };
+
+        last = {
+          absoluteOffsetM: lap * params.route.totalDistanceM + snapped.offsetM,
+          lap,
+          ambiguous,
+          confidence,
+        };
+      } catch (error) {
+        // `SnapInputError` só acontece com coordenada não finita, que a
+        // validação já barra. Se acontecer, o ping ainda vale como posição
+        // bruta: gravar sem âncora é melhor que perder o ponto.
+        if (!(error instanceof SnapInputError)) throw error;
+      }
+    }
+
+    rows.push({
+      race_id: params.session.raceId,
+      position_id: params.session.positionId,
+      session_id: params.session.sessionId,
+      lat: ping.lat,
+      lng: ping.lng,
+      accuracy_m: ping.accuracyM,
+      altitude_m: ping.altitudeM,
+      speed_mps: ping.speedMps,
+      heading_deg: ping.headingDeg,
+      recorded_at: ping.recordedAtIso,
+      clock_skew_ms: clampSkew(params.clockSkewMs),
+      route_offset_m: routeOffsetM,
+      snap_distance_m: snapDistanceM,
+      off_route: offRoute,
+      snap_confidence: confidence,
+      snap_ambiguous: ambiguous,
+      snap_method: method,
+      lap,
+      client_seq: ping.clientSeq,
+      client_ping_id: ping.clientPingId,
+      battery_pct: ping.batteryPct,
+      queued_offline: ping.queuedOffline,
+    });
+  }
+
+  return { rows, last };
+}
+
+/**
+ * Velocidade a entregar ao próximo ping, em ordem de confiabilidade:
+ * a do GPS, a média móvel já conhecida, e — só se as duas faltarem — a
+ * derivada dos próprios offsets, que é a menos confiável porque herda qualquer
+ * erro do snap anterior.
+ */
+function derivedSpeedMps(
+  ping: ValidatedPing,
+  cursor: SnapPrevious | null,
+  newOffsetM: number,
+  rollingFallbackMps: number | null,
+): number | null {
+  if (ping.speedMps != null) return ping.speedMps;
+  if (rollingFallbackMps != null) return rollingFallbackMps;
+
+  if (!cursor) return null;
+
+  const dtSeconds = (ping.recordedAtMs - cursor.recordedAtMs) / 1000;
+  if (dtSeconds <= 0 || dtSeconds > 120) return null;
+
+  return Math.max(0, (newOffsetM - cursor.offsetM) / dtSeconds);
+}
+
+/** `clock_skew_ms` é bigint no banco, mas absurdos não têm valor diagnóstico. */
+function clampSkew(skewMs: number | null): number | null {
+  if (skewMs == null) return null;
+  const limit = 30 * 24 * 60 * 60_000;
+  return Math.max(-limit, Math.min(limit, skewMs));
 }
 
 function isFiniteNumber(v: unknown): boolean {

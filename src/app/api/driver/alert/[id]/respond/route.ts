@@ -6,6 +6,7 @@ import {
   autoDispatch,
   declinedPositions,
   logAlertEvent,
+  scheduleDispatchRetry,
 } from "@/app/api/driver/_lib/dispatch";
 import { driverError, driverJson, readJsonBody } from "@/app/api/driver/_lib/http";
 import { authenticateDriver } from "@/app/api/driver/_lib/session";
@@ -51,6 +52,9 @@ interface AlertRow {
   lat: number | null;
   lng: number | null;
   route_offset_m: number | null;
+  absolute_offset_m: number | null;
+  route_offset_ambiguous: boolean;
+  dispatch_attempts: number;
   raised_by_position_id: string | null;
   dispatched_position_id: string | null;
   dispatch_acknowledged_at: string | null;
@@ -81,7 +85,8 @@ export async function POST(
   const { data: alert } = await admin
     .from("alerts")
     .select(
-      "id, race_id, category, status, lat, lng, route_offset_m, raised_by_position_id, " +
+      "id, race_id, category, status, lat, lng, route_offset_m, absolute_offset_m, " +
+        "route_offset_ambiguous, dispatch_attempts, raised_by_position_id, " +
         "dispatched_position_id, dispatch_acknowledged_at, on_scene_at",
     )
     .eq("id", id)
@@ -193,7 +198,12 @@ export async function POST(
       alertId: alert.id,
       raceId: alert.race_id,
       category: alert.category,
-      origin: { lat: alert.lat, lng: alert.lng, routeOffsetM: alert.route_offset_m },
+      origin: {
+        lat: alert.lat,
+        lng: alert.lng,
+        routeOffsetM: alert.absolute_offset_m ?? alert.route_offset_m,
+        ambiguous: alert.route_offset_ambiguous,
+      },
       excludePositionIds: [...excluded],
       persistSuggestions: true,
     });
@@ -211,6 +221,10 @@ export async function POST(
     );
 
     if (!outcome.dispatched) {
+      // Ninguém agora. O alerta fica marcado para nova tentativa: o veículo que
+      // está num túnel volta a transmitir em segundos, e sem isto o alerta
+      // ficaria órfão pelo resto da prova.
+      await scheduleDispatchRetry(alert.id, alert.dispatch_attempts);
       return result("open", { orphaned: true });
     }
 
@@ -230,6 +244,7 @@ export async function POST(
     // A recusa foi registrada e o alerta está sem dono. Dizer isso é o que
     // permite ao motorista que recusou avisar pelo rádio — melhor um humano
     // sabendo do buraco do que um estado bonito e falso.
+    await scheduleDispatchRetry(alert.id, alert.dispatch_attempts);
     return result("open", { orphaned: true });
   }
 }

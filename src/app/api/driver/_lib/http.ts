@@ -92,12 +92,66 @@ export function unwrapEmbed<T>(value: T | T[] | null | undefined): T | null {
   return value;
 }
 
-/** Lê o corpo como JSON sem deixar um corpo malformado virar 500. */
-export async function readJsonBody(request: Request): Promise<{ ok: true; value: unknown } | { ok: false }> {
+/** Teto padrão de corpo: cabe um lote cheio de 500 pings com folga. */
+export const DEFAULT_MAX_BODY_BYTES = 512 * 1024;
+
+export type JsonBody =
+  | { ok: true; value: unknown }
+  | { ok: false; reason: string };
+
+/**
+ * Lê o corpo como JSON, com teto de tamanho.
+ *
+ * O teto é lido do STREAM, não do `content-length`: um cliente pode mentir no
+ * cabeçalho ou omiti-lo, e `await request.json()` bufferizaria tudo antes de
+ * qualquer verificação. Sem isto, um POST de 20 MB em `/api/driver/alert` é
+ * aceito e processado — memória do servidor gasta por quem não tem nem sessão
+ * válida ainda.
+ */
+export async function readJsonBody(
+  request: Request,
+  maxBytes = DEFAULT_MAX_BODY_BYTES,
+): Promise<JsonBody> {
+  const declared = Number(request.headers.get("content-length") ?? "");
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    return { ok: false, reason: `Corpo de ${declared} bytes acima do limite de ${maxBytes}.` };
+  }
+
+  const body = request.body;
+  if (!body) return { ok: false, reason: "Requisição sem corpo." };
+
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
   try {
-    return { ok: true, value: await request.json() };
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return { ok: false, reason: `Corpo acima do limite de ${maxBytes} bytes.` };
+      }
+      chunks.push(value);
+    }
   } catch {
-    return { ok: false };
+    return { ok: false, reason: "Falha ao ler o corpo da requisição." };
+  }
+
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  try {
+    return { ok: true, value: JSON.parse(new TextDecoder().decode(merged)) };
+  } catch {
+    return { ok: false, reason: "Corpo da requisição não é JSON válido." };
   }
 }
 
