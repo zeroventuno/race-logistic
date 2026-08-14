@@ -2,7 +2,9 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { sair } from "@/app/login/actions";
-import { Bandeirola } from "@/components/marketing/marca";
+import { Creditos } from "@/components/Creditos";
+import { ForaDoAoVivo } from "@/components/director/ForaDoAoVivo";
+import { Letreiro } from "@/components/Letreiro";
 import { TemaBotao } from "@/components/TemaBotao";
 import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 import { I18nProvider } from "@/lib/i18n/client";
@@ -45,16 +47,12 @@ export default async function DirectorLayout({
             tela que se imprime aqui é o painel de códigos. */}
         <header className="sticky top-0 z-30 border-b border-border bg-surface-0/95 backdrop-blur print:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-            {/* Monocromática por dentro: `currentColor` faz a bandeirinha
-                herdar a cor do texto, então ela acompanha o tema e o estado de
-                foco sem nenhuma regra a mais — e o rouge fica do lado de fora,
-                onde ele não compete com alerta. */}
             <Link
               href="/dashboard"
-              className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.24em] text-ink-faint transition hover:text-ink"
+              className="text-ink-faint transition hover:text-ink"
+              aria-label={t("meta.appName")}
             >
-              <Bandeirola size={17} color="currentColor" />
-              {t("meta.appName")}
+              <Letreiro size={13} />
             </Link>
 
             <div className="flex items-center gap-3">
@@ -83,6 +81,17 @@ export default async function DirectorLayout({
             não muda nada — elas não pedem altura, então crescem pelo
             conteúdo, como antes. */}
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+
+        {/* Na tela Ao vivo o rodapé sai: o mapa ocupa a viewport inteira e
+            qualquer faixa aqui embaixo roubaria altura dele. Lá o crédito
+            entra na faixa de referência que já existe no pé do mapa. */}
+        <ForaDoAoVivo>
+          <footer className="border-t border-border px-4 py-4 sm:px-6 print:hidden">
+            <div className="mx-auto max-w-[73.75rem]">
+              <Creditos />
+            </div>
+          </footer>
+        </ForaDoAoVivo>
       </div>
     </I18nProvider>
   );

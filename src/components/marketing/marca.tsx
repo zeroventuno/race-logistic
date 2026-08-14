@@ -11,7 +11,7 @@
  * regra é outra e continua valendo.
  */
 
-import { BRAND, PENNANT_WITH_POLE } from "@/brand/mark";
+import { BRAND, PENNANT_ICON, PENNANT_WITH_POLE } from "@/brand/mark";
 
 interface BandeirolaProps {
   /** Lado em px. */
@@ -21,6 +21,19 @@ interface BandeirolaProps {
   /** Tremular como o arco de verdade. Desligado sob `prefers-reduced-motion`. */
   tremular?: boolean;
   className?: string;
+  /**
+   * Sem o mastro, para os letreiros DEITADOS.
+   *
+   * O mastro existe para sustentar a bandeirola quando o nome está empilhado:
+   * ali o símbolo é uma coluna vertical ao lado de um bloco de duas linhas, e
+   * a haste dá a ele a mesma altura do bloco.
+   *
+   * Deitado, o nome é uma linha só de 15 px, e a haste vira um risco vertical
+   * solto na frente da palavra — mais alto que as letras e sem nada para
+   * sustentar. Sem mastro, a flâmula ocupa a caixa inteira e casa com a altura
+   * da caixa alta, que é onde ela deve casar.
+   */
+  semMastro?: boolean;
 }
 
 export function Bandeirola({
@@ -28,6 +41,7 @@ export function Bandeirola({
   color = BRAND.color.rouge,
   tremular = false,
   className,
+  semMastro = false,
 }: BandeirolaProps) {
   return (
     <svg
@@ -38,15 +52,17 @@ export function Bandeirola({
       focusable="false"
       className={className}
     >
-      <rect
-        x={PENNANT_WITH_POLE.pole.x}
-        y={PENNANT_WITH_POLE.pole.y}
-        width={PENNANT_WITH_POLE.pole.width}
-        height={PENNANT_WITH_POLE.pole.height}
-        fill={color}
-      />
+      {semMastro ? null : (
+        <rect
+          x={PENNANT_WITH_POLE.pole.x}
+          y={PENNANT_WITH_POLE.pole.y}
+          width={PENNANT_WITH_POLE.pole.width}
+          height={PENNANT_WITH_POLE.pole.height}
+          fill={color}
+        />
+      )}
       <polygon
-        points={PENNANT_WITH_POLE.flag}
+        points={semMastro ? PENNANT_ICON : PENNANT_WITH_POLE.flag}
         fill={color}
         className={tremular ? "fr-flutter" : undefined}
       />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { Bandeirola } from "@/components/marketing/marca";
+import { Creditos } from "@/components/Creditos";
+import { Letreiro } from "@/components/Letreiro";
 import { TemaBotao } from "@/components/TemaBotao";
 import type { Tema } from "@/lib/tema";
 
@@ -71,10 +72,9 @@ export function PortaDaDirecao({
             lugar nenhum depois. Do outro lado do login vermelho é uma pessoa
             no chão — e uma marca vermelha no topo de toda tela ensinaria o
             olho a filtrar exatamente a cor que não pode ser filtrada. */}
-        <p className="relative flex items-center gap-3 font-mono text-sm font-medium uppercase tracking-[0.34em] text-[rgb(246_245_242/0.9)]">
-          <Bandeirola size={20} />
-          Flamme Rouge
-        </p>
+        <div className="relative text-[rgb(246_245_242/0.9)]">
+          <Letreiro tom="rouge" size={15} />
+        </div>
 
         <div className="relative max-w-[29rem]">
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.26em] text-[rgb(246_245_242/0.5)]">
@@ -99,10 +99,10 @@ export function PortaDaDirecao({
           <div className="flex items-center justify-between gap-4">
             <Link
               href="/"
-              className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.34em] text-ink-faint transition hover:text-ink"
+              className="text-ink-faint transition hover:text-ink"
+              aria-label="Flamme Rouge, início"
             >
-              <Bandeirola size={17} />
-              Flamme Rouge
+              <Letreiro tom="rouge" size={13} />
             </Link>
             <TemaBotao inicial={tema} />
           </div>
@@ -115,6 +115,8 @@ export function PortaDaDirecao({
           </p>
 
           <div className="mt-8">{children}</div>
+
+          <Creditos className="mt-10" />
         </div>
       </div>
     </main>

@@ -45,6 +45,14 @@ export function Rodape() {
           </Link>
         </div>
       </div>
+
+      {/* Numa linha própria, abaixo da grade: crédito de autoria não é uma
+          quarta coluna de navegação. Ele fecha a página. */}
+      <div className="fr-shell fr-rodape__creditos">
+        <p>
+          Flamme Rouge · uma ferramenta <strong>Ventuno</strong> · 2026
+        </p>
+      </div>
     </footer>
   );
 }

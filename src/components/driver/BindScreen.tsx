@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { Creditos } from "@/components/Creditos";
 import { formatBindCode } from "@/lib/codes/bind-code";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { DriverErrorCode } from "@/lib/driver/protocol";
@@ -189,6 +190,7 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
       </button>
 
       {/* i18n: precisa de chave — instrução de manter a tela aberta */}
+      <Creditos className="text-center" />
       <p className="text-center text-xs text-ink-faint">
         Mantenha esta tela aberta durante a prova. A posição é enviada
         automaticamente, mesmo com sinal ruim.
