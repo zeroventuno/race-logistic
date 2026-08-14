@@ -2,10 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 
+import { AlertIcon } from "@/components/icons/alerta";
 import { VehicleIcon } from "@/components/icons/vehicle";
 import { useFormat, useI18n, useT } from "@/lib/i18n/client";
 import { LOCALE_META } from "@/lib/i18n/config";
-import { ALERT_CATEGORY_META, ROLE_META, SIGNAL_META } from "@/lib/types";
+import { ROLE_META, SIGNAL_META } from "@/lib/types";
 
 import {
   acionarApoio,
@@ -184,7 +185,6 @@ function CartaoAlerta({
   const [verTodosApoios, setVerTodosApoios] = useState(false);
   const [pendente, iniciar] = useTransition();
 
-  const meta = ALERT_CATEGORY_META[alerta.category];
   const ativo = alertIsActive(alerta);
   const gritando = alertNeedsAttention(alerta);
   const semNinguem = alertHasNobodyGoing(alerta);
@@ -228,9 +228,12 @@ function CartaoAlerta({
           "o que é isso e desde quando" sem precisar ler mais nada. */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
-          <span aria-hidden className="text-2xl leading-none">
-            {meta.icon}
-          </span>
+          <AlertIcon
+            category={alerta.category}
+            size={24}
+            stroke={2.2}
+            className="mt-0.5 shrink-0"
+          />
           <div className="min-w-0">
             <p
               className={`text-base font-bold leading-tight ${

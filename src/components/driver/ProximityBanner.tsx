@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { AlertIcon } from "@/components/icons/alerta";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type {
   AlertConfirmationKind,
@@ -60,9 +61,7 @@ export function ProximityBanner({ proximity, alerts, onConfirm }: ProximityBanne
       }`}
     >
       <div className="flex items-center gap-2">
-        <span aria-hidden="true" className="text-xl">
-          {ALERT_CATEGORY_META[category].icon}
-        </span>
+        <AlertIcon category={category} size={20} />
         <p className="tnum flex-1 text-sm font-semibold text-ink">
           {passing
             ? t("alerts.proximity.passing")

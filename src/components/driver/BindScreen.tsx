@@ -183,7 +183,7 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
         type="button"
         onClick={() => void submit()}
         disabled={!complete || busy || blocked}
-        className="font-mono uppercase tracking-[0.12em] touch-target w-full bg-info px-6 py-4 text-lg font-semibold text-surface-0 transition disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint"
+        className="font-mono uppercase tracking-[0.12em] touch-target w-full bg-ink px-6 py-4 text-lg font-semibold text-surface-0 transition hover:bg-ink/85 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint"
       >
         {busy ? t("common.loading") : t("driver.bindAction")}
       </button>

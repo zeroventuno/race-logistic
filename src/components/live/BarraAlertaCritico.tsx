@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import { AlertIcon } from "@/components/icons/alerta";
 import { useFormat, useT } from "@/lib/i18n/client";
-import { ALERT_CATEGORY_META, ROLE_META } from "@/lib/types";
+import { ROLE_META } from "@/lib/types";
 
 import { acionarApoio, reconhecerAlerta } from "./acoes";
 import {
@@ -91,7 +92,6 @@ export function BarraAlertaCritico({
 
   if (!alerta) return null;
 
-  const meta = ALERT_CATEGORY_META[alerta.category];
   const medico = alerta.category === "medical";
   const idade = serverAgeSeconds(alerta.receivedAt, nowMs);
   const primeiraSugestao = alerta.suggestions.find(
@@ -110,9 +110,7 @@ export function BarraAlertaCritico({
       }`}
     >
       <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-4 gap-y-2">
-        <span aria-hidden className="text-2xl leading-none">
-          {meta.icon}
-        </span>
+        <AlertIcon category={alerta.category} size={26} stroke={2.2} />
 
         <div className="min-w-0 flex-1">
           <p className="text-base font-bold leading-tight">

@@ -198,17 +198,27 @@ export const ROLE_META: Record<PositionRole, RoleMeta> = {
   },
 };
 
+/**
+ * O nome do pictograma da categoria, resolvido em
+ * `@/components/icons/alerta`. Pelo mesmo motivo dos veículos: emoji muda de
+ * desenho em cada sistema, não aceita cor, e some dentro de um marcador de
+ * 30 px — e aqui ele estava no botão de acidente do app do motorista, que é o
+ * pior lugar possível para um símbolo que o Android e o iOS desenham
+ * diferente.
+ */
+export type AlertIconName = "medical" | "mechanical" | "other";
+
 export const ALERT_CATEGORY_META: Record<
   AlertCategory,
-  { label: string; icon: string; defaultPriority: AlertPriority }
+  { label: string; icon: AlertIconName; defaultPriority: AlertPriority }
 > = {
   medical: {
     label: "Acidente / ambulância",
-    icon: "🚑",
+    icon: "medical",
     defaultPriority: "critical",
   },
-  mechanical: { label: "Mecânico", icon: "🔧", defaultPriority: "normal" },
-  other: { label: "Outro", icon: "⚠️", defaultPriority: "high" },
+  mechanical: { label: "Mecânico", icon: "mechanical", defaultPriority: "normal" },
+  other: { label: "Outro", icon: "other", defaultPriority: "high" },
 };
 
 // ---------------------------------------------------------------------------

@@ -50,15 +50,37 @@ export function Selo({
   );
 }
 
-type Variant = "primary" | "secondary" | "ghost" | "quiet";
+type Variant = "primary" | "marca" | "secondary" | "ghost" | "quiet";
 
+/**
+ * SOBRE A COR DOS BOTÕES.
+ *
+ * O botão principal do produto é TINTA, não azul. O azul estava ali só porque
+ * "primário é azul" — e num painel cuja regra é que cor significa estado
+ * (vermelho socorro, âmbar dúvida, verde confirmado), gastar uma quarta cor
+ * saturada em "este é o botão" ensina o olho que cor nem sempre quer dizer
+ * alguma coisa. Tinta sólida sobre a superfície é o contraste mais alto que a
+ * paleta tem e não custa significado nenhum: bg-ink com text-surface-0 inverte
+ * sozinho entre o tema claro e o escuro.
+ *
+ * O ciano continua existindo, mas só como ESTADO — veículo selecionado, selo
+ * de janela projetada, foco de teclado. Nunca como "clique aqui".
+ *
+ * `marca` é o rouge, e existe para exatamente duas telas: entrar e criar
+ * conta. Elas são a porta do produto, não a operação — ali ninguém está no
+ * chão, e a marca pode aparecer. Passada a porta, o rouge some.
+ */
 const VARIANT: Record<Variant, string> = {
   primary:
-    "bg-info text-surface-0 font-semibold hover:bg-info/85 disabled:bg-info/40",
+    "bg-ink text-surface-0 font-semibold hover:bg-ink/85 disabled:bg-ink/30 disabled:text-surface-0/60",
+  marca:
+    "bg-[#d92d20] text-white font-semibold hover:bg-[#a81e14] disabled:bg-[#d92d20]/40",
   secondary:
-    "border border-border-strong bg-surface-2 text-ink hover:border-info hover:bg-surface-3",
-  ghost: "border border-border bg-transparent text-ink-muted hover:text-ink hover:border-border-strong",
-  quiet: "bg-transparent text-ink-muted hover:text-ink underline underline-offset-4",
+    "border border-border-strong bg-surface-2 text-ink hover:border-ink hover:bg-surface-3",
+  ghost:
+    "border border-border bg-transparent text-ink-muted hover:text-ink hover:border-border-strong",
+  quiet:
+    "bg-transparent text-ink-muted hover:text-ink underline underline-offset-4",
 };
 
 const SIZE = {

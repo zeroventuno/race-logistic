@@ -3,6 +3,7 @@
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { alertGlyphSvg } from "@/components/icons/alerta";
 import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { useT } from "@/lib/i18n/client";
@@ -166,10 +167,10 @@ export function DriverMap({
         el.style.display = "flex";
         el.style.alignItems = "center";
         el.style.justifyContent = "center";
-        el.style.width = "38px";
-        el.style.height = "38px";
+        el.style.width = "30px";
+        el.style.height = "30px";
         el.style.borderRadius = "8px";
-        el.style.fontSize = "20px";
+
         marker = new maplibregl.Marker({ element: el, anchor: "bottom" });
         marker.setLngLat([alert.lng, alert.lat]).addTo(map);
         alertMarkersRef.current.set(alert.alertId, marker);
@@ -181,7 +182,10 @@ export function DriverMap({
       el.style.background =
         alert.category === "medical" ? "var(--color-critical)" : "var(--color-warn)";
       el.style.border = "2px solid #0a0c10";
-      el.textContent = ALERT_CATEGORY_META[alert.category].icon;
+      if (el.dataset.categoria !== alert.category) {
+        el.innerHTML = alertGlyphSvg(alert.category, "#0a0c10", 21);
+        el.dataset.categoria = alert.category;
+      }
       el.title = alert.note ?? ALERT_CATEGORY_META[alert.category].label;
     }
 
@@ -285,7 +289,10 @@ function paintMarker(
 ): void {
   const meta = ROLE_META[vehicle.role];
   const signal = signalHealth(ageSeconds);
-  const size = vehicle.isSelf ? 44 : 32;
+  // Menor que antes, pelo mesmo motivo do painel da direção. O próprio
+  // veículo continua bem maior que os outros: no celular, no suporte, de
+  // relance, achar a si mesmo tem que ser instantâneo.
+  const size = vehicle.isSelf ? 34 : 22;
 
   el.style.width = `${size}px`;
   el.style.height = `${size}px`;
@@ -300,9 +307,10 @@ function paintMarker(
   // Pictograma, não emoji: o desenho tem que ser o mesmo do painel da direção,
   // e emoji muda de forma (e de legibilidade) em cada aparelho. `innerHTML`
   // aqui recebe SVG gerado por nós — nada que venha do banco entra por aqui.
-  if (el.dataset.papel !== vehicle.role) {
-    el.innerHTML = vehicleGlyphSvg(vehicle.role, "#0a0c10", vehicle.isSelf ? 24 : 18);
-    el.dataset.papel = vehicle.role;
+  const chaveIcone = `${vehicle.role}:${vehicle.isSelf ? "eu" : "outro"}`;
+  if (el.dataset.papel !== chaveIcone) {
+    el.innerHTML = vehicleGlyphSvg(vehicle.role, "#0a0c10", vehicle.isSelf ? 20 : 13);
+    el.dataset.papel = chaveIcone;
   }
 
   const signalLabel = t(`signal.${signal}`);

@@ -160,7 +160,7 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
           <button
             type="button"
             onClick={onUnbind}
-            className="font-mono uppercase tracking-[0.12em] touch-target bg-info px-6 py-4 text-lg font-semibold text-surface-0"
+            className="font-mono uppercase tracking-[0.12em] touch-target bg-ink px-6 py-4 text-lg font-semibold text-surface-0 transition hover:bg-ink/85"
           >
             {t("driver.bindAction")}
           </button>

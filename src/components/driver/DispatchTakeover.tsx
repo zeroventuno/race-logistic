@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { AlertIcon } from "@/components/icons/alerta";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { DriverAlertView } from "@/lib/driver/protocol";
 import { ALERT_CATEGORY_META } from "@/lib/types";
@@ -64,8 +65,8 @@ export function DispatchTakeover({
           {t("alerts.dispatch.youWereCalled")}
         </p>
 
-        <p className="mt-6 text-center text-6xl" aria-hidden="true">
-          {category.icon}
+        <p className="mt-6 flex justify-center" aria-hidden="true">
+          <AlertIcon category={alert.category} size={72} stroke={1.8} />
         </p>
 
         <h2 className="titulo mt-4 text-center font-bold text-ink text-4xl">
@@ -183,9 +184,7 @@ export function DispatchBanner({
 
   return (
     <div className="flex items-center gap-3 border-b border-ok/50 bg-ok-dim/30 px-3 py-2">
-      <span aria-hidden="true" className="text-xl">
-        {ALERT_CATEGORY_META[alert.category].icon}
-      </span>
+      <AlertIcon category={alert.category} size={20} />
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">

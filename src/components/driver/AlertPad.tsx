@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { AlertIcon } from "@/components/icons/alerta";
 import { useT } from "@/lib/i18n/client";
 import type { DriverAlertView } from "@/lib/driver/protocol";
 import type { DriverSnapshot } from "@/lib/driver/runtime";
@@ -114,9 +115,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
               : "border-2 border-critical bg-critical-dim/40 text-ink"
           }`}
         >
-          <span aria-hidden="true" className="text-2xl">
-            {ALERT_CATEGORY_META.medical.icon}
-          </span>
+          <AlertIcon category="medical" size={30} stroke={2.2} />
           {confirming === "medical"
             ? t("alerts.confirmMedical")
             : t("alerts.categories.medical.label")}
@@ -142,7 +141,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
             onClick={() => handlePress("mechanical")}
             className="font-mono uppercase tracking-[0.12em] touch-target flex items-center justify-center gap-2 border border-border-strong bg-surface-2 px-3 py-3 font-semibold text-ink"
           >
-            <span aria-hidden="true">{ALERT_CATEGORY_META.mechanical.icon}</span>
+            <AlertIcon category="mechanical" size={20} />
             {t("alerts.categories.mechanical.short")}
           </button>
 
@@ -152,7 +151,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
             onClick={() => handlePress("other")}
             className="font-mono uppercase tracking-[0.12em] touch-target flex items-center justify-center gap-2 border border-border-strong bg-surface-2 px-3 py-3 font-semibold text-ink"
           >
-            <span aria-hidden="true">{ALERT_CATEGORY_META.other.icon}</span>
+            <AlertIcon category="other" size={20} />
             {t("alerts.categories.other.short")}
           </button>
         </div>
@@ -189,7 +188,7 @@ function MyAlerts({ snapshot }: { snapshot: DriverSnapshot }) {
                 : "border-border bg-surface-2 text-ink-muted"
           }`}
         >
-          <span aria-hidden="true">{ALERT_CATEGORY_META[line.category].icon} </span>
+          <AlertIcon category={line.category} size={15} className="inline-block shrink-0" />
           <strong className="font-semibold">
             {t(`alerts.categories.${line.category}.short`)}
           </strong>

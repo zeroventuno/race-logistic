@@ -118,7 +118,7 @@ export function AuthForm({
 
       <Botao
         type="submit"
-        variant="primary"
+        variant="marca"
         size="lg"
         className="w-full"
         disabled={pendente}

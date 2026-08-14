@@ -81,17 +81,53 @@ function arquivosDeFonte(dir: string, saida: string[] = []): string[] {
 }
 
 describe("nome de pictograma nunca vira texto na tela", () => {
-  it("ninguém renderiza ROLE_META[...].icon", () => {
-    // `ROLE_META[x].icon` é o nome do símbolo, para o módulo de ícones
-    // resolver. Fora dele, qualquer uso é o bug de novo: ou está indo para
-    // JSX, ou para `textContent`, ou para dentro de uma interpolação de
-    // tradução — e nos três casos a tela mostra "ambulance".
+  // `X_META[y].icon` é o NOME do símbolo, para o módulo de ícones resolver.
+  // Fora dele, qualquer uso é o bug de novo: ou está indo para JSX, ou para
+  // `textContent`, ou para dentro de uma interpolação de tradução — e nos três
+  // casos a tela mostra a palavra "ambulance".
+  //
+  // Este teste já pegou o mesmo erro duas vezes, em duas tabelas diferentes.
+  // Da primeira foi ROLE_META e a tela do diretor escrevia o nome do papel; da
+  // segunda foi ALERT_CATEGORY_META e o botão de acidente do app do motorista
+  // escrevia "medical". Nas duas o compilador ficou quieto, porque o campo é
+  // `string` antes e depois, e string renderizada como texto é o uso normal.
+  const TABELAS = [
+    { nome: "ROLE_META", modulo: join("components", "icons", "vehicle") },
+    { nome: "ALERT_CATEGORY_META", modulo: join("components", "icons", "alerta") },
+  ];
+
+  for (const tabela of TABELAS) {
+    it(`ninguém renderiza ${tabela.nome}[...].icon`, () => {
+      const padrao = new RegExp(`${tabela.nome}\\s*\\[[^\\]]+\\]\\s*\\.icon\\b`);
+      const culpados: string[] = [];
+
+      for (const arquivo of arquivosDeFonte(RAIZ)) {
+        if (arquivo.includes(tabela.modulo)) continue;
+        const linhas = readFileSync(arquivo, "utf8").split("\n");
+        linhas.forEach((linha, i) => {
+          if (padrao.test(linha)) {
+            culpados.push(`${relative(RAIZ, arquivo)}:${i + 1}`);
+          }
+        });
+      }
+
+      expect(culpados).toEqual([]);
+    });
+  }
+
+  it("ninguém renderiza `.icon` de um meta desestruturado", () => {
+    // A variante que escapou da primeira rede: `const meta = X_META[y]` e
+    // depois `{meta.icon}`. O padrão acima não pega, porque o índice já foi
+    // resolvido numa linha anterior.
     const culpados: string[] = [];
 
     for (const arquivo of arquivosDeFonte(RAIZ)) {
-      const linhas = readFileSync(arquivo, "utf8").split("\n");
-      linhas.forEach((linha, i) => {
-        if (/ROLE_META\s*\[[^\]]+\]\s*\.icon\b/.test(linha)) {
+      if (TABELAS.some((t) => arquivo.includes(t.modulo))) continue;
+      const texto = readFileSync(arquivo, "utf8");
+      if (!/const\s+\w*[Mm]eta\w*\s*=\s*\w*_META\s*\[/.test(texto)) continue;
+
+      texto.split("\n").forEach((linha, i) => {
+        if (/\{\s*\w*[Mm]eta\w*\.icon\s*\}|=\s*\w*[Mm]eta\w*\.icon\b/.test(linha)) {
           culpados.push(`${relative(RAIZ, arquivo)}:${i + 1}`);
         }
       });

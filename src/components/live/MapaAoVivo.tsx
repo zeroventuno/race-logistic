@@ -3,6 +3,7 @@
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { alertGlyphSvg } from "@/components/icons/alerta";
 import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { useT } from "@/lib/i18n/client";
@@ -433,7 +434,13 @@ function pintarVeiculo(
 ): void {
   const meta = ROLE_META[v.role];
   const referencia = v.isReferenceLead || v.isReferenceSweep;
-  const tamanho = referencia ? 38 : 30;
+  // Ponto, não botão. O marcador de 30/38 px cobria a curva em que o veículo
+  // estava — com uma dúzia deles no mesmo trecho o mapa virava uma fileira de
+  // discos encostados e sumia o percurso por baixo. A cor já diz o papel de
+  // relance; o pictograma é para quando o olho pousa. As duas referências da
+  // janela continuam maiores que o resto, que é a única hierarquia que este
+  // mapa precisa sustentar.
+  const tamanho = referencia ? 26 : 20;
   const apagado = sinal === "stale" || sinal === "lost" || sinal === "never";
 
   raiz.style.display = "flex";
@@ -459,13 +466,13 @@ function pintarVeiculo(
     selo = document.createElement("span");
     selo.dataset.selo = "1";
     selo.style.position = "absolute";
-    selo.style.top = "-7px";
-    selo.style.right = "-12px";
+    selo.style.top = "-6px";
+    selo.style.right = "-10px";
     selo.style.borderRadius = "9999px";
     selo.style.padding = "0 4px";
-    selo.style.fontSize = "9px";
+    selo.style.fontSize = "8px";
     selo.style.fontWeight = "700";
-    selo.style.lineHeight = "14px";
+    selo.style.lineHeight = "12px";
     selo.style.border = "1px solid #0a0c10";
     chip.appendChild(selo);
 
@@ -490,9 +497,9 @@ function pintarVeiculo(
 
   chip.style.width = `${tamanho}px`;
   chip.style.height = `${tamanho}px`;
-  chip.style.fontSize = referencia ? "17px" : "14px";
+  chip.style.fontSize = referencia ? "12px" : "10px";
   chip.style.background = meta.color;
-  chip.style.borderWidth = referencia ? "3px" : "2px";
+  chip.style.borderWidth = referencia ? "2.5px" : "2px";
   chip.style.borderStyle = apagado ? "dashed" : "solid";
   chip.style.borderColor = SIGNAL_META[sinal].color;
   chip.style.opacity = sinal === "lost" || sinal === "never" ? "0.45" : apagado ? "0.7" : "1";
@@ -513,9 +520,10 @@ function pintarVeiculo(
     icone.style.display = "flex";
     chip.insertBefore(icone, selo);
   }
-  if (icone.dataset.papel !== v.role) {
-    icone.innerHTML = vehicleGlyphSvg(v.role, "#0a0c10", 18);
-    icone.dataset.papel = v.role;
+  const chaveIcone = `${v.role}:${referencia ? "ref" : "normal"}`;
+  if (icone.dataset.papel !== chaveIcone) {
+    icone.innerHTML = vehicleGlyphSvg(v.role, "#0a0c10", referencia ? 15 : 12);
+    icone.dataset.papel = chaveIcone;
   }
 
   // O selo só existe quando há o que confessar: idade que já compromete a
@@ -565,11 +573,16 @@ function pintarAlerta(el: HTMLElement, a: LiveAlertView): void {
   el.style.width = gritando ? "44px" : "36px";
   el.style.height = gritando ? "44px" : "36px";
   el.style.borderRadius = "10px";
-  el.style.fontSize = gritando ? "22px" : "18px";
+
   el.style.border = "2px solid #0a0c10";
   el.style.background =
     a.category === "medical" ? "var(--color-critical)" : "var(--color-warn)";
-  el.textContent = meta.icon;
+  // SVG gerado por nós, nunca dado do banco — a nota do alerta entra por
+  // `title` mais abaixo, justamente para não abrir essa porta.
+  if (el.dataset.categoria !== a.category) {
+    el.innerHTML = alertGlyphSvg(a.category, "#0a0c10", gritando ? 24 : 20);
+    el.dataset.categoria = a.category;
+  }
 
   // O mesmo pulso do painel de alertas. Um acidente que ninguém reconheceu tem
   // que se mexer no mapa exatamente como se mexe na lista — são a mesma coisa

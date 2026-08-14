@@ -3,7 +3,8 @@
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 
-import { DARK_BASEMAP } from "@/components/map/map-style";
+import { DARK_BASEMAP, LIGHT_BASEMAP } from "@/components/map/map-style";
+import { resolverTema, useTemaResolvido } from "@/lib/tema-atual";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -53,6 +54,7 @@ export function MapCanvas({
   const onReadyRef = useRef(onReady);
   const onTeardownRef = useRef(onTeardown);
   const [failed, setFailed] = useState(false);
+  const tema = useTemaResolvido();
 
   onReadyRef.current = onReady;
   onTeardownRef.current = onTeardown;
@@ -65,7 +67,10 @@ export function MapCanvas({
     try {
       map = new maplibregl.Map({
         container,
-        style: DARK_BASEMAP,
+        // Lido direto, não pelo estado: no primeiro render o hook ainda
+        // devolve "dark" para não divergir da hidratação, e montar o mapa
+        // escuro para trocar 16 ms depois pisca a tela inteira.
+        style: resolverTema() === "light" ? LIGHT_BASEMAP : DARK_BASEMAP,
         center: initialCenter,
         zoom: initialZoom,
         attributionControl: { compact: true },
@@ -120,6 +125,43 @@ export function MapCanvas({
     // Montagem única de propósito — mudanças posteriores são imperativas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Troca de basemap quando o tema muda.
+   *
+   * `setStyle` derruba fontes e camadas próprias — o traçado do percurso é uma
+   * delas —, então `onReady` é chamado de novo depois do `styledata` para
+   * quem desenhou em cima do mapa redesenhar. Os marcadores não entram nessa
+   * conta: são elementos DOM ancorados pelo MapLibre, e sobrevivem à troca.
+   *
+   * `diff: false` porque os dois estilos têm a mesma `source` com URLs
+   * diferentes, e o diff do MapLibre não troca a URL de uma fonte existente —
+   * o estilo mudaria de cor de fundo e continuaria baixando os tiles antigos.
+   */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const estilo = tema === "light" ? LIGHT_BASEMAP : DARK_BASEMAP;
+    const atual = map.getStyle()?.layers?.find((l) => l.id === "background");
+    const corAtual =
+      atual && atual.type === "background"
+        ? (atual.paint as { "background-color"?: string })["background-color"]
+        : undefined;
+    const corAlvo = tema === "light" ? "#f2f4f7" : "#0a0c10";
+    if (corAtual === corAlvo) return;
+
+    const redesenhar = () => {
+      map.off("styledata", redesenhar);
+      onReadyRef.current?.(map);
+    };
+    map.on("styledata", redesenhar);
+    map.setStyle(estilo, { diff: false });
+
+    return () => {
+      map.off("styledata", redesenhar);
+    };
+  }, [tema]);
 
   if (failed) {
     return (

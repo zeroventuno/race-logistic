@@ -109,7 +109,7 @@ export function ControleProva({
             disabled={pendente || !pronta}
             onClick={() => setConfirmando("iniciar")}
             title={pronta ? undefined : pendencias.join(" · ")}
-            className="min-h-9 bg-info px-4 text-sm font-bold text-surface-0 transition hover:bg-info/85 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-9 bg-ink px-4 text-sm font-bold text-surface-0 transition hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-40"
           >
             ▶ {t("director.goLive")}
           </button>
