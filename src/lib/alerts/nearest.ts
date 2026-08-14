@@ -55,6 +55,10 @@ const MIN_USABLE_SPEED_MPS = 1.5;
 const NOMINAL_SPEED_MPS: Record<PositionRole, number> = {
   lead_car: 11,
   sweep_car: 9,
+  // A vassoura anda no ritmo do último atleta, então é o veículo mais lento
+  // do comboio — e superestimar a velocidade dela é prometer um socorro que
+  // chega depois do prometido.
+  broom_wagon: 7,
   moto: 13,
   ambulance: 11,
   mechanic: 10,

@@ -36,7 +36,8 @@ export const en: Dictionary = {
 
   roles: {
     lead_car: { label: "Lead car", short: "Lead" },
-    sweep_car: { label: "Broom wagon", short: "Broom" },
+    sweep_car: { label: "Closing car", short: "Closing" },
+    broom_wagon: { label: "Broom wagon", short: "Broom" },
     moto: { label: "Support motorcycle", short: "Moto" },
     ambulance: { label: "Ambulance", short: "Ambulance" },
     mechanic: { label: "Neutral service", short: "Service" },

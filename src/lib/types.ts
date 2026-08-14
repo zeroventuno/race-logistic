@@ -20,9 +20,26 @@
 
 export type RaceStatus = "draft" | "armed" | "live" | "finished" | "archived";
 
+/**
+ * Papéis na estrada, na ORDEM em que aparecem no comboio.
+ *
+ *   abertura … pelotão … último atleta … vassoura … fechamento
+ *
+ * `sweep_car` é o CARRO DE FECHAMENTO, não a vassoura — o identificador é
+ * legado e está em 29 arquivos; o significado é este. São veículos distintos e
+ * confundi-los apaga um dos dois do cadastro:
+ *
+ *   - a VASSOURA (`broom_wagon`) vem atrás do último atleta e recolhe quem
+ *     abandona;
+ *   - o FECHAMENTO (`sweep_car`) é o último veículo do comboio, e é a passagem
+ *     dele que libera a via.
+ *
+ * Por isso a janela de tempo da prova é abertura ↔ FECHAMENTO.
+ */
 export type PositionRole =
   | "lead_car"
   | "sweep_car"
+  | "broom_wagon"
   | "moto"
   | "ambulance"
   | "mechanic"
@@ -50,80 +67,120 @@ export type TrackSource = "gpx" | "drawn";
 export interface RoleMeta {
   label: string;
   shortLabel: string;
-  /** Emoji usado no marcador do mapa e nas listas. */
-  icon: string;
+  /**
+   * Nome do pictograma em `src/components/icons/vehicle.tsx`.
+   *
+   * Era emoji. Emoji desenha diferente em cada sistema operacional, não aceita
+   * cor, fica minúsculo dentro de um marcador de mapa e some em impressão
+   * monocromática — as quatro coisas que este produto precisa que funcionem.
+   */
+  icon: VehicleIconName;
   /** Cor do marcador. Definidas em `globals.css` como tokens. */
   color: string;
   /** Este papel pode ser despachado para atender um alerta? */
   dispatchable: boolean;
   /** Categorias de alerta que este papel resolve melhor. */
   handles: AlertCategory[];
+  /**
+   * Ordem no comboio, do primeiro ao último veículo da estrada.
+   * Usada para ordenar listas e para o cadastro sugerir a sequência real.
+   */
+  convoyOrder: number;
 }
+
+export type VehicleIconName =
+  | "lead"
+  | "closing"
+  | "broom"
+  | "moto"
+  | "ambulance"
+  | "mechanic"
+  | "support"
+  | "marshal"
+  | "other";
 
 export const ROLE_META: Record<PositionRole, RoleMeta> = {
   lead_car: {
     label: "Carro de abertura",
     shortLabel: "Abertura",
-    icon: "🚩",
+    icon: "lead",
     color: "var(--role-lead)",
     dispatchable: false,
     handles: [],
-  },
-  sweep_car: {
-    label: "Carro de fechamento (vassoura)",
-    shortLabel: "Vassoura",
-    icon: "🏁",
-    color: "var(--role-sweep)",
-    dispatchable: false,
-    handles: [],
+    convoyOrder: 0,
   },
   moto: {
     label: "Moto de apoio",
     shortLabel: "Moto",
-    icon: "🏍️",
+    icon: "moto",
     color: "var(--role-moto)",
     dispatchable: true,
     handles: ["other", "mechanical"],
+    convoyOrder: 10,
   },
   ambulance: {
     label: "Ambulância",
     shortLabel: "Ambulância",
-    icon: "🚑",
+    icon: "ambulance",
     color: "var(--role-ambulance)",
     dispatchable: true,
     handles: ["medical"],
+    convoyOrder: 20,
   },
   mechanic: {
     label: "Apoio mecânico",
     shortLabel: "Mecânico",
-    icon: "🔧",
+    icon: "mechanic",
     color: "var(--role-mechanic)",
     dispatchable: true,
     handles: ["mechanical"],
+    convoyOrder: 30,
   },
   support_car: {
     label: "Carro de apoio",
     shortLabel: "Apoio",
-    icon: "🚗",
+    icon: "support",
     color: "var(--role-support)",
     dispatchable: true,
     handles: ["mechanical", "other"],
+    convoyOrder: 40,
   },
   marshal: {
     label: "Fiscal de percurso",
     shortLabel: "Fiscal",
-    icon: "🦺",
+    icon: "marshal",
     color: "var(--role-marshal)",
     dispatchable: true,
     handles: ["other"],
+    convoyOrder: 50,
   },
   other: {
     label: "Outro",
     shortLabel: "Outro",
-    icon: "📍",
+    icon: "other",
     color: "var(--role-other)",
     dispatchable: true,
     handles: ["other"],
+    convoyOrder: 60,
+  },
+  broom_wagon: {
+    label: "Vassoura",
+    shortLabel: "Vassoura",
+    icon: "broom",
+    color: "var(--role-broom)",
+    dispatchable: true,
+    handles: ["mechanical", "other"],
+    convoyOrder: 90,
+  },
+  // Último da estrada: é a passagem dele que libera a via.
+  sweep_car: {
+    label: "Carro de fechamento",
+    shortLabel: "Fechamento",
+    icon: "closing",
+    color: "var(--role-sweep)",
+    dispatchable: false,
+    handles: [],
+    convoyOrder: 100,
   },
 };
 

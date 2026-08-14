@@ -24,6 +24,11 @@ dotenv.config({ path: join(ROOT, ".env.local"), quiet: true });
 const MIGRATIONS_DIR = join(ROOT, "supabase", "migrations");
 const RESET = process.argv.includes("--reset");
 
+/** Arquivos cuja divergência de hash foi conferida e aceita à mão. */
+const ACCEPT_HASH = process.argv
+  .filter((a) => a.startsWith("--accept-hash="))
+  .map((a) => a.slice("--accept-hash=".length));
+
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -145,9 +150,28 @@ async function main() {
 
     if (previous) {
       if (previous !== hash) {
+        // Saída para a edição legítima: mudar um comentário de uma migração
+        // já aplicada não altera o banco, e forçar `--reset` por causa disso
+        // treinaria a equipe a usar a opção destrutiva por rotina — que é como
+        // se apaga um banco de produção por engano.
+        //
+        // O aceite é explícito e por arquivo. Nunca automático: o guarda existe
+        // porque divergência entre repositório e produção só aparece no dia da
+        // prova.
+        if (ACCEPT_HASH.includes(file)) {
+          await client.query(
+            "update public._migrations set hash = $2 where name = $1",
+            [file, hash],
+          );
+          console.log(`  ± ${file} (hash aceito — confirme que a mudança é cosmética)`);
+          continue;
+        }
+
         throw new Error(
-          `A migração ${file} já foi aplicada mas o arquivo mudou desde então.\n` +
-            `Crie uma migração nova em vez de editar uma já aplicada, ou rode com --reset se o banco for descartável.`,
+          `A migração ${file} já foi aplicada mas o arquivo mudou desde então.\n\n` +
+            `  Se a mudança altera o banco, crie uma migração nova.\n` +
+            `  Se for cosmética (comentário, formatação), aceite o hash novo:\n` +
+            `    npm run db:migrate -- --accept-hash=${file}\n`,
         );
       }
       console.log(`  · ${file} (já aplicada)`);

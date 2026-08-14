@@ -48,7 +48,10 @@ export const ptBR = {
 
   roles: {
     lead_car: { label: "Carro de abertura", short: "Abertura" },
-    sweep_car: { label: "Carro de fechamento", short: "Vassoura" },
+    // Último veículo do comboio: a passagem dele libera a via.
+    sweep_car: { label: "Carro de fechamento", short: "Fechamento" },
+    // Vem atrás do último atleta e recolhe quem abandona.
+    broom_wagon: { label: "Vassoura", short: "Vassoura" },
     moto: { label: "Moto de apoio", short: "Moto" },
     ambulance: { label: "Ambulância", short: "Ambulância" },
     mechanic: { label: "Apoio mecânico", short: "Mecânico" },
