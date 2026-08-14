@@ -7,7 +7,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { entrar } from "./actions";
 
 export const metadata = {
-  title: "Entrar — Race Logistic",
+  title: "Entrar — Flamme Rouge",
 };
 
 export default async function LoginPage() {
@@ -24,7 +24,7 @@ export default async function LoginPage() {
           href="/"
           className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint hover:text-ink-muted"
         >
-          Race Logistic
+          Flamme Rouge
         </Link>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
           Painel da direção

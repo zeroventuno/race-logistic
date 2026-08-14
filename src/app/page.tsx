@@ -12,7 +12,7 @@ export default function Home() {
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-10 px-6 py-16">
       <header>
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
-          Race Logistic
+          Flamme Rouge
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
           Direção de prova ao vivo

@@ -36,7 +36,7 @@ export function supabaseAdmin(): SupabaseClient {
       detectSessionInUrl: false,
     },
     global: {
-      headers: { "x-application-name": "race-logistic-server" },
+      headers: { "x-application-name": "flamme-rouge-server" },
     },
   });
 

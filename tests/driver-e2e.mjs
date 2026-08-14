@@ -328,7 +328,7 @@ function makePing(track, offsetM, atMs, { queuedOffline = false, speedMps = 12 }
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log(`\nRace Logistic — simulação de prova contra ${BASE_URL}\n`);
+  console.log(`\nFlamme Rouge — simulação de prova contra ${BASE_URL}\n`);
 
   await client.connect();
 

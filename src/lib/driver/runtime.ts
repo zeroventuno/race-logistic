@@ -78,6 +78,16 @@ export interface QueuedActionView {
   action: DispatchResponseAction | AlertConfirmationKind;
 }
 
+/** Um alerta já confirmado pelo servidor, guardado localmente. */
+export interface AckedAlertView {
+  clientAlertId: string;
+  alertId: string;
+  category: AlertCategory;
+  createdAt: string;
+  dispatchLabel: string | null;
+  dispatchFailed: boolean;
+}
+
 export interface DriverSnapshot {
   connection: ConnectionState;
   /** A fila sobrevive ao fechamento do app? `false` = só memória. */
@@ -95,8 +105,20 @@ export interface DriverSnapshot {
   wakeLockActive: boolean;
   /** Alertas ainda NÃO confirmados pelo servidor. */
   pendingAlerts: PendingAlertView[];
-  /** `clientAlertId` dos alertas com ack do servidor. */
-  ackedAlertIds: string[];
+  /** Alertas com ack do servidor, com o que ele respondeu sobre o acionamento. */
+  ackedAlerts: AckedAlertView[];
+  /**
+   * O alerta não pôde nem ser ENFILEIRADO. É a pior falha do app: nada foi
+   * gravado, nada será reenviado. A tela precisa mandar o motorista usar o
+   * rádio.
+   */
+  alertStorageError: string | null;
+  /**
+   * Pings que o servidor recusou nominalmente (relógio absurdo, coordenada
+   * inválida). Invisível, isto vira seis horas de prova sem um único ponto no
+   * mapa com o indicador de conexão verde.
+   */
+  rejectedPings: { count: number; reason: string } | null;
   state: DriverStateResponse | null;
   stateError: string | null;
   /** Preenchido quando o vínculo morreu e o app precisa pedir código de novo. */
@@ -117,7 +139,9 @@ const INITIAL: DriverSnapshot = {
   lastFixAccuracyM: null,
   wakeLockActive: false,
   pendingAlerts: [],
-  ackedAlertIds: [],
+  ackedAlerts: [],
+  alertStorageError: null,
+  rejectedPings: null,
   state: null,
   stateError: null,
   revokedMessage: null,
@@ -127,7 +151,7 @@ export function initialSnapshot(): DriverSnapshot {
   return INITIAL;
 }
 
-const SEQ_KEY = "race-logistic.driver.seq.v1";
+const SEQ_KEY = "flamme-rouge.driver.seq.v1";
 
 export class DriverRuntime {
   private readonly queue: OutboxQueue;
@@ -155,11 +179,19 @@ export class DriverRuntime {
   private batchSize = PING_BATCH_SIZE;
   private started = false;
 
+  private readonly probeStore: () => Promise<boolean>;
+
   constructor(session: StoredSession) {
     this.session = session;
 
-    const { store, durable } = createQueueStore();
+    const { store, durable, probe } = createQueueStore((reason) => {
+      // Degradação para memória: a fila continua funcionando, mas não sobrevive
+      // ao fechamento do app. O motorista precisa saber disso ANTES de precisar.
+      this.patch({ durableQueue: false, lastSyncError: `Armazenamento local falhou: ${reason}` });
+    });
+
     this.queue = new OutboxQueue(store);
+    this.probeStore = probe;
     this.snapshot = { ...INITIAL, durableQueue: durable };
 
     this.seq = readSeq();
@@ -185,6 +217,12 @@ export class DriverRuntime {
     window.addEventListener("online", this.onOnline);
     window.addEventListener("offline", this.onOffline);
     document.addEventListener("visibilitychange", this.onVisibility);
+
+    // Confirma que o armazenamento aceita escrita ANTES de o motorista
+    // precisar dele. `createStore` do idb-keyval não abre o banco até a
+    // primeira operação, então sem esta verificação `durableQueue` seria um
+    // palpite otimista.
+    void this.probeStore().then((durable) => this.patch({ durableQueue: durable }));
 
     void this.refreshQueueCounts();
     void this.hydrateAcks();
@@ -260,7 +298,10 @@ export class DriverRuntime {
    * confirmação vem depois pelo snapshot. Prometer entrega aqui seria mentir
    * exatamente no momento em que a mentira custa mais caro.
    */
-  async raiseAlert(category: AlertCategory, note: string | null): Promise<string> {
+  async raiseAlert(
+    category: AlertCategory,
+    note: string | null,
+  ): Promise<{ ok: true; clientAlertId: string } | { ok: false; error: string }> {
     const alert: ClientAlert = {
       clientAlertId: uuid(),
       category,
@@ -271,7 +312,23 @@ export class DriverRuntime {
       createdAt: new Date().toISOString(),
     };
 
-    await this.queue.enqueueAlert(alert);
+    try {
+      await this.queue.enqueueAlert(alert);
+    } catch (error) {
+      // Último recurso: a fila resiliente já cai para memória sozinha, então
+      // chegar aqui significa que NEM a memória aceitou. Não há como salvar o
+      // alerta — só há como não mentir sobre isso.
+      const message = (error as Error)?.message ?? "falha desconhecida";
+      console.error("[driver] ALERTA NÃO ENFILEIRADO:", message);
+      this.patch({
+        alertStorageError: message,
+        // A degradação é informação operacional: sem fila, nada será reenviado.
+        durableQueue: false,
+      });
+      return { ok: false, error: message };
+    }
+
+    this.patch({ alertStorageError: null });
     await this.refreshQueueCounts();
 
     // Alerta fura o backoff: a próxima tentativa é agora.
@@ -279,7 +336,7 @@ export class DriverRuntime {
     this.nextFlushAtMs = 0;
     void this.flush();
 
-    return alert.clientAlertId;
+    return { ok: true, clientAlertId: alert.clientAlertId };
   }
 
   /**
@@ -456,10 +513,17 @@ export class DriverRuntime {
       const result = await sendAlert(this.session.token, record.payload);
 
       if (result.ok) {
+        // O ack guarda o que o servidor RESPONDEU, não só que respondeu: se o
+        // `/state` seguinte não chegar (sinal caiu logo depois — o caso comum),
+        // é daqui que a tela tira "recebido" e "quem foi acionado".
         await recordAlertAck({
           clientAlertId: record.payload.clientAlertId,
           alertId: result.value.alertId,
           receivedAtMs: Date.parse(result.value.receivedAt) || Date.now(),
+          category: record.payload.category,
+          createdAt: record.payload.createdAt,
+          dispatchLabel: result.value.dispatch?.label ?? null,
+          dispatchFailed: result.value.dispatchFailed,
         });
         // Só agora o alerta sai da fila. `deduplicated: true` conta como
         // sucesso: significa que o servidor já tinha este alerta.
@@ -547,11 +611,27 @@ export class DriverRuntime {
 
       if (result.value.rejected.length > 0) {
         // O servidor explicou por que recusou. Insistir seria reenviar lixo
-        // para sempre e nunca esvaziar a fila.
+        // para sempre e nunca esvaziar a fila — mas descartar em SILÊNCIO é
+        // pior: com o relógio do aparelho adiantado, todos os pings de uma
+        // prova inteira são recusados, `position_state` fica vazio, o veículo
+        // nunca aparece no mapa — e a tela dizia "transmitindo", em verde.
+        const reason = result.value.rejected[0]!.reason;
         console.warn("[driver] pings recusados:", result.value.rejected);
+
         await this.queue.dropPingsByClientId(
           result.value.rejected.map((r) => r.clientPingId),
         );
+
+        this.patch({
+          rejectedPings: {
+            count: (this.snapshot.rejectedPings?.count ?? 0) + result.value.rejected.length,
+            reason,
+          },
+        });
+      } else if (result.value.accepted.length > 0 && this.snapshot.rejectedPings) {
+        // Voltou a ser aceito (o motorista corrigiu a hora do aparelho): o
+        // aviso some sozinho, senão vira ruído permanente.
+        this.patch({ rejectedPings: null });
       }
 
       this.batchSize = PING_BATCH_SIZE;
@@ -667,7 +747,16 @@ export class DriverRuntime {
 
   private async hydrateAcks(): Promise<void> {
     const acks = await loadAlertAcks();
-    this.patch({ ackedAlertIds: acks.map((a) => a.clientAlertId) });
+    this.patch({
+      ackedAlerts: acks.map((a) => ({
+        clientAlertId: a.clientAlertId,
+        alertId: a.alertId,
+        category: a.category,
+        createdAt: a.createdAt,
+        dispatchLabel: a.dispatchLabel,
+        dispatchFailed: a.dispatchFailed,
+      })),
+    });
   }
 
   private patch(partial: Partial<DriverSnapshot>): void {

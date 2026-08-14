@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries/pt-BR";
 /** Deutsch. Terminologie der BDR-/UCI-Kommissäre. */
 export const de: Dictionary = {
   meta: {
-    appName: "Race Logistic",
+    appName: "Flamme Rouge",
     tagline: "Rennleitung in Echtzeit",
   },
 

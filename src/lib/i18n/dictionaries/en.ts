@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries/pt-BR";
 /** English. UCI / British Cycling commissaire terminology. */
 export const en: Dictionary = {
   meta: {
-    appName: "Race Logistic",
+    appName: "Flamme Rouge",
     tagline: "Live race control",
   },
 

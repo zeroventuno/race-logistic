@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries/pt-BR";
 /** Italiano. Terminologia della Federazione Ciclistica Italiana. */
 export const it: Dictionary = {
   meta: {
-    appName: "Race Logistic",
+    appName: "Flamme Rouge",
     tagline: "Direzione gara in tempo reale",
   },
 

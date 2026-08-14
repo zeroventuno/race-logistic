@@ -34,9 +34,9 @@ import {
 
 import { createMemoryStore, type QueueStore } from "@/lib/driver/queue";
 import type { CachedRoute, DriverRace } from "@/lib/driver/protocol";
-import type { PositionRole } from "@/lib/types";
+import type { AlertCategory, PositionRole } from "@/lib/types";
 
-const SESSION_KEY = "race-logistic.driver.session.v1";
+const SESSION_KEY = "flamme-rouge.driver.session.v1";
 
 export interface StoredSession {
   token: string;
@@ -101,7 +101,7 @@ function idb(): UseStore | null {
       idbFailed = true;
       return null;
     }
-    outboxStore = createStore("race-logistic", "driver-outbox");
+    outboxStore = createStore("flamme-rouge", "driver-outbox");
     return outboxStore;
   } catch {
     idbFailed = true;
@@ -111,33 +111,125 @@ function idb(): UseStore | null {
 
 export interface QueueStoreResult {
   store: QueueStore;
-  /** `false` quando a fila está só em memória e some se o app fechar. */
+  /**
+   * `false` quando a fila está só em memória e some se o app fechar.
+   *
+   * Só é confiável DEPOIS de `probe()` resolver: `createStore` do idb-keyval é
+   * preguiçoso e não abre o banco até a primeira operação. Declarar durável
+   * antes disso é a mentira que fazia o alerta sumir sem rastro.
+   */
   durable: boolean;
+  /** Confirma que o armazenamento aceita escrita de verdade. */
+  probe: () => Promise<boolean>;
 }
 
-export function createQueueStore(): QueueStoreResult {
-  const store = idb();
-  if (!store) return { store: createMemoryStore(), durable: false };
+/**
+ * Armazenamento resiliente da fila.
+ *
+ * O modo de falha que este envelope existe para eliminar: IndexedDB recusa a
+ * escrita (modo privado, cota estourada, política do sistema), a promessa
+ * rejeita, e o alerta que o motorista acabou de disparar NUNCA EXISTIU — sem
+ * erro na tela, sem linha na lista, sem nada.
+ *
+ * Aqui, a primeira falha de qualquer operação degrada o armazenamento inteiro
+ * para memória e avisa quem estiver ouvindo. Perder a fila num fechamento de
+ * app é ruim; perder um chamado de socorro em silêncio é inaceitável. A
+ * degradação é PERMANENTE de propósito: um IndexedDB que falhou uma vez vai
+ * falhar de novo, e alternar entre os dois espalharia a fila em dois lugares.
+ */
+export function createQueueStore(
+  onDegraded?: (reason: string) => void,
+): QueueStoreResult {
+  const native = idb();
+  const memory = createMemoryStore();
 
-  const wrapped: QueueStore = {
-    async get<T>(key: string) {
-      return (await idbGet(key, store)) as T | undefined;
-    },
-    async set(key, value) {
-      await idbSet(key, value, store);
-    },
-    async delMany(keysToDelete) {
-      await idbDelMany(keysToDelete, store);
-    },
-    async keys() {
-      return (await idbKeys(store)).map(String);
-    },
-    async getMany<T>(wanted: string[]) {
-      return (await idbGetMany(wanted, store)) as (T | undefined)[];
-    },
+  let degraded = native === null;
+
+  const degrade = (reason: string) => {
+    if (degraded) return;
+    degraded = true;
+    console.warn("[driver] armazenamento local degradado para memória:", reason);
+    onDegraded?.(reason);
   };
 
-  return { store: wrapped, durable: true };
+  if (!native) {
+    return {
+      store: memory,
+      durable: false,
+      probe: async () => false,
+    };
+  }
+
+  async function guard<T>(
+    operation: () => Promise<T>,
+    fallback: () => Promise<T>,
+  ): Promise<T> {
+    if (degraded) return fallback();
+
+    try {
+      return await operation();
+    } catch (error) {
+      degrade((error as Error)?.message ?? "erro desconhecido");
+      return fallback();
+    }
+  }
+
+  const store: QueueStore = {
+    get: <T,>(key: string) =>
+      guard<T | undefined>(
+        async () => (await idbGet(key, native!)) as T | undefined,
+        () => memory.get<T>(key),
+      ),
+    set: (key, value) =>
+      guard(
+        async () => {
+          await idbSet(key, value, native!);
+        },
+        () => memory.set(key, value),
+      ),
+    delMany: (keysToDelete) =>
+      guard(
+        async () => {
+          await idbDelMany(keysToDelete, native!);
+        },
+        () => memory.delMany(keysToDelete),
+      ),
+    keys: () =>
+      guard(
+        async () => (await idbKeys(native!)).map(String),
+        () => memory.keys(),
+      ),
+    getMany: <T,>(wanted: string[]) =>
+      guard<(T | undefined)[]>(
+        async () => (await idbGetMany(wanted, native!)) as (T | undefined)[],
+        () => memory.getMany<T>(wanted),
+      ),
+  };
+
+  return {
+    store,
+    durable: true,
+    /**
+     * Escreve, lê e apaga uma chave de teste. É a única forma de saber se o
+     * IndexedDB funciona: até a primeira operação real, ele é só uma promessa.
+     */
+    probe: async () => {
+      const key = "meta:probe";
+      try {
+        await idbSet(key, Date.now(), native!);
+        const back = await idbGet(key, native!);
+        await idbDelMany([key], native!);
+        if (back == null) {
+          degrade("leitura de verificação voltou vazia");
+          return false;
+        }
+        return !degraded;
+      } catch (error) {
+        degrade((error as Error)?.message ?? "falha na verificação");
+        return false;
+      }
+    },
+  };
 }
 
 const ROUTE_KEY = "meta:route";
@@ -171,6 +263,12 @@ export interface LocalAlertAck {
   clientAlertId: string;
   alertId: string;
   receivedAtMs: number;
+  category: AlertCategory;
+  createdAt: string;
+  /** Quem o servidor acionou. `null` = ninguém foi acionado. */
+  dispatchLabel: string | null;
+  /** O servidor gravou o alerta mas não conseguiu acionar ninguém. */
+  dispatchFailed: boolean;
 }
 
 /**
@@ -180,26 +278,50 @@ export interface LocalAlertAck {
  * antes do próximo `/state` chegar — e, principalmente, depois do app ser
  * fechado e reaberto sem rede.
  */
+/**
+ * Espelho em memória das confirmações.
+ *
+ * O disco é conforto; ESTE é o que garante que a tela não mente dentro da
+ * sessão. Sem ele, um IndexedDB indisponível fazia o alerta confirmado sumir da
+ * lista assim que saía da fila — o motorista via o alerta desaparecer sem nunca
+ * ter visto "recebido".
+ */
+let ackMirror: LocalAlertAck[] = [];
+let ackMirrorLoaded = false;
+
 export async function recordAlertAck(ack: LocalAlertAck): Promise<void> {
+  await loadAlertAcks();
+
+  ackMirror = [...ackMirror.filter((a) => a.clientAlertId !== ack.clientAlertId), ack].slice(-50);
+
   const store = idb();
   if (!store) return;
 
   try {
-    const current = ((await idbGet(ACK_KEY, store)) as LocalAlertAck[] | undefined) ?? [];
-    const next = [...current.filter((a) => a.clientAlertId !== ack.clientAlertId), ack];
-    await idbSet(ACK_KEY, next.slice(-50), store);
+    await idbSet(ACK_KEY, ackMirror, store);
   } catch {
-    /* a confirmação autoritativa continua vindo de /state */
+    /* o espelho em memória continua valendo para esta sessão */
   }
 }
 
 export async function loadAlertAcks(): Promise<LocalAlertAck[]> {
+  if (ackMirrorLoaded) return ackMirror;
+
   const store = idb();
-  if (!store) return [];
+  ackMirrorLoaded = true;
+
+  if (!store) return ackMirror;
 
   try {
-    return ((await idbGet(ACK_KEY, store)) as LocalAlertAck[] | undefined) ?? [];
+    const stored = ((await idbGet(ACK_KEY, store)) as LocalAlertAck[] | undefined) ?? [];
+    // O que já está em memória tem precedência: pode ter sido gravado nesta
+    // sessão enquanto a leitura do disco estava em voo.
+    const byId = new Map(stored.map((a) => [a.clientAlertId, a]));
+    for (const a of ackMirror) byId.set(a.clientAlertId, a);
+    ackMirror = [...byId.values()].slice(-50);
   } catch {
-    return [];
+    /* segue só com o espelho */
   }
+
+  return ackMirror;
 }

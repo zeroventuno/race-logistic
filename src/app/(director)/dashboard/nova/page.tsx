@@ -6,7 +6,7 @@ import { ProvaForm } from "@/components/director/ProvaForm";
 import { Cartao } from "@/components/director/ui";
 import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata = { title: "Race Logistic" };
+export const metadata = { title: "Flamme Rouge" };
 
 export default async function NovaProvaPage() {
   const { t } = await getTranslator();

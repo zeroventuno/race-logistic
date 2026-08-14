@@ -1,5 +1,5 @@
 {
-  "name": "race-logistic",
+  "name": "flamme-rouge",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "brand": "node scripts/build-brand.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:reset": "node scripts/migrate.mjs --reset",
     "sim": "node scripts/simulate-drivers.mjs"

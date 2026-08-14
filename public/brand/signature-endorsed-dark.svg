@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 110" width="360" height="110">
+  <g transform="translate(4 5) scale(0.9)">
+    <rect x="16" y="12" width="7" height="76" fill="#D92D20"/>
+    <polygon points="23,22 88,22 68,44 88,66 23,66" fill="#D92D20"/>
+  </g>
+  <text x="118" y="46" font-family="Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="3.4" fill="#ECEFF1">FLAMME</text>
+  <text x="118" y="78" font-family="Helvetica Neue,Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="3.4" fill="#D92D20">ROUGE</text>
+  <text x="118" y="94" font-family="Helvetica Neue,Arial,sans-serif" font-size="9" letter-spacing="1.6" fill="#ECEFF1" opacity="0.55">BY </text>
+       <text x="136" y="94" font-family="Helvetica Neue,Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="1.6" fill="#A6E51A">TRAKR</text>
+</svg>

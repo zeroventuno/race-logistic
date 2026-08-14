@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries/pt-BR";
 /** Français. Terminologie des commissaires FFC / UCI. */
 export const fr: Dictionary = {
   meta: {
-    appName: "Race Logistic",
+    appName: "Flamme Rouge",
     tagline: "Direction de course en direct",
   },
 

@@ -11,7 +11,7 @@ import { RACE_STATUS_TONE, formatRaceDate } from "../_lib/format";
 import { computeReadiness } from "../_lib/readiness";
 import { requireUser } from "../_lib/session";
 
-export const metadata = { title: "Race Logistic" };
+export const metadata = { title: "Flamme Rouge" };
 
 export default async function DashboardPage() {
   const { supabase } = await requireUser();

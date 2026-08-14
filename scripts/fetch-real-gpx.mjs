@@ -38,7 +38,7 @@ const url =
 console.log("  Buscando percurso real no OSRM...");
 
 const res = await fetch(url, {
-  headers: { "User-Agent": "race-logistic-dev/0.1 (teste de percurso)" },
+  headers: { "User-Agent": "flamme-rouge-dev/0.1 (teste de percurso)" },
 });
 
 if (!res.ok) {
@@ -66,7 +66,7 @@ const ele = (i) =>
   (250 + 140 * Math.sin((i / coords.length) * Math.PI * 6) + 60 * Math.sin(i / 40)).toFixed(1);
 
 const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="race-logistic/fetch-real-gpx" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="flamme-rouge/fetch-real-gpx" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>Giro delle Langhe — Alba / La Morra / Barolo / Monforte / Serralunga</name>
     <desc>Percurso real sobre estradas do OpenStreetMap, roteado via OSRM. ${(route.distance / 1000).toFixed(1)} km.</desc>

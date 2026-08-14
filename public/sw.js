@@ -26,8 +26,8 @@
  */
 
 const VERSION = "v1";
-const SHELL_CACHE = `race-logistic-shell-${VERSION}`;
-const ASSET_CACHE = `race-logistic-assets-${VERSION}`;
+const SHELL_CACHE = `flamme-rouge-shell-${VERSION}`;
+const ASSET_CACHE = `flamme-rouge-assets-${VERSION}`;
 
 const SHELL_URLS = ["/motorista", "/manifest.webmanifest"];
 

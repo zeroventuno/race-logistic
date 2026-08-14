@@ -15,7 +15,7 @@
 
 export const ptBR = {
   meta: {
-    appName: "Race Logistic",
+    appName: "Flamme Rouge",
     tagline: "Direção de prova ao vivo",
   },
 

@@ -6,7 +6,7 @@ import { AuthForm } from "@/components/director/AuthForm";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Criar conta — Race Logistic",
+  title: "Criar conta — Flamme Rouge",
 };
 
 export default async function CadastroPage() {
@@ -21,7 +21,7 @@ export default async function CadastroPage() {
           href="/"
           className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint hover:text-ink-muted"
         >
-          Race Logistic
+          Flamme Rouge
         </Link>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
           Criar conta de direção

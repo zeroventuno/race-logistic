@@ -1,7 +1,7 @@
 {
   "id": "/motorista",
-  "name": "Race Logistic",
-  "short_name": "Race Logistic",
+  "name": "Flamme Rouge",
+  "short_name": "Flamme",
   "description": "GPS e alertas para veículos de apoio em provas de ciclismo.",
   "start_url": "/motorista",
   "scope": "/",
@@ -13,6 +13,12 @@
   "dir": "ltr",
   "categories": ["navigation", "sports", "utilities"],
   "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",

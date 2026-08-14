@@ -1,5 +1,5 @@
 -- ===========================================================================
--- Race Logistic — schema inicial
+-- Flamme Rouge — schema inicial
 --
 -- Princípios de projeto que atravessam este schema:
 --

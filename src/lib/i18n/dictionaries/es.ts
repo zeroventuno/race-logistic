@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries/pt-BR";
 /** Español. Terminología de comisarios RFEC / UCI. */
 export const es: Dictionary = {
   meta: {
-    appName: "Race Logistic",
+    appName: "Flamme Rouge",
     tagline: "Dirección de carrera en directo",
   },
 
