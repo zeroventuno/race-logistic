@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   Linguagem visual — direção de prova
+   ===========================================================================
+
+   Escuro por padrão, e não por moda. O dashboard fica ligado por 6 horas numa
+   sala de direção de prova ou num trailer, muitas vezes projetado, e um fundo
+   claro nesse cenário vira uma lanterna. Escuro também deixa as cores de
+   estado (vermelho de alerta, âmbar de sinal perdido) saltarem sem precisar
+   de área grande — o que importa quando a informação urgente tem que ser vista
+   pelo canto do olho.
+
+   A paleta tem apenas três cores "quentes", e cada uma significa exatamente
+   uma coisa:
+     vermelho → alguém precisa de socorro agora
+     âmbar    → o sistema não sabe algo que deveria saber (sinal, dado velho)
+     verde    → confirmado, ao vivo, sob controle
+   Nada decorativo usa essas três. Se aparecer vermelho na tela, é sangue ou
+   é máquina quebrada.
+   =========================================================================== */
+
+@theme {
+  --color-surface-0: #0a0c10;
+  --color-surface-1: #12151c;
+  --color-surface-2: #1a1f29;
+  --color-surface-3: #242b38;
+  --color-border: #2e3644;
+  --color-border-strong: #414c5f;
+
+  --color-ink: #e8ecf2;
+  --color-ink-muted: #9aa5b5;
+  --color-ink-faint: #6b7688;
+
+  --color-critical: #ff3b3b;
+  --color-critical-dim: #7a1414;
+  --color-warn: #ffa726;
+  --color-warn-dim: #7a4a08;
+  --color-ok: #22c55e;
+  --color-ok-dim: #0d4a24;
+  --color-info: #38bdf8;
+
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+}
+
+:root {
+  /* Cores por papel no mapa e nas listas. Escolhidas para continuarem
+     distinguíveis lado a lado num mapa e para quem tem daltonismo de
+     vermelho-verde: variam também em luminosidade, não só em matiz. */
+  --role-lead: #4ade80;
+  --role-sweep: #f472b6;
+  --role-moto: #60a5fa;
+  --role-ambulance: #ff3b3b;
+  --role-mechanic: #fbbf24;
+  --role-support: #a78bfa;
+  --role-marshal: #2dd4bf;
+  --role-other: #94a3b8;
+
+  --signal-live: #22c55e;
+  --signal-delayed: #fbbf24;
+  --signal-stale: #ffa726;
+  --signal-lost: #ff3b3b;
+  --signal-never: #6b7688;
+
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-surface-0);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Sem seleção acidental de texto ao tocar em botões no celular do motorista. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Números que mudam sozinhos — distância, tempo, velocidade — em fonte
+   tabular. Sem isso o dígito muda de largura, o número "pula" a cada
+   atualização e o olho perde a leitura. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Pulso do alerta crítico não reconhecido. Respeita quem pediu menos
+   movimento — mas mantém a cor forte, porque a informação não é opcional. */
+@keyframes alert-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 59 59 / 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgb(255 59 59 / 0);
+  }
+}
+
+.alert-pulse {
+  animation: alert-pulse 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alert-pulse {
+    animation: none;
+    box-shadow: 0 0 0 3px rgb(255 59 59 / 0.6);
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Alvos de toque no app do motorista. 56px porque a mão está com luva, o
+   carro está em movimento e errar o botão de alerta não é aceitável. */
+.touch-target {
+  min-height: 56px;
+  min-width: 56px;
+}
+
+/* MapLibre: o CSS da biblioteca assume tema claro. */
+.maplibregl-ctrl-group {
+  background: var(--color-surface-2) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--color-border) !important;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgb(10 12 16 / 0.75) !important;
+  color: var(--color-ink-faint) !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--color-ink-muted) !important;
+}
+
+/* Foco visível sempre. Um diretor sob pressão pode estar navegando por
+   teclado, e foco invisível é como perder o cursor. */
+:focus-visible {
+  outline: 2px solid var(--color-info);
+  outline-offset: 2px;
+}
