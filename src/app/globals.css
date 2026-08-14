@@ -78,7 +78,14 @@
   --color-ok-dim: #0d4a24;
   --color-info: #38bdf8;
 
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  /* O mono é da mesma família em toda a ferramenta, e não é enfeite de
+     terminal: é a fonte de tudo que a estrada mediu ou que alguém digita —
+     quilômetro, janela, código de vínculo, horário, unidade. Ter uma fonte
+     própria para o dado medido é o que separa, de relance, um número de um
+     adjetivo. Sempre em caixa alta com entreletra ≥ .1em. */
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo,
+    monospace;
 
   /* Barlow tem o traço de baixo contraste e os terminais retos da sinalização
      rodoviária — o mesmo mundo visual da bandeirola. A pilha de reserva é
@@ -241,6 +248,33 @@ body {
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* ---------------------------------------------------------------------------
+   As duas vozes da tipografia da ferramenta.
+
+   TÍTULO (`.titulo`) e NÚMERO MEDIDO (`.medido`) são a mesma família — Barlow
+   Condensed — e é de propósito: a condensada empacota mais informação na
+   mesma largura, que é o que uma tela de operação precisa. Barlow de largura
+   normal fica com o parágrafo, onde a condensada cansaria.
+
+   O número medido é condensado e pesado, nunca mono. Mono é a fonte do RÓTULO
+   ("KM", "JANELA", "MÉDIA") e do que se digita (o código de vínculo); em corpo
+   grande ele vira máquina de escrever e o dígito perde peso justamente quando
+   ele é a única coisa que importa na tela.
+   --------------------------------------------------------------------------- */
+.titulo {
+  font-family: var(--font-wordmark);
+  letter-spacing: -0.01em;
+}
+
+.medido {
+  font-family: var(--font-wordmark);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 /* ---------------------------------------------------------------------------

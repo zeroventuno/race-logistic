@@ -350,7 +350,7 @@ export function MapaAoVivo({
       <MapCanvas onReady={aoPronto} className="h-full w-full" initialZoom={12} />
 
       {!pronto && demorou ? (
-        <div className="pointer-events-none absolute inset-x-3 top-3 rounded-lg border border-warn/60 bg-surface-1/95 px-3 py-2 text-sm text-warn">
+        <div className="pointer-events-none absolute inset-x-3 top-3 border border-warn/60 bg-surface-1/95 px-3 py-2 text-sm text-warn">
           {/* i18n: precisa de chave — mapa não terminou de carregar */}
           <p className="font-semibold">O mapa não terminou de carregar.</p>
           <p className="mt-0.5 text-ink-muted">
@@ -368,7 +368,7 @@ export function MapaAoVivo({
             enquadrar(mapRef.current, renderPoints);
           }
         }}
-        className="absolute bottom-3 right-3 rounded-lg border border-border-strong bg-surface-2/95 px-3 py-2 text-xs font-medium text-ink shadow-lg hover:border-info"
+        className="absolute bottom-3 right-3 border border-border-strong bg-surface-2/95 px-3 py-2 text-xs font-medium text-ink shadow-lg hover:border-info"
       >
         {t("map.fitRoute")}
       </button>
@@ -383,7 +383,7 @@ function LegendaSinal() {
   const estados: SignalHealth[] = ["live", "delayed", "stale", "lost"];
 
   return (
-    <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-x-3 gap-y-1 rounded-lg border border-border bg-surface-1/90 px-3 py-2 text-[11px] text-ink-muted">
+    <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-x-3 gap-y-1 border border-border bg-surface-1/90 px-3 py-2 text-[11px] text-ink-muted">
       {estados.map((s) => (
         <span key={s} className="flex items-center gap-1.5">
           <span

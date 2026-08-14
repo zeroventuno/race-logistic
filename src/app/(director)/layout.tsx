@@ -62,7 +62,7 @@ export default async function DirectorLayout({
               <form action={sair}>
                 <button
                   type="submit"
-                  className="min-h-9 rounded-lg border border-border px-3 text-sm text-ink-muted transition hover:border-border-strong hover:text-ink"
+                  className="min-h-9 border border-border px-3 text-sm text-ink-muted transition hover:border-border-strong hover:text-ink"
                 >
                   {/* i18n: precisa de chave — "Sair" (logout) */}
                   Sair

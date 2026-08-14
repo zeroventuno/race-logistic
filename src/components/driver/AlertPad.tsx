@@ -91,7 +91,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
         /* i18n: precisa de chave — falha de gravação local do alerta */
         <p
           role="alert"
-          className="alert-pulse rounded-lg border-2 border-critical bg-critical px-3 py-3 text-sm font-bold text-white"
+          className="alert-pulse border-2 border-critical bg-critical px-3 py-3 text-sm font-bold text-white"
         >
           ALERTA NÃO SALVO NESTE APARELHO — USE O RÁDIO AGORA.
           <span className="mt-1 block text-xs font-normal opacity-90">
@@ -108,7 +108,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
           type="button"
           disabled={busy}
           onClick={() => handlePress("medical")}
-          className={`touch-target flex items-center justify-center gap-3 rounded-xl px-4 py-4 text-lg font-bold transition ${
+          className={`font-mono uppercase tracking-[0.12em] touch-target flex items-center justify-center gap-3 px-4 py-4 text-lg font-bold transition ${
             confirming === "medical"
               ? "alert-pulse bg-critical text-white"
               : "border-2 border-critical bg-critical-dim/40 text-ink"
@@ -128,7 +128,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
             <button
               type="button"
               onClick={() => setConfirming(null)}
-              className="touch-target rounded-xl border border-border bg-surface-2 px-4 text-sm font-medium text-ink-muted"
+              className="font-mono uppercase tracking-[0.12em] touch-target border border-border bg-surface-2 px-4 text-sm font-medium text-ink-muted"
             >
               {t("common.cancel")}
             </button>
@@ -140,7 +140,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
             type="button"
             disabled={busy}
             onClick={() => handlePress("mechanical")}
-            className="touch-target flex items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-3 py-3 font-semibold text-ink"
+            className="font-mono uppercase tracking-[0.12em] touch-target flex items-center justify-center gap-2 border border-border-strong bg-surface-2 px-3 py-3 font-semibold text-ink"
           >
             <span aria-hidden="true">{ALERT_CATEGORY_META.mechanical.icon}</span>
             {t("alerts.categories.mechanical.short")}
@@ -150,7 +150,7 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
             type="button"
             disabled={busy}
             onClick={() => handlePress("other")}
-            className="touch-target flex items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-2 px-3 py-3 font-semibold text-ink"
+            className="font-mono uppercase tracking-[0.12em] touch-target flex items-center justify-center gap-2 border border-border-strong bg-surface-2 px-3 py-3 font-semibold text-ink"
           >
             <span aria-hidden="true">{ALERT_CATEGORY_META.other.icon}</span>
             {t("alerts.categories.other.short")}
@@ -181,7 +181,7 @@ function MyAlerts({ snapshot }: { snapshot: DriverSnapshot }) {
       {lines.map((line) => (
         <li
           key={line.key}
-          className={`rounded-lg border px-3 py-2 text-sm ${
+          className={`border px-3 py-2 text-sm ${
             line.tone === "pending"
               ? "border-warn/60 bg-warn-dim/25 text-ink"
               : line.tone === "delivered"

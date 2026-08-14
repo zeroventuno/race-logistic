@@ -80,7 +80,7 @@ export function PosicoesPainel({
             <div>
               <label
                 htmlFor="papel-lote"
-                className="block text-sm font-medium text-ink-muted"
+                className="block font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted"
               >
                 {/* i18n: precisa de chave — rótulo "Papel" */}
                 Papel
@@ -89,7 +89,7 @@ export function PosicoesPainel({
                 id="papel-lote"
                 value={papel}
                 onChange={(e) => setPapel(e.target.value as PositionRole)}
-                className="mt-1.5 min-h-11 rounded-lg border border-border bg-surface-0 px-3 text-ink"
+                className="mt-1.5 min-h-11 border border-border bg-surface-0 px-3 text-ink"
               >
                 {PAPEIS.map((p) => (
                   // `<option>` só aceita texto: um SVG dentro dele é ignorado
@@ -105,7 +105,7 @@ export function PosicoesPainel({
             <div>
               <label
                 htmlFor="qtd-lote"
-                className="block text-sm font-medium text-ink-muted"
+                className="block font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted"
               >
                 {t("positions.quantity")}
               </label>
@@ -121,7 +121,7 @@ export function PosicoesPainel({
                     Math.max(1, Math.min(40, Number(e.target.value) || 1)),
                   )
                 }
-                className="tnum mt-1.5 min-h-11 w-24 rounded-lg border border-border bg-surface-0 px-3 text-ink"
+                className="tnum mt-1.5 min-h-11 w-24 border border-border bg-surface-0 px-3 text-ink"
               />
             </div>
 
@@ -157,7 +157,7 @@ export function PosicoesPainel({
         <Cartao className="p-6">
           {/* i18n: precisa de chave — estado vazio de posições (título e os dois
               parágrafos que explicam o que é uma posição) */}
-          <h2 className="text-lg font-semibold text-ink">
+          <h2 className="titulo font-semibold text-ink text-xl">
             Nenhuma posição cadastrada
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-ink-muted">

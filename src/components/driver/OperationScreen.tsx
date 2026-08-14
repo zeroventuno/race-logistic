@@ -160,7 +160,7 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
           <button
             type="button"
             onClick={onUnbind}
-            className="touch-target rounded-xl bg-info px-6 py-4 text-lg font-semibold text-surface-0"
+            className="font-mono uppercase tracking-[0.12em] touch-target bg-info px-6 py-4 text-lg font-semibold text-surface-0"
           >
             {t("driver.bindAction")}
           </button>
@@ -316,7 +316,7 @@ function StatusBar({
             onClick={() => {
               if (window.confirm(t("driver.unbindConfirm"))) onUnbind();
             }}
-            className="touch-target w-full rounded-lg border border-border-strong px-4 text-sm text-ink-muted"
+            className="font-mono uppercase tracking-[0.12em] touch-target w-full border border-border-strong px-4 text-sm text-ink-muted"
           >
             {t("driver.unbind")}
           </button>
@@ -355,7 +355,7 @@ function GapStrip({ gap }: { gap: GapResult }) {
 
   return (
     <div className="flex items-baseline gap-2 border-b border-border bg-surface-1 px-3 py-1.5">
-      <span className="text-xs uppercase tracking-wide text-ink-faint">
+      <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
         {t("gap.short")}
       </span>
       <span className="tnum text-lg font-semibold text-ink">

@@ -174,7 +174,7 @@ export function ProvaForm({
         />
       </Campo>
 
-      <fieldset className="rounded-lg border border-border bg-surface-1 p-4">
+      <fieldset className="border border-border bg-surface-1 p-4">
         <legend className="px-1 text-sm font-medium text-ink">
           {t("gap.title")}
         </legend>

@@ -83,10 +83,10 @@ export function PainelAlertas({
   return (
     <section
       aria-label={t("alerts.title")}
-      className="flex min-h-0 flex-col rounded-xl border border-border bg-surface-1"
+      className="flex min-h-0 flex-col border border-border bg-surface-1"
     >
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-ink">
+        <h2 className="font-mono flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-ink">
           {t("alerts.title")}
           {ativos.length > 0 ? (
             <span
@@ -117,7 +117,7 @@ export function PainelAlertas({
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {ativos.length === 0 ? (
-          <p className="rounded-lg border border-border bg-surface-2/50 px-4 py-6 text-center text-sm text-ink-muted">
+          <p className="border border-border bg-surface-2/50 px-4 py-6 text-center text-sm text-ink-muted">
             {t("alerts.none")}
           </p>
         ) : (
@@ -222,7 +222,7 @@ function CartaoAlerta({
 
   return (
     <article
-      className={`rounded-xl border-2 p-3 ${borda} ${gritando ? "alert-pulse" : ""}`}
+      className={`border-2 p-3 ${borda} ${gritando ? "alert-pulse" : ""}`}
     >
       {/* Cabeçalho: categoria grande, estado e idade. É a linha que responde
           "o que é isso e desde quando" sem precisar ler mais nada. */}
@@ -270,7 +270,7 @@ function CartaoAlerta({
         </div>
 
         <span
-          className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+          className={`font-mono shrink-0 border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
             gritando
               ? "border-critical/60 bg-critical/15 text-critical"
               : "border-border bg-surface-3 text-ink-muted"
@@ -281,7 +281,7 @@ function CartaoAlerta({
       </div>
 
       {alerta.note ? (
-        <p className="mt-2 rounded-md bg-surface-0/60 px-2.5 py-1.5 text-sm text-ink">
+        <p className="mt-2 bg-surface-0/60 px-2.5 py-1.5 text-sm text-ink">
           {alerta.note}
         </p>
       ) : null}
@@ -290,7 +290,7 @@ function CartaoAlerta({
       <div className="mt-2.5">
         {alerta.dispatch ? (
           <div
-            className={`flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-2.5 py-1.5 text-sm ${
+            className={`flex flex-wrap items-center gap-x-2 gap-y-1 border px-2.5 py-1.5 text-sm ${
               estagio === "declined"
                 ? "border-warn/50 bg-warn/10 text-warn"
                 : estagio === "on_scene"
@@ -316,7 +316,7 @@ function CartaoAlerta({
               </span>
             ) : null}
             {alerta.dispatch.mode === "auto" ? (
-              <span className="rounded border border-border px-1 text-[10px] uppercase tracking-wide opacity-80">
+              <span className="font-mono rounded border border-border px-1 text-[10px] uppercase tracking-wide opacity-80">
                 {/* i18n: precisa de chave — "automático" */}
                 automático
               </span>
@@ -325,7 +325,7 @@ function CartaoAlerta({
         ) : ativo ? (
           <p
             role="alert"
-            className="rounded-lg border border-critical/60 bg-critical/15 px-2.5 py-1.5 text-sm font-semibold text-critical"
+            className="border border-critical/60 bg-critical/15 px-2.5 py-1.5 text-sm font-semibold text-critical"
           >
             {/* i18n: precisa de chave — "Ninguém foi acionado" */}
             ⚠ Ninguém foi acionado para este alerta.
@@ -366,7 +366,7 @@ function CartaoAlerta({
                 type="button"
                 disabled={pendente}
                 onClick={() => executar(() => reconhecerAlerta(alerta, usuarioId))}
-                className="min-h-11 flex-1 rounded-lg bg-ink px-4 text-sm font-bold text-surface-0 transition hover:bg-white disabled:opacity-50"
+                className="min-h-11 flex-1 bg-ink px-4 text-sm font-bold text-surface-0 transition hover:bg-white disabled:opacity-50"
               >
                 {t("alerts.actions.acknowledge")}
               </button>
@@ -376,7 +376,7 @@ function CartaoAlerta({
               type="button"
               disabled={pendente}
               onClick={() => executar(() => resolverAlerta(alerta, usuarioId, nota))}
-              className="min-h-11 flex-1 rounded-lg border border-ok/50 bg-ok/10 px-4 text-sm font-semibold text-ok transition hover:bg-ok/20 disabled:opacity-50"
+              className="min-h-11 flex-1 border border-ok/50 bg-ok/10 px-4 text-sm font-semibold text-ok transition hover:bg-ok/20 disabled:opacity-50"
             >
               ✓ {t("alerts.actions.resolve")}
             </button>
@@ -387,7 +387,7 @@ function CartaoAlerta({
               prova em que ninguém tem cliques sobrando. */}
           {alternativas.length > 0 ? (
             <div className="mt-3">
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
+              <p className="font-mono mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
                 {alerta.dispatch
                   ? t("alerts.dispatch.reassign")
                   : /* i18n: precisa de chave — "Acionar apoio" */
@@ -412,7 +412,7 @@ function CartaoAlerta({
                           ),
                         )
                       }
-                      className="flex w-full items-start gap-2 rounded-lg border border-border bg-surface-0/50 px-2.5 py-2 text-left transition hover:border-info hover:bg-surface-3 disabled:opacity-50"
+                      className="flex w-full items-start gap-2 border border-border bg-surface-0/50 px-2.5 py-2 text-left transition hover:border-info hover:bg-surface-3 disabled:opacity-50"
                     >
                       <span
                         aria-hidden
@@ -464,7 +464,7 @@ function CartaoAlerta({
               </button>
             </div>
           ) : semNinguem ? (
-            <p className="mt-3 rounded-lg border border-warn/45 bg-warn/10 px-2.5 py-2 text-xs text-warn">
+            <p className="mt-3 border border-warn/45 bg-warn/10 px-2.5 py-2 text-xs text-warn">
               {t("alerts.dispatch.noneAvailable")}
             </p>
           ) : null}
@@ -474,7 +474,7 @@ function CartaoAlerta({
               value={nota}
               onChange={(e) => setNota(e.target.value)}
               placeholder={t("alerts.actions.resolutionNote")}
-              className="min-h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface-0 px-2.5 text-xs text-ink placeholder:text-ink-faint"
+              className="min-h-9 min-w-0 flex-1 border border-border bg-surface-0 px-2.5 text-xs text-ink placeholder:text-ink-faint"
             />
 
             <button
@@ -488,7 +488,7 @@ function CartaoAlerta({
                 executar(() => cancelarAlerta(alerta, usuarioId, nota));
               }}
               onBlur={() => setConfirmandoCancelar(false)}
-              className={`min-h-9 rounded-lg border px-2.5 text-xs transition ${
+              className={`min-h-9 border px-2.5 text-xs transition ${
                 confirmandoCancelar
                   ? "border-warn bg-warn/15 font-semibold text-warn"
                   : "border-border text-ink-faint hover:text-ink"

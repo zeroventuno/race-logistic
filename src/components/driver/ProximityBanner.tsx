@@ -74,7 +74,7 @@ export function ProximityBanner({ proximity, alerts, onConfirm }: ProximityBanne
         <button
           type="button"
           onClick={() => setDismissed((d) => [...d, nearest.alertId])}
-          className="rounded-lg border border-border px-3 py-1 text-xs text-ink-muted"
+          className="border border-border px-3 py-1 text-xs text-ink-muted"
         >
           {t("alerts.proximity.dismiss")}
         </button>
@@ -90,7 +90,7 @@ export function ProximityBanner({ proximity, alerts, onConfirm }: ProximityBanne
                 setConfirmed((c) => [...c, nearest.alertId]);
                 onConfirm(nearest.alertId, "still_there");
               }}
-              className="touch-target flex-1 rounded-lg border border-border-strong bg-surface-2 px-2 text-sm font-medium text-ink"
+              className="font-mono uppercase tracking-[0.12em] touch-target flex-1 border border-border-strong bg-surface-2 px-2 text-sm font-medium text-ink"
             >
               {t("alerts.confirm.still_there")}
             </button>
@@ -100,7 +100,7 @@ export function ProximityBanner({ proximity, alerts, onConfirm }: ProximityBanne
                 setConfirmed((c) => [...c, nearest.alertId]);
                 onConfirm(nearest.alertId, "cleared");
               }}
-              className="touch-target flex-1 rounded-lg border border-border-strong bg-surface-2 px-2 text-sm font-medium text-ink"
+              className="font-mono uppercase tracking-[0.12em] touch-target flex-1 border border-border-strong bg-surface-2 px-2 text-sm font-medium text-ink"
             >
               {t("alerts.confirm.cleared")}
             </button>

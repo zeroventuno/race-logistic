@@ -535,7 +535,7 @@ function ResumoDoPercurso({
       <div className="border-b border-border p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-ink">
+            <h2 className="titulo font-semibold text-ink text-xl">
               {t("route.current")}
             </h2>
             <p className="mt-1 text-sm text-ink-muted">
@@ -555,27 +555,27 @@ function ResumoDoPercurso({
 
         <dl className="mt-5 grid gap-5 sm:grid-cols-3">
           <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">
+            <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
               {t("race.distance")}
             </dt>
-            <dd className="tnum mt-1 text-3xl font-semibold text-ink">
+            <dd className="medido tnum mt-1 text-3xl text-ink">
               {fmt.distance(track.totalDistanceM)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">
+            <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
               {t("race.elevation")}
             </dt>
-            <dd className="tnum mt-1 text-3xl font-semibold text-ink">
+            <dd className="medido tnum mt-1 text-3xl text-ink">
               {formatElevationGain(track.elevationGainM, locale)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">
+            <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
               {/* i18n: precisa de chave — "Pontos de geometria" */}
               Pontos de geometria
             </dt>
-            <dd className="tnum mt-1 text-3xl font-semibold text-ink">
+            <dd className="medido tnum mt-1 text-3xl text-ink">
               {formatInteger(track.pointCount, locale)}
             </dd>
           </div>
@@ -639,7 +639,7 @@ function AreaDeSoltar({
           const arquivo = e.dataTransfer.files?.[0];
           if (arquivo) onArquivo(arquivo);
         }}
-        className={`rounded-xl border-2 border-dashed transition ${
+        className={`border-2 border-dashed transition ${
           arrastando
             ? "border-info bg-info/10"
             : "border-border-strong bg-surface-1"
@@ -715,44 +715,44 @@ function PreviewDaImportacao({
   return (
     <Cartao className="overflow-hidden">
       <div className="border-b border-border p-5 sm:p-6">
-        <p className="text-xs uppercase tracking-wide text-ink-faint">
+        <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
           {/* i18n: precisa de chave — "Conferindo antes de gravar" */}
           Conferindo antes de gravar
         </p>
-        <h2 className="mt-1 text-lg font-semibold text-ink">
+        <h2 className="titulo mt-1 font-semibold text-ink text-xl">
           {preview.nomeArquivo}
         </h2>
 
         <dl className="mt-5 grid gap-5 sm:grid-cols-3">
           <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">
+            <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
               {t("race.distance")}
             </dt>
-            <dd className="tnum mt-1 text-3xl font-semibold text-ink">
+            <dd className="medido tnum mt-1 text-3xl text-ink">
               {fmt.distance(preview.distanciaM)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">
+            <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
               {t("race.elevation")}
             </dt>
-            <dd className="tnum mt-1 text-3xl font-semibold text-ink">
+            <dd className="medido tnum mt-1 text-3xl text-ink">
               {formatElevationGain(preview.ganhoElevacaoM, locale)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">
+            <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
               {/* i18n: precisa de chave — "Pontos de geometria" */}
               Pontos de geometria
             </dt>
-            <dd className="tnum mt-1 text-3xl font-semibold text-ink">
+            <dd className="medido tnum mt-1 text-3xl text-ink">
               {formatInteger(preview.pontosNoBanco, locale)}
             </dd>
           </div>
         </dl>
 
         {preview.segmentos.length > 1 ? (
-          <fieldset className="mt-6 rounded-lg border border-border bg-surface-2 p-4">
+          <fieldset className="mt-6 border border-border bg-surface-2 p-4">
             <legend className="px-1 text-sm font-medium text-ink">
               {t("route.chooseSegment")}
             </legend>
@@ -765,7 +765,7 @@ function PreviewDaImportacao({
               {preview.segmentos.map((seg, i) => (
                 <label
                   key={i}
-                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 ${
+                  className={`flex min-h-11 cursor-pointer items-center gap-3 border px-3 py-2 ${
                     i === preview.indiceEscolhido
                       ? "border-info bg-info/10"
                       : "border-border hover:border-border-strong"
@@ -908,7 +908,7 @@ function EditorDeDesenho({
       <div className="border-b border-border p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-ink">
+            <h2 className="titulo font-semibold text-ink text-xl">
               {t("route.drawTitle")}
             </h2>
             <p className="mt-1 max-w-2xl text-sm text-ink-muted">
@@ -922,19 +922,19 @@ function EditorDeDesenho({
 
           <div className="flex gap-6">
             <div>
-              <p className="text-xs uppercase tracking-wide text-ink-faint">
+              <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
                 {t("race.distance")}
               </p>
-              <p className="tnum mt-0.5 text-2xl font-semibold text-ink">
+              <p className="medido tnum mt-0.5 text-2xl text-ink">
                 {fmt.distance(distanciaM)}
               </p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-ink-faint">
+              <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
                 {/* i18n: precisa de chave — "Vértices" */}
                 Vértices
               </p>
-              <p className="tnum mt-0.5 text-2xl font-semibold text-ink">
+              <p className="medido tnum mt-0.5 text-2xl text-ink">
                 {vertices.length}
               </p>
             </div>

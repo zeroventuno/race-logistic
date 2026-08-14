@@ -47,7 +47,7 @@ export default async function ResumoDaProvaPage({
           {readiness.items.map((item) => (
             <li
               key={item.key}
-              className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${
+              className={`flex items-start gap-3 border px-4 py-3 ${
                 item.done
                   ? "border-border bg-surface-2/40"
                   : item.required
@@ -127,23 +127,23 @@ export default async function ResumoDaProvaPage({
           {activeTrack ? (
             <dl className="mt-4 grid grid-cols-2 gap-4">
               <div>
-                <dt className="text-xs uppercase tracking-wide text-ink-faint">
+                <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
                   {t("race.distance")}
                 </dt>
-                <dd className="tnum mt-0.5 text-2xl font-semibold text-ink">
+                <dd className="medido tnum mt-0.5 text-2xl text-ink">
                   {formatDistance(activeTrack.total_distance_m, locale)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-ink-faint">
+                <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
                   {t("race.elevation")}
                 </dt>
-                <dd className="tnum mt-0.5 text-2xl font-semibold text-ink">
+                <dd className="medido tnum mt-0.5 text-2xl text-ink">
                   {formatElevationGain(activeTrack.elevation_gain_m, locale)}
                 </dd>
               </div>
               {voltas > 1 ? (
-                <div className="col-span-2 rounded-lg border border-border bg-surface-2/50 px-3 py-2 text-sm text-ink-muted">
+                <div className="col-span-2 border border-border bg-surface-2/50 px-3 py-2 text-sm text-ink-muted">
                   {/* i18n: precisa de chave — distância total com voltas */}
                   <span className="tnum">{voltas}</span> voltas ={" "}
                   <span className="tnum font-semibold text-ink">
@@ -194,7 +194,7 @@ export default async function ResumoDaProvaPage({
             {t("race.positions")}
           </TituloSecao>
 
-          <p className="tnum mt-4 text-2xl font-semibold text-ink">
+          <p className="medido tnum mt-4 text-2xl text-ink">
             {positions.length}
           </p>
 

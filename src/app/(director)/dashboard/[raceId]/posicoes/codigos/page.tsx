@@ -62,7 +62,7 @@ export default async function CodigosPage({
 
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-ink">
+            <h1 className="titulo text-2xl font-semibold text-ink">
               {t("positions.printTitle", { race: race.name })}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-ink-muted">
@@ -122,7 +122,7 @@ export default async function CodigosPage({
 
       <section className="folha-impressao mt-8">
         <header className="cabecalho-folha mb-5 border-b border-border pb-4">
-          <h2 className="text-lg font-semibold text-ink">{race.name}</h2>
+          <h2 className="titulo font-semibold text-ink text-xl">{race.name}</h2>
           <p className="mt-0.5 text-sm text-ink-muted">
             {race.location ? `${race.location} · ` : ""}
             <span className="tnum">
@@ -147,7 +147,7 @@ export default async function CodigosPage({
             return (
               <article
                 key={p.id}
-                className="bloco-codigo rounded-lg border border-dashed border-border-strong p-4"
+                className="bloco-codigo border border-dashed border-border-strong p-4"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="flex items-center gap-1.5 text-base font-semibold text-ink">
@@ -156,7 +156,7 @@ export default async function CodigosPage({
                     <VehicleIcon role={p.role} size={17} />
                     {p.label}
                   </p>
-                  <p className="text-xs uppercase tracking-wide text-ink-faint">
+                  <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
                     {/* O marcador de referência só aparece quando ele acrescenta
                         informação: num carro de abertura marcado como abertura,
                         repetir a palavra é ruído no papel. */}

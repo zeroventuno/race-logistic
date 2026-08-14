@@ -186,7 +186,7 @@ export function PainelAoVivo({
               <li
                 key={w}
                 role="alert"
-                className="rounded-lg border border-warn/45 bg-warn/10 px-3 py-2 text-sm text-warn"
+                className="border border-warn/45 bg-warn/10 px-3 py-2 text-sm text-warn"
               >
                 {w}
               </li>
@@ -211,7 +211,7 @@ export function PainelAoVivo({
             />
           </div>
 
-          <div className="h-[24rem] overflow-hidden rounded-xl border border-border sm:h-[32rem] xl:h-[calc(100dvh-21rem)] xl:min-h-[30rem]">
+          <div className="h-[24rem] overflow-hidden border border-border sm:h-[32rem] xl:h-[calc(100dvh-21rem)] xl:min-h-[30rem]">
             {renderPoints.length >= 2 ? (
               <MapaAoVivo
                 renderPoints={renderPoints}

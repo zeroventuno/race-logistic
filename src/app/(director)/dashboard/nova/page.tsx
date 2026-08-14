@@ -20,7 +20,7 @@ export default async function NovaProvaPage() {
         ← {t("director.myRaces")}
       </Link>
 
-      <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">
+      <h1 className="mt-4 titulo text-3xl font-semibold text-ink">
         {t("director.newRace")}
       </h1>
       <p className="mt-1 text-sm text-ink-muted">

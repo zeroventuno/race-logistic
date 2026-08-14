@@ -79,7 +79,7 @@ export default async function DashboardPage() {
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          <h1 className="titulo text-3xl font-semibold text-ink">
             {t("director.myRaces")}
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
@@ -123,10 +123,10 @@ export default async function DashboardPage() {
               <li key={race.id}>
                 <Link
                   href={`/dashboard/${race.id}`}
-                  className="block h-full rounded-xl border border-border bg-surface-1 p-5 transition hover:border-border-strong hover:bg-surface-2"
+                  className="block h-full border border-border bg-surface-1 p-5 transition hover:border-border-strong hover:bg-surface-2"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <h2 className="text-lg font-semibold leading-tight text-ink">
+                    <h2 className="titulo font-semibold leading-tight text-ink text-xl">
                       {race.name}
                     </h2>
                     <Selo tone={RACE_STATUS_TONE[race.status]}>
@@ -226,7 +226,7 @@ function EstadoVazio({ t }: { t: Translator }) {
 
   return (
     <Cartao className="mt-8 p-6 sm:p-8">
-      <h2 className="text-xl font-semibold text-ink">{t("director.noRaces")}</h2>
+      <h2 className="titulo font-semibold text-ink text-2xl">{t("director.noRaces")}</h2>
       <p className="mt-2 max-w-2xl text-sm text-ink-muted">
         {/* i18n: precisa de chave — explicação dos requisitos de uma prova */}
         Uma prova fica pronta para ir ao ar quando tem percurso, posições de

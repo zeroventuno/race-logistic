@@ -57,7 +57,7 @@ export function DispatchTakeover({
     <div className="fixed inset-0 z-50 flex flex-col justify-between bg-surface-0/98 p-5 backdrop-blur">
       <header className="pt-6">
         <p
-          className={`text-center text-sm font-bold uppercase tracking-[0.2em] ${
+          className={`font-mono text-center text-sm font-bold uppercase tracking-[0.2em] ${
             alert.category === "medical" ? "text-critical" : "text-warn"
           }`}
         >
@@ -68,14 +68,14 @@ export function DispatchTakeover({
           {category.icon}
         </p>
 
-        <h2 className="mt-4 text-center text-3xl font-bold text-ink">
+        <h2 className="titulo mt-4 text-center font-bold text-ink text-4xl">
           {t(`alerts.categories.${alert.category}.label`)}
         </h2>
 
         {/* Sentido junto com a distância: "1,2 km" sozinho não diz se o
             motorista segue em frente ou dá meia-volta, e essa é a primeira
             decisão que ele precisa tomar. */}
-        <p className="tnum mt-3 text-center text-2xl font-semibold text-ink">
+        <p className="medido tnum mt-3 text-center text-2xl text-ink">
           {distanceM == null
             ? t("common.unknown")
             : `${fmt.distance(Math.abs(distanceM))} ${
@@ -92,7 +92,7 @@ export function DispatchTakeover({
         ) : null}
 
         {alert.note ? (
-          <p className="mt-4 rounded-lg border border-border bg-surface-2 px-4 py-3 text-center text-base text-ink">
+          <p className="mt-4 border border-border bg-surface-2 px-4 py-3 text-center text-base text-ink">
             {alert.note}
           </p>
         ) : null}
@@ -106,26 +106,29 @@ export function DispatchTakeover({
 
       {declining ? (
         <section className="flex flex-col gap-3 pb-6">
-          <label className="text-sm text-ink-muted" htmlFor="decline-reason">
+          <label
+            className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted"
+            htmlFor="decline-reason"
+          >
             {t("alerts.dispatch.declineReason")}
           </label>
           <input
             id="decline-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="touch-target rounded-xl border border-border-strong bg-surface-1 px-4 text-base text-ink"
+            className="font-mono uppercase tracking-[0.12em] touch-target border border-border-strong bg-surface-1 px-4 text-base text-ink"
           />
           <button
             type="button"
             onClick={() => onRespond("decline", reason.trim() || null)}
-            className="touch-target rounded-xl bg-warn px-6 py-4 text-lg font-bold text-surface-0"
+            className="font-mono uppercase tracking-[0.12em] touch-target bg-warn px-6 py-4 text-lg font-bold text-surface-0"
           >
             {t("alerts.dispatch.cantGo")}
           </button>
           <button
             type="button"
             onClick={() => setDeclining(false)}
-            className="touch-target rounded-xl border border-border bg-surface-2 px-6 text-base text-ink-muted"
+            className="font-mono uppercase tracking-[0.12em] touch-target border border-border bg-surface-2 px-6 text-base text-ink-muted"
           >
             {t("common.cancel")}
           </button>
@@ -135,7 +138,7 @@ export function DispatchTakeover({
           <button
             type="button"
             onClick={() => onRespond(accepted ? "arrived" : "on_my_way", null)}
-            className="touch-target rounded-xl bg-ok px-6 py-6 text-2xl font-bold text-surface-0"
+            className="font-mono uppercase tracking-[0.12em] touch-target bg-ok px-6 py-6 text-2xl font-bold text-surface-0"
           >
             {accepted ? t("alerts.dispatch.arrived") : t("alerts.dispatch.onMyWay")}
           </button>
@@ -143,7 +146,7 @@ export function DispatchTakeover({
           <button
             type="button"
             onClick={() => setDeclining(true)}
-            className="touch-target rounded-xl border-2 border-border-strong bg-surface-2 px-6 py-4 text-lg font-semibold text-ink"
+            className="font-mono uppercase tracking-[0.12em] touch-target border-2 border-border-strong bg-surface-2 px-6 py-4 text-lg font-semibold text-ink"
           >
             {t("alerts.dispatch.cantGo")}
           </button>
@@ -201,7 +204,7 @@ export function DispatchBanner({
       <button
         type="button"
         onClick={() => onRespond("arrived", null)}
-        className="touch-target shrink-0 rounded-lg bg-ok px-4 text-sm font-bold text-surface-0"
+        className="font-mono uppercase tracking-[0.12em] touch-target shrink-0 bg-ok px-4 text-sm font-bold text-surface-0"
       >
         {t("alerts.dispatch.arrived")}
       </button>

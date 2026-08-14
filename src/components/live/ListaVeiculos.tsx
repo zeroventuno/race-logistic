@@ -68,11 +68,11 @@ export function ListaVeiculos({
   return (
     <section
       aria-label={t("map.vehicles")}
-      className="flex min-h-0 flex-col rounded-xl border border-border bg-surface-1"
+      className="flex min-h-0 flex-col border border-border bg-surface-1"
     >
       <header className="border-b border-border px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-ink">
+          <h2 className="font-mono text-sm font-semibold uppercase tracking-[0.14em] text-ink">
             {t("map.vehicles")}
           </h2>
           <span className="tnum text-xs text-ink-muted">{vehicles.length}</span>
@@ -85,7 +85,7 @@ export function ListaVeiculos({
               type="button"
               onClick={() => onSort(o.valor)}
               aria-pressed={sort === o.valor}
-              className={`rounded-md border px-2 py-1 text-[11px] transition ${
+              className={`border px-2 py-1 text-[11px] transition ${
                 sort === o.valor
                   ? "border-info bg-info/15 font-semibold text-info"
                   : "border-border text-ink-muted hover:text-ink"
@@ -100,7 +100,7 @@ export function ListaVeiculos({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {semSinal.length > 0 ? (
           <>
-            <p className="sticky top-0 z-10 bg-critical/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-critical backdrop-blur">
+            <p className="font-mono sticky top-0 z-10 bg-critical/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-critical backdrop-blur">
               {/* i18n: precisa de chave — cabeçalho do grupo sem sinal */}
               Sem sinal ({semSinal.length}) — a posição no mapa é uma lembrança
             </p>

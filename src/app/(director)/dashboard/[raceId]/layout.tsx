@@ -39,7 +39,7 @@ export default async function RaceLayout({
 
             <div className="mt-3 flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
               <div>
-                <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+                <h1 className="titulo text-2xl font-semibold text-ink sm:text-2xl">
                   {race.name}
                 </h1>
                 <p className="mt-1 text-sm text-ink-muted">

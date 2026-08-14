@@ -44,7 +44,7 @@ export default async function PercursoPage({
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight text-ink">
+        <h1 className="titulo text-2xl font-semibold text-ink">
           {t("race.route")}
         </h1>
         <p className="mt-1 max-w-3xl text-sm text-ink-muted">

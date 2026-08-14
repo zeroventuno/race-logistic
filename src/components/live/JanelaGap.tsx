@@ -68,12 +68,12 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
   return (
     <section
       aria-label={t("gap.title")}
-      className={`rounded-xl border bg-surface-1 p-4 sm:p-5 ${
+      className={`border bg-surface-1 p-4 sm:p-5 ${
         confiavel ? "border-border" : "border-warn/50"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t("gap.title")}
         </h2>
         <SeloMetodo gap={gap} />
@@ -82,7 +82,7 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
       <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-3">
         <div>
           <p
-            className={`tnum text-[3.25rem] font-bold leading-none tracking-tight sm:text-6xl ${
+            className={`medido tnum text-[3.5rem] leading-none sm:text-[4.5rem] ${
               confiavel ? "text-ink" : "text-warn"
             }`}
             style={
@@ -99,17 +99,17 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
           >
             {fmt.duration(gap.gapSeconds)}
           </p>
-          <p className="mt-1 text-xs uppercase tracking-wide text-ink-faint">
+          <p className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
             {/* i18n: precisa de chave — "separação no tempo" */}
             separação no tempo
           </p>
         </div>
 
         <div>
-          <p className="tnum text-3xl font-semibold leading-none text-ink-muted">
+          <p className="medido tnum text-3xl leading-none text-ink-muted">
             {gap.gapM === null ? "—" : fmt.distance(gap.gapM)}
           </p>
-          <p className="mt-1 text-xs uppercase tracking-wide text-ink-faint">
+          <p className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
             {/* i18n: precisa de chave — "pela estrada" */}
             pela estrada
           </p>
@@ -203,7 +203,7 @@ function SeloMetodo({ gap }: { gap: LiveGapView }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${estilo}`}
+      className={`font-mono inline-flex items-center gap-1.5 border px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${estilo}`}
     >
       <span aria-hidden>
         {gap.method === "measured" ? "◉" : gap.method === "projected" ? "◌" : "⚠"}
@@ -235,7 +235,7 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
 
   if (!confiavel) {
     return (
-      <span className="inline-flex w-fit items-center rounded-md border border-warn/45 bg-warn/10 px-2 py-0.5 text-xs text-warn">
+      <span className="inline-flex w-fit items-center border border-warn/45 bg-warn/10 px-2 py-0.5 text-xs text-warn">
         {/* i18n: precisa de chave — comparação suspensa por dado não confiável */}
         Comparação com a janela alvo suspensa enquanto o dado não for confiável
       </span>
@@ -245,7 +245,7 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
   if (gap.band === "no_limits") {
     return (
       <span
-        className={`inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-xs ${BAND_TOM.no_limits}`}
+        className={`inline-flex w-fit items-center border px-2 py-0.5 text-xs ${BAND_TOM.no_limits}`}
       >
         {/* i18n: precisa de chave — prova sem limites de janela definidos */}
         Sem limites definidos para esta prova
@@ -259,7 +259,7 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
 
   return (
     <span
-      className={`inline-flex w-fit items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold ${BAND_TOM[gap.band]}`}
+      className={`inline-flex w-fit items-center gap-1.5 border px-2 py-0.5 text-xs font-semibold ${BAND_TOM[gap.band]}`}
     >
       {gap.band === "over" ? (
         <>
@@ -315,7 +315,7 @@ function Veredito({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean }) 
 
   return (
     <p
-      className={`flex flex-col gap-1 rounded-lg border px-3 py-2 text-sm ${
+      className={`flex flex-col gap-1 border px-3 py-2 text-sm ${
         adiantado
           ? "border-info/45 bg-info/10 text-info"
           : "border-warn/50 bg-warn/10 text-warn"
@@ -349,7 +349,7 @@ function Ressalva({ children }: { children: React.ReactNode }) {
   return (
     <p
       role="alert"
-      className="rounded-lg border border-warn/45 bg-warn/10 px-3 py-2 text-sm font-medium text-warn"
+      className="border border-warn/45 bg-warn/10 px-3 py-2 text-sm font-medium text-warn"
     >
       {children}
     </p>

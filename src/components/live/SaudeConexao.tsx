@@ -65,7 +65,7 @@ export function SaudeConexao({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-1.5 text-xs ${estilo}`}
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-1.5 text-xs ${estilo}`}
       role={health === "down" ? "alert" : undefined}
     >
       <span className="flex items-center gap-1.5 font-semibold">
@@ -125,7 +125,7 @@ export function SaudeConexao({
         type="button"
         onClick={onRecarregar}
         disabled={atualizando}
-        className="ml-auto rounded-md border border-current/40 px-2 py-0.5 font-medium hover:bg-current/10 disabled:opacity-50"
+        className="ml-auto border border-current/40 px-2 py-0.5 font-medium hover:bg-current/10 disabled:opacity-50"
       >
         {/* i18n: precisa de chaves — "atualizar agora" / "atualizando…" */}
         {atualizando ? "atualizando…" : "atualizar agora"}
@@ -137,7 +137,7 @@ export function SaudeConexao({
         <button
           type="button"
           onClick={onAtivarSom}
-          className="rounded-md border border-warn/60 bg-warn/15 px-2 py-0.5 font-semibold text-warn"
+          className="border border-warn/60 bg-warn/15 px-2 py-0.5 font-semibold text-warn"
         >
           {/* i18n: precisa de chave — "som desligado — ativar" */}
           🔇 som desligado — ativar

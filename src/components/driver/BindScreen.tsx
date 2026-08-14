@@ -117,21 +117,24 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
           {t("meta.appName")}
         </p>
-        <h1 className="mt-2 text-2xl font-semibold text-ink">{t("driver.bindTitle")}</h1>
+        <h1 className="titulo mt-2 font-semibold text-ink text-3xl">{t("driver.bindTitle")}</h1>
         <p className="mt-2 text-sm text-ink-muted">{t("driver.bindSubtitle")}</p>
       </header>
 
       {revokedMessage ? (
         <p
           role="status"
-          className="rounded-lg border border-warn/40 bg-warn-dim/30 px-4 py-3 text-sm text-ink"
+          className="border border-warn/40 bg-warn-dim/30 px-4 py-3 text-sm text-ink"
         >
           {t("driver.revoked")}
         </p>
       ) : null}
 
       <div>
-        <label htmlFor="bind-code" className="text-sm font-medium text-ink-muted">
+        <label
+          htmlFor="bind-code"
+          className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted"
+        >
           {t("positions.code")}
         </label>
 
@@ -152,7 +155,7 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
           maxLength={9}
           placeholder={t("driver.bindPlaceholder")}
           aria-describedby="bind-help"
-          className="touch-target mt-2 w-full rounded-xl border-2 border-border-strong bg-surface-1 px-4 py-5 text-center font-mono text-4xl tracking-[0.25em] text-ink outline-none placeholder:text-ink-faint focus:border-info"
+          className="touch-target mt-2 w-full border-2 border-border-strong bg-surface-1 px-4 py-5 text-center font-mono text-4xl tracking-[0.25em] text-ink outline-none placeholder:text-ink-faint focus:border-info"
         />
 
         {/* i18n: precisa de chave — dica sobre colar e sobre O/I virarem 0/1 */}
@@ -165,7 +168,7 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
       {error ? (
         <p
           role="alert"
-          className="rounded-lg border border-critical/50 bg-critical-dim/30 px-4 py-3 text-sm text-ink"
+          className="border border-critical/50 bg-critical-dim/30 px-4 py-3 text-sm text-ink"
         >
           {error}
           {blocked ? (
@@ -180,7 +183,7 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
         type="button"
         onClick={() => void submit()}
         disabled={!complete || busy || blocked}
-        className="touch-target w-full rounded-xl bg-info px-6 py-4 text-lg font-semibold text-surface-0 transition disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint"
+        className="font-mono uppercase tracking-[0.12em] touch-target w-full bg-info px-6 py-4 text-lg font-semibold text-surface-0 transition disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint"
       >
         {busy ? t("common.loading") : t("driver.bindAction")}
       </button>

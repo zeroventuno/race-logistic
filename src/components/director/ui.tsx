@@ -43,7 +43,7 @@ export function Selo({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${TONE_BADGE[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 border px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.14em] ${TONE_BADGE[tone]} ${className}`}
     >
       {children}
     </span>
@@ -62,10 +62,14 @@ const VARIANT: Record<Variant, string> = {
 };
 
 const SIZE = {
-  md: "min-h-11 px-4 text-sm",
-  lg: "min-h-14 px-6 text-base",
-  sm: "min-h-9 px-3 text-xs",
+  md: "min-h-11 px-5 text-xs tracking-[0.14em]",
+  lg: "min-h-14 px-7 text-sm tracking-[0.14em]",
+  sm: "min-h-9 px-3.5 text-[0.6875rem] tracking-[0.16em]",
 } as const;
+
+/** Comum a botão e link-botão: mono, caixa alta, canto vivo. */
+const BOTAO_BASE =
+  "inline-flex items-center justify-center gap-2 font-mono uppercase transition";
 
 export function Botao({
   variant = "secondary",
@@ -79,7 +83,7 @@ export function Botao({
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${VARIANT[variant]} ${SIZE[size]} ${className}`}
+      className={`${BOTAO_BASE} disabled:cursor-not-allowed disabled:opacity-50 ${VARIANT[variant]} ${SIZE[size]} ${className}`}
     />
   );
 }
@@ -101,7 +105,7 @@ export function BotaoLink({
     <Link
       href={href}
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg transition ${VARIANT[variant]} ${SIZE[size]} ${className}`}
+      className={`${BOTAO_BASE} ${VARIANT[variant]} ${SIZE[size]} ${className}`}
     >
       {children}
     </Link>
@@ -116,9 +120,7 @@ export function Cartao({
   className?: string;
 }) {
   return (
-    <section
-      className={`rounded-xl border border-border bg-surface-1 ${className}`}
-    >
+    <section className={`border border-border bg-surface-1 ${className}`}>
       {children}
     </section>
   );
@@ -150,7 +152,7 @@ export function Aviso({
   return (
     <div
       role={tone === "warn" ? "alert" : undefined}
-      className={`rounded-lg border px-4 py-3 text-sm ${border} ${className}`}
+      className={`border px-4 py-3 text-sm ${border} ${className}`}
     >
       {titulo ? (
         <p
@@ -169,7 +171,7 @@ export function Aviso({
 }
 
 const CAMPO_BASE =
-  "w-full min-h-11 rounded-lg border bg-surface-0 px-3 py-2 text-ink placeholder:text-ink-faint focus:outline-none focus-visible:outline-2 focus-visible:outline-info";
+  "w-full min-h-11 border bg-surface-0 px-3 py-2 text-ink placeholder:text-ink-faint focus:outline-none focus-visible:outline-2 focus-visible:outline-info";
 
 export function Campo({
   label,
@@ -192,7 +194,7 @@ export function Campo({
     <div className={className}>
       <label
         htmlFor={htmlFor}
-        className="block text-sm font-medium text-ink-muted"
+        className="block font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted"
       >
         {label}
         {obrigatorio ? (
@@ -227,7 +229,7 @@ export function TituloSecao({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="text-lg font-semibold tracking-tight text-ink">
+      <h2 className="font-[family-name:var(--font-wordmark)] titulo text-2xl font-semibold text-ink">
         {children}
       </h2>
       {acao}

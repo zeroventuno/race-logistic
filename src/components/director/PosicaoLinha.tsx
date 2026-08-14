@@ -96,7 +96,7 @@ export function PosicaoLinha({
   };
 
   return (
-    <li className="rounded-lg border border-border bg-surface-1">
+    <li className="border border-border bg-surface-1">
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3 p-4">
         {podeEditar ? (
           <div className="flex flex-col gap-1">
@@ -163,7 +163,7 @@ export function PosicaoLinha({
         </div>
 
         <div className="flex flex-col items-start gap-1">
-          <span className="text-xs uppercase tracking-wide text-ink-faint">
+          <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
             {t("positions.code")}
           </span>
           {/* i18n: precisa de chave — "revogado — gere outro", "expirado",
@@ -415,7 +415,7 @@ function BotaoDeLinha({
       type="button"
       onClick={onClick}
       disabled={pendente}
-      className={`min-h-9 rounded-md border px-3 text-xs transition disabled:opacity-50 ${
+      className={`min-h-9 border px-3 text-xs transition disabled:opacity-50 ${
         ativo
           ? "border-ok/40 bg-ok/10 text-ok"
           : "border-border text-ink-muted hover:border-border-strong hover:text-ink"

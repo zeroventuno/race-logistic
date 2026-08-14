@@ -254,7 +254,7 @@ export function DriverMap({
         <button
           type="button"
           onClick={recenter}
-          className="touch-target absolute bottom-4 left-4 rounded-full border border-border-strong bg-surface-2/95 px-5 text-sm font-medium text-ink shadow-lg"
+          className="font-mono uppercase tracking-[0.12em] touch-target absolute bottom-4 left-4 rounded-full border border-border-strong bg-surface-2/95 px-5 text-sm font-medium text-ink shadow-lg"
         >
           {t("map.followMe")}
         </button>

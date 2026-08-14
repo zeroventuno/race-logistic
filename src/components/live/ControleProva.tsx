@@ -90,7 +90,7 @@ export function ControleProva({
               type="button"
               disabled={pendente}
               onClick={() => executar(() => iniciarProva(raceId))}
-              className="min-h-9 rounded-lg bg-ok px-4 text-sm font-bold text-surface-0 disabled:opacity-50"
+              className="min-h-9 bg-ok px-4 text-sm font-bold text-surface-0 disabled:opacity-50"
             >
               {/* i18n: precisa de chave — "confirmar largada" */}
               confirmar largada
@@ -109,7 +109,7 @@ export function ControleProva({
             disabled={pendente || !pronta}
             onClick={() => setConfirmando("iniciar")}
             title={pronta ? undefined : pendencias.join(" · ")}
-            className="min-h-9 rounded-lg bg-info px-4 text-sm font-bold text-surface-0 transition hover:bg-info/85 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-9 bg-info px-4 text-sm font-bold text-surface-0 transition hover:bg-info/85 disabled:cursor-not-allowed disabled:opacity-40"
           >
             ▶ {t("director.goLive")}
           </button>
@@ -123,7 +123,7 @@ export function ControleProva({
               type="button"
               disabled={pendente}
               onClick={() => executar(() => encerrarProva(raceId))}
-              className="min-h-9 rounded-lg border border-warn bg-warn/20 px-4 text-sm font-bold text-warn disabled:opacity-50"
+              className="min-h-9 border border-warn bg-warn/20 px-4 text-sm font-bold text-warn disabled:opacity-50"
             >
               {/* i18n: precisa de chave — "confirmar encerramento" */}
               confirmar encerramento
@@ -141,7 +141,7 @@ export function ControleProva({
             type="button"
             disabled={pendente}
             onClick={() => setConfirmando("encerrar")}
-            className="min-h-9 rounded-lg border border-border-strong bg-surface-2 px-4 text-sm font-semibold text-ink transition hover:border-warn disabled:opacity-50"
+            className="min-h-9 border border-border-strong bg-surface-2 px-4 text-sm font-semibold text-ink transition hover:border-warn disabled:opacity-50"
           >
             ■ {t("director.finish")}
           </button>

@@ -23,7 +23,7 @@ export default async function CadastroPage() {
         >
           Flamme Rouge
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
+        <h1 className="mt-3 titulo text-3xl font-semibold text-ink">
           Criar conta de direção
         </h1>
         <p className="mt-2 text-sm text-ink-muted">

@@ -61,7 +61,7 @@ export function TemaBotao({ inicial = "system" }: { inicial?: Tema }) {
       // real (o servidor não sabe a preferência do sistema operacional).
       title={montado ? `${rotulo} — trocar para ${META[proximo].rotulo.toLowerCase()}` : rotulo}
       aria-label={rotulo}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-ink-muted transition hover:border-border-strong hover:text-ink"
+      className="inline-flex h-9 w-9 items-center justify-center border border-border text-ink-muted transition hover:border-border-strong hover:text-ink"
     >
       <Icone size={17} stroke={1.8} aria-hidden="true" />
     </button>

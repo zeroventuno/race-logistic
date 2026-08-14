@@ -167,7 +167,7 @@ export function BarraAlertaCritico({
                     aoAgir();
                   });
                 }}
-                className="min-h-11 rounded-lg border-2 border-surface-0/40 bg-surface-0/15 px-4 text-sm font-bold hover:bg-surface-0/25 disabled:opacity-50"
+                className="min-h-11 border-2 border-surface-0/40 bg-surface-0/15 px-4 text-sm font-bold hover:bg-surface-0/25 disabled:opacity-50"
               >
                 {t("alerts.dispatch.calling", {
                   position: primeiraSugestao.label,
@@ -186,7 +186,7 @@ export function BarraAlertaCritico({
                   aoAgir();
                 });
               }}
-              className="min-h-11 rounded-lg bg-surface-0 px-5 text-sm font-bold text-ink hover:bg-surface-1 disabled:opacity-50"
+              className="min-h-11 bg-surface-0 px-5 text-sm font-bold text-ink hover:bg-surface-1 disabled:opacity-50"
             >
               {t("alerts.actions.acknowledge")}
             </button>
