@@ -70,7 +70,9 @@ body:has(.fr-landing) {
 
   --fr-shell: 80rem; /* 1280px */
   --fr-gutter: 1.25rem;
-  --fr-section-y: 7.375rem; /* 118px */
+  /* Respiro vertical de seção. Dois valores porque no celular 118px de
+     espaço morto entre seções é rolagem sem informação. */
+  --fr-section-y: 4.5rem;
 
   /* Cantos retos. A única curva do sistema é a estrada — e a moldura de
      aparelho, que é o desenho de um objeto e não do sistema. */
@@ -135,7 +137,7 @@ body:has(.fr-landing) {
 }
 
 .fr-section {
-  padding-block: 4.5rem;
+  padding-block: var(--fr-section-y);
   border-top: 1px solid var(--fr-line);
   /* O cabeçalho é fixo: sem isto, o link do menu deixa o título da seção
      escondido atrás dele. */
@@ -143,8 +145,8 @@ body:has(.fr-landing) {
 }
 
 @media (min-width: 64rem) {
-  .fr-section {
-    padding-block: 7rem;
+  .fr-landing {
+    --fr-section-y: 7.375rem; /* 118px, o valor do sistema */
   }
 }
 
