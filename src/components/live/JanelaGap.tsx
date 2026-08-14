@@ -4,6 +4,7 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import { ROLE_META } from "@/lib/types";
 
 import {
+  gapAdvice,
   gapIsTrustworthy,
   serverAgeSeconds,
   type GapBand,
@@ -135,6 +136,10 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
 
           <SeloBanda gap={gap} confiavel={confiavel} />
         </div>
+      </div>
+
+      <div className="mt-4">
+        <Veredito gap={gap} confiavel={confiavel} />
       </div>
 
       {/* Ressalvas. Vêm antes da explicação do método de propósito: elas
@@ -274,6 +279,68 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
       )}
       <span className="tnum font-normal opacity-80">({limites})</span>
     </span>
+  );
+}
+
+/**
+ * O veredito acionável: quanto fora do combinado, e o que fazer.
+ *
+ * A banda diz "esticou demais". Isto diz o que o diretor faz a respeito — e
+ * por que, já que os dois lados custam coisas diferentes: adiantar prejudica a
+ * prova, atrasar quebra o contrato de interdição com a autoridade. Sem a
+ * consequência declarada, "adiantado 12 min" é só um número que não obriga
+ * ninguém a nada.
+ */
+function Veredito({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean }) {
+  const fmt = useFormat();
+  const conselho = gapAdvice(gap.gapSeconds, gap.targetSeconds, confiavel);
+
+  if (conselho.drift === "unknown") return null;
+
+  if (conselho.drift === "on_target") {
+    return (
+      <p className="flex items-baseline gap-2 text-sm text-ok">
+        {/* i18n: precisa de chave — janela dentro do combinado */}
+        <span aria-hidden="true">✓</span>
+        <span>
+          Janela <strong className="tnum">{fmt.duration(gap.gapSeconds)}</strong>, combinado{" "}
+          <strong className="tnum">{fmt.duration(gap.targetSeconds)}</strong>. Nada a corrigir.
+        </span>
+      </p>
+    );
+  }
+
+  const adiantado = conselho.drift === "ahead";
+
+  return (
+    <p
+      className={`flex flex-col gap-1 rounded-lg border px-3 py-2 text-sm ${
+        adiantado
+          ? "border-info/45 bg-info/10 text-info"
+          : "border-warn/50 bg-warn/10 text-warn"
+      }`}
+    >
+      {/* i18n: precisa de chave — veredito da janela com remédio e custo */}
+      <span>
+        Janela <strong className="tnum">{fmt.duration(gap.gapSeconds)}</strong>, combinado{" "}
+        <strong className="tnum">{fmt.duration(gap.targetSeconds)}</strong> —{" "}
+        <strong>
+          {adiantado ? "adiantado" : "atrasado"}{" "}
+          <span className="tnum">{fmt.duration(conselho.driftSeconds)}</span>
+        </strong>
+        .
+      </span>
+      <span className="font-medium text-ink">
+        {adiantado
+          ? "Retarde o carro de fechamento."
+          : "Acelere o carro de fechamento."}{" "}
+        <span className="font-normal text-ink-muted">
+          {adiantado
+            ? "A via está reabrindo antes do previsto e quem ficou para trás perde a proteção cedo demais."
+            : "A interdição está passando do tempo autorizado pela autoridade de trânsito."}
+        </span>
+      </span>
+    </p>
   );
 }
 

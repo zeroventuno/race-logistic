@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
+
+import { temaDoCookie } from "@/components/TemaBotao";
 
 import "./globals.css";
 
@@ -35,11 +38,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // O tema é estampado no servidor, antes do primeiro byte. Resolver isso no
+  // cliente faria a tela piscar clara antes de escurecer — agressivo numa sala
+  // de direção às escuras, e um sintoma clássico de app mal terminado.
+  const tema = temaDoCookie((await cookies()).get("race_theme")?.value);
+
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-theme={tema === "system" ? undefined : tema}>
       <body className="min-h-full antialiased">{children}</body>
     </html>
   );

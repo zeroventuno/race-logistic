@@ -388,6 +388,82 @@ export interface GapLimits {
  * inventar uma tolerância de ±25% aqui seria acender um alarme que ninguém
  * configurou e que, por isso, ninguém sabe interpretar.
  */
+/**
+ * Para que lado a janela está fora do combinado, e o que fazer.
+ *
+ * A INTERDIÇÃO É UMA BOLHA QUE VIAJA. Antes do carro de abertura a via está
+ * aberta; ele passa e vai fechando os cruzamentos; o fechamento passa e vai
+ * reabrindo atrás dele. A janela é quanto tempo CADA PONTO do percurso fica
+ * fechado — por isso é a mesma medida em qualquer lugar do circuito, e por
+ * isso um único número responde pela prova inteira.
+ *
+ * O desvio tem consequências de NATUREZA diferente para cada lado, e é isso
+ * que esta função existe para dizer:
+ *
+ *   ADIANTADO — janela menor que o combinado. O fechamento está colado demais
+ *   no abertura, a via reabre antes do previsto, e os ciclistas que ficam para
+ *   trás perdem a proteção cedo demais. Prejudica A PROVA.
+ *
+ *   ATRASADO — janela maior que o combinado. A via segue fechada além do que
+ *   foi autorizado. Quebra o CONTRATO com a autoridade de trânsito.
+ *
+ * Nos dois casos quem corrige é o carro de fechamento, porque o de abertura
+ * anda no ritmo da prova e não pode ser segurado.
+ */
+export type GapDrift = "on_target" | "ahead" | "behind" | "unknown";
+
+export interface GapAdvice {
+  drift: GapDrift;
+  /** Módulo do desvio, em segundos. */
+  driftSeconds: number;
+  /** O que o carro de fechamento precisa fazer. */
+  action: "hold" | "slow_down" | "speed_up";
+  /** Quem paga o preço se nada mudar. */
+  cost: "none" | "race" | "authorization";
+}
+
+/**
+ * Zona morta.
+ *
+ * Sem ela, o painel pediria correção a cada oscilação de um minuto e o diretor
+ * aprenderia a ignorar o aviso — que é o pior resultado possível para um
+ * indicador que precisa ser obedecido quando aparece de verdade.
+ */
+export function gapToleranceSeconds(targetSeconds: number): number {
+  return Math.max(120, targetSeconds * 0.1);
+}
+
+export function gapAdvice(
+  gapSeconds: number | null,
+  targetSeconds: number,
+  trustworthy: boolean,
+): GapAdvice {
+  if (!trustworthy || gapSeconds === null || !Number.isFinite(gapSeconds)) {
+    return { drift: "unknown", driftSeconds: 0, action: "hold", cost: "none" };
+  }
+
+  const delta = gapSeconds - targetSeconds;
+  const tolerance = gapToleranceSeconds(targetSeconds);
+
+  if (Math.abs(delta) <= tolerance) {
+    return { drift: "on_target", driftSeconds: Math.abs(delta), action: "hold", cost: "none" };
+  }
+
+  return delta < 0
+    ? {
+        drift: "ahead",
+        driftSeconds: -delta,
+        action: "slow_down",
+        cost: "race",
+      }
+    : {
+        drift: "behind",
+        driftSeconds: delta,
+        action: "speed_up",
+        cost: "authorization",
+      };
+}
+
 export function classifyGapBand(
   gapSeconds: number | null,
   limits: GapLimits,

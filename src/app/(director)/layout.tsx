@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 import { sair } from "@/app/login/actions";
+import { TemaBotao, temaDoCookie } from "@/components/TemaBotao";
 import { I18nProvider } from "@/lib/i18n/client";
 import { getTranslator } from "@/lib/i18n/server";
 
@@ -27,6 +29,7 @@ export default async function DirectorLayout({
 }) {
   const { user } = await requireUser();
   const { locale, t } = await getTranslator();
+  const tema = temaDoCookie((await cookies()).get("race_theme")?.value);
 
   const nome =
     (user.user_metadata?.full_name as string | undefined) ??
@@ -54,6 +57,7 @@ export default async function DirectorLayout({
               >
                 {nome}
               </span>
+              <TemaBotao inicial={tema} />
               <form action={sair}>
                 <button
                   type="submit"

@@ -43,6 +43,71 @@
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
 }
 
+/* ---------------------------------------------------------------------------
+   TEMA CLARO
+
+   O escuro continua sendo o padrão do produto, pelo motivo original: a tela
+   fica ligada seis horas numa sala de direção ou num trailer, muitas vezes
+   projetada. Mas quem monta a prova trabalha de dia, numa mesa, e ali o escuro
+   pesa. Os dois contextos são reais, então a escolha é de quem está usando.
+
+   Os tokens são redefinidos em três estados, e a ordem importa: `[data-theme]`
+   vence a preferência do sistema nos dois sentidos, para que a escolha
+   explícita não seja desfeita pelo relógio do sistema operacional ao anoitecer.
+
+   As cores de ESTADO (vermelho de socorro, âmbar de dado incerto, verde de
+   confirmado) mudam de tom mas não de significado — e são recalculadas para
+   manter contraste sobre fundo claro, porque um vermelho pensado para preto
+   fica lavado sobre branco justamente onde ele precisa gritar.
+   --------------------------------------------------------------------------- */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-surface-0: #f4f5f7;
+    --color-surface-1: #ffffff;
+    --color-surface-2: #f0f2f5;
+    --color-surface-3: #e5e8ed;
+    --color-border: #d6dae1;
+    --color-border-strong: #b4bcc7;
+
+    --color-ink: #11151b;
+    --color-ink-muted: #525c6a;
+    --color-ink-faint: #78828f;
+
+    --color-critical: #d02318;
+    --color-critical-dim: #fbdedb;
+    --color-warn: #a35a00;
+    --color-warn-dim: #fdeacf;
+    --color-ok: #14743c;
+    --color-ok-dim: #d6f0e0;
+    --color-info: #0369a1;
+
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --color-surface-0: #f4f5f7;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f0f2f5;
+  --color-surface-3: #e5e8ed;
+  --color-border: #d6dae1;
+  --color-border-strong: #b4bcc7;
+
+  --color-ink: #11151b;
+  --color-ink-muted: #525c6a;
+  --color-ink-faint: #78828f;
+
+  --color-critical: #d02318;
+  --color-critical-dim: #fbdedb;
+  --color-warn: #a35a00;
+  --color-warn-dim: #fdeacf;
+  --color-ok: #14743c;
+  --color-ok-dim: #d6f0e0;
+  --color-info: #0369a1;
+
+  color-scheme: light;
+}
+
 :root {
   /* Cores por papel no mapa e nas listas. Escolhidas para continuarem
      distinguíveis lado a lado num mapa e para quem tem daltonismo de
@@ -64,6 +129,47 @@
   --signal-never: #6b7688;
 
   color-scheme: dark;
+}
+
+/* No claro, os marcadores de papel e de sinal precisam de tons mais fechados:
+   um verde-menta que brilha sobre preto some sobre branco, e o marcador de
+   veículo tem que continuar legível sobre o mapa em qualquer tema. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --role-lead: #15803d;
+    --role-sweep: #be185d;
+    --role-broom: #7e22ce;
+    --role-moto: #1d4ed8;
+    --role-ambulance: #c1170d;
+    --role-mechanic: #a16207;
+    --role-support: #6d28d9;
+    --role-marshal: #0f766e;
+    --role-other: #475569;
+
+    --signal-live: #14743c;
+    --signal-delayed: #a16207;
+    --signal-stale: #a35a00;
+    --signal-lost: #c1170d;
+    --signal-never: #78828f;
+  }
+}
+
+:root[data-theme="light"] {
+  --role-lead: #15803d;
+  --role-sweep: #be185d;
+  --role-broom: #7e22ce;
+  --role-moto: #1d4ed8;
+  --role-ambulance: #c1170d;
+  --role-mechanic: #a16207;
+  --role-support: #6d28d9;
+  --role-marshal: #0f766e;
+  --role-other: #475569;
+
+  --signal-live: #14743c;
+  --signal-delayed: #a16207;
+  --signal-stale: #a35a00;
+  --signal-lost: #c1170d;
+  --signal-never: #78828f;
 }
 
 html,
