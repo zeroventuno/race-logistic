@@ -11,7 +11,7 @@ const PASSOS = [
     n: "Passo 2",
     titulo: "Gere a folha de códigos.",
     corpo:
-      "Um código de 6 caracteres por veículo, com o papel de cada um: abertura, vassoura, ambulância, mecânico, moto, fiscal. A folha sai pronta para imprimir e entregar no briefing.",
+      "Um código de 6 caracteres por veículo, com o papel de cada um: abertura, fechamento, vassoura, ambulância, mecânico, moto, fiscal. A folha sai pronta para imprimir e entregar no briefing.",
   },
   {
     n: "Passo 3",

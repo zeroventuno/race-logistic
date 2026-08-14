@@ -14,3 +14,14 @@ next-env.d.ts
 coverage/
 .vitest/
 scratch/
+
+# Originais de imagem largados na raiz de /public.
+#
+# O que vai para produção são os derivados em /public/marketing, gerados por
+# `npm run media`. Um PNG de 2 MB em /public é servido, versionado e engorda o
+# clone para sempre — e ninguém o referencia. Os originais ficam fora do
+# repositório; o script os reconstrói a partir de SRC_HEROI / SRC_PAVE.
+/public/*.png
+!/public/icon-*.png
+!/public/apple-touch-icon.png
+!/public/favicon-*.png

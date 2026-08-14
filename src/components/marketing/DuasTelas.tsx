@@ -19,7 +19,7 @@ import { SLOTS } from "@/components/marketing/midia";
 
 const PAINEL = [
   "Mapa ao vivo com todos os veículos, cada papel com sua cor e sua idade de dado.",
-  "Janela entre abertura e vassoura, marcada como medida ou projetada.",
+  "Janela entre abertura e fechamento, marcada como medida ou projetada.",
   "Fila de alertas com o apoio mais próximo já sugerido — e o porquê da sugestão por escrito.",
   "Saúde de conexão veículo a veículo: quem está ao vivo, quem atrasou, quem sumiu.",
 ];

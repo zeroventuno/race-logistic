@@ -61,15 +61,20 @@ export const SLOTS = {
   heroi: {
     id: "heroi",
     tipo: "video",
-    proporcao: "21/9",
-    // Quando os arquivos existirem, troque por:
-    // [{ src: "/marketing/heroi-pave.webm", type: "video/webm" },
-    //  { src: "/marketing/heroi-pave.mp4",  type: "video/mp4"  }]
+    // 3/2, e não os 21/9 originais: a composição precisa de altura. O arco
+    // ocupa o topo, a bandeirola pende no centro e o guidão da moto ancora a
+    // base — um corte panorâmico decepa justamente os dois elementos que
+    // fazem o quadro ser este quadro.
+    proporcao: "3/2",
+    // Ainda não há filmagem. O pôster carrega o herói sozinho, que é o caso
+    // que este slot sempre precisou atender: a maioria dos visitantes nunca
+    // vê o vídeo rodar.
     fontes: null,
-    poster: null,
+    poster: "/marketing/heroi-1536.avif",
     alt:
-      "Vista de dentro do carro de direção numa estrada de paralelepípedo, " +
-      "ciclistas à frente e o arco do último quilômetro passando por cima.",
+      "Vista de cima da moto de prova numa estrada de paralelepípedo molhada, " +
+      "dois ciclistas à frente contra o sol baixo, e o arco vermelho do último " +
+      "quilômetro cruzando por cima com a bandeirola pendurada.",
     maxKB: 2500,
     duracaoSegundos: [6, 10],
     briefing:
@@ -112,10 +117,11 @@ export const SLOTS = {
     id: "pave",
     tipo: "imagem",
     proporcao: "3/2",
-    src: null,
+    src: "/marketing/pave-1400.avif",
     alt:
-      "Pelotão esticado em trecho de paralelepípedo, com carros de apoio " +
-      "separados por centenas de metros.",
+      "Estrada de paralelepípedo serpenteando entre colinas ao pôr do sol, com " +
+      "três ciclistas separados por centenas de metros e um carro de apoio num " +
+      "dos vãos — a prova deixou de ser um pelotão.",
     maxKB: 180,
     formatos: ["avif", "webp"],
     larguraRef: 1400,

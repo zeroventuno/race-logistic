@@ -80,9 +80,9 @@ export function Heroi() {
               <Assinatura size={34} tremular color="#ffffff" />
             </div>
             <p className="fr-hero__kicker">
-              No pavé a prova estica. A distância entre o carro de abertura e a
-              vassoura deixa de ser um número que alguém estima de cabeça — e
-              vira o número que decide a hora de reabrir a rua.
+              No pavé a prova estica. A janela entre o carro de abertura e o de
+              fechamento deixa de ser um número que alguém estima de cabeça — e
+              vira o número que decide a hora de devolver a rua ao trânsito.
             </p>
           </div>
         </div>
@@ -97,7 +97,7 @@ export function Heroi() {
           <div className="fr-hero__base">
             <p className="fr-lead">
               Cada veículo de apoio no percurso em tempo real. A janela entre
-              abertura e vassoura medida como um tempo intermediário de
+              abertura e fechamento medida como um tempo intermediário de
               cronometragem, não estimada. E o socorro escolhido pela distância
               que o carro vai realmente percorrer. O GPS é o celular de quem
               dirige: nada para instalar, nada para embarcar.

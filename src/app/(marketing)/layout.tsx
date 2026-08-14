@@ -16,7 +16,7 @@ import "./marketing.css";
 export const metadata: Metadata = {
   title: "Flamme Rouge — direção de prova ao vivo para ciclismo de estrada",
   description:
-    "Posição de cada veículo de apoio medida pela estrada, janela entre carro de abertura e vassoura medida como tempo intermediário, e alerta que aciona o socorro certo por categoria. O GPS é o celular do motorista.",
+    "Posição de cada veículo de apoio medida pela estrada, janela entre carro de abertura e carro de fechamento medida como tempo intermediário, e alerta que aciona o socorro certo por categoria. O GPS é o celular do motorista.",
   openGraph: {
     title: "Flamme Rouge — direção de prova ao vivo",
     description:

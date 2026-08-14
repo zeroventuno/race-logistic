@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "brand": "node scripts/build-brand.mjs",
+    "media": "node scripts/build-media.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:reset": "node scripts/migrate.mjs --reset",
     "sim": "node scripts/simulate-drivers.mjs"

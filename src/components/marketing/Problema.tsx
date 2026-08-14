@@ -13,9 +13,9 @@ import { SLOTS } from "@/components/marketing/midia";
 
 const FALHAS = [
   {
-    fala: "“Onde está a vassoura?”",
+    fala: "“Onde está o fechamento?”",
     consequencia:
-      "A resposta vem por estimativa, e é em cima dela que se decide reabrir a rua. Uma estimativa dez minutos otimista reabre a via com corredor ainda passando.",
+      "A resposta vem por estimativa, e é em cima dela que se libera a via — e que se cumpre, ou não, o tempo de interdição combinado com a autoridade de trânsito. Errar dez minutos para mais é quebrar o acordo; para menos, é reabrir a rua antes da hora.",
   },
   {
     fala: "“Caiu alguém no km 60.”",

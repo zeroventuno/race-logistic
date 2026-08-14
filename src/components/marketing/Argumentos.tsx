@@ -18,10 +18,10 @@ import { Secao } from "@/components/marketing/Secao";
 const CARTOES = [
   {
     indice: "02",
-    titulo: "A janela abertura↔vassoura é medida, não estimada.",
+    titulo: "A janela abertura↔fechamento é medida, não estimada.",
     numero: "medido",
     corpo:
-      "O sistema guarda a que horas o carro de abertura passou por cada ponto do percurso. Quando a vassoura chega ao km 42, a janela é a diferença entre dois horários observados — a mesma conta de um tempo intermediário de cronometragem. Quando ainda não há histórico suficiente, a tela escreve “projetado” e diz o motivo. O diretor nunca precisa adivinhar qual dos dois está lendo.",
+      "O sistema guarda a que horas o carro de abertura passou por cada ponto do percurso. Quando o carro de fechamento chega ao km 42, a janela é a diferença entre dois horários observados — a mesma conta de um tempo intermediário de cronometragem. É esse número que a organização combinou com a autoridade de trânsito: é a passagem do fechamento que devolve a via ao tráfego. Quando ainda não há histórico suficiente, a tela escreve “projetado” e diz o motivo. O diretor nunca precisa adivinhar qual dos dois está lendo.",
   },
   {
     indice: "03",
