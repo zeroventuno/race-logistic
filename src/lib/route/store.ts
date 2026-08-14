@@ -24,6 +24,7 @@ interface CacheEntry {
   trackId: string;
   track: RouteTrack;
   index: RouteIndex;
+  laps: number;
   loadedAtMs: number;
 }
 
@@ -39,6 +40,17 @@ export interface LoadedRoute {
   trackId: string;
   track: RouteTrack;
   index: RouteIndex;
+  /** Voltas que a prova dá sobre o traçado. 1 = ponto-a-ponto ou volta única. */
+  laps: number;
+  /**
+   * Distância total da PROVA: `laps × comprimento do traçado`.
+   *
+   * Distinta de `track.totalDistanceM`, que é o comprimento de UMA volta. A
+   * confusão entre as duas é o que fazia um veículo na terceira volta de um
+   * circuito ser reportado como estando na primeira — medido: 120,7 km
+   * percorridos, 10,9 km gravados.
+   */
+  raceDistanceM: number;
 }
 
 export async function loadRaceRoute(
@@ -50,19 +62,39 @@ export async function loadRaceRoute(
       trackId: cached.trackId,
       track: cached.track,
       index: cached.index,
+      laps: cached.laps,
+      raceDistanceM: cached.laps * cached.track.totalDistanceM,
     };
   }
 
-  const { data, error } = await supabaseAdmin()
-    .from("route_tracks")
-    .select("id, points, total_distance_m, bbox, elevation_gain_m")
-    .eq("race_id", raceId)
-    .eq("is_active", true)
-    .maybeSingle();
+  const admin = supabaseAdmin();
+
+  const [trackResult, raceResult] = await Promise.all([
+    admin
+      .from("route_tracks")
+      .select("id, points, total_distance_m, bbox, elevation_gain_m")
+      .eq("race_id", raceId)
+      .eq("is_active", true)
+      .maybeSingle(),
+    admin.from("races").select("laps").eq("id", raceId).maybeSingle(),
+  ]);
+
+  const { data, error } = trackResult;
 
   if (error) {
     throw new Error(`Falha ao carregar o percurso da prova: ${error.message}`);
   }
+
+  if (raceResult.error) {
+    throw new Error(
+      `Falha ao carregar a prova: ${raceResult.error.message}`,
+    );
+  }
+
+  const laps = Math.max(
+    1,
+    (raceResult.data as { laps?: number } | null)?.laps ?? 1,
+  );
 
   if (!data) {
     cache.delete(raceId);
@@ -119,12 +151,19 @@ export async function loadRaceRoute(
     trackId: row.id,
     track,
     index: new RouteIndex(track),
+    laps,
     loadedAtMs: Date.now(),
   };
 
   cache.set(raceId, entry);
 
-  return { trackId: entry.trackId, track: entry.track, index: entry.index };
+  return {
+    trackId: entry.trackId,
+    track: entry.track,
+    index: entry.index,
+    laps: entry.laps,
+    raceDistanceM: entry.laps * entry.track.totalDistanceM,
+  };
 }
 
 /** Invalida o cache — chamar quando o diretor substitui o percurso. */
