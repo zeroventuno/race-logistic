@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Bandeirola } from "@/components/marketing/marca";
 import { TemaBotao } from "@/components/TemaBotao";
 import type { Tema } from "@/lib/tema";
 
@@ -66,7 +67,12 @@ export function PortaDaDirecao({
           }}
         />
 
-        <p className="relative font-mono text-sm font-medium uppercase tracking-[0.34em] text-[rgb(246_245_242/0.9)]">
+        {/* A bandeirinha em rouge aparece AQUI e na porta ao lado, e em
+            lugar nenhum depois. Do outro lado do login vermelho é uma pessoa
+            no chão — e uma marca vermelha no topo de toda tela ensinaria o
+            olho a filtrar exatamente a cor que não pode ser filtrada. */}
+        <p className="relative flex items-center gap-3 font-mono text-sm font-medium uppercase tracking-[0.34em] text-[rgb(246_245_242/0.9)]">
+          <Bandeirola size={20} />
           Flamme Rouge
         </p>
 
@@ -93,8 +99,9 @@ export function PortaDaDirecao({
           <div className="flex items-center justify-between gap-4">
             <Link
               href="/"
-              className="font-mono text-xs uppercase tracking-[0.34em] text-ink-faint transition hover:text-ink"
+              className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.34em] text-ink-faint transition hover:text-ink"
             >
+              <Bandeirola size={17} />
               Flamme Rouge
             </Link>
             <TemaBotao inicial={tema} />

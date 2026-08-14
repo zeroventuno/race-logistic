@@ -102,7 +102,7 @@
   /* Cartão flutuante sobre o mapa. Não é `surface-1` com opacidade: o vidro
      precisa deixar a estrada passar por baixo sem deixar o texto ilegível, e
      esse equilíbrio é um valor próprio, medido contra o basemap. */
-  --color-glass: light-dark(rgb(255 255 255 / 0.92), rgb(12 15 18 / 0.78));
+  --color-glass: light-dark(rgb(255 255 255 / 0.84), rgb(12 15 18 / 0.72));
   --color-glass-strong: light-dark(
     rgb(255 255 255 / 0.96),
     rgb(12 15 18 / 0.88)
@@ -419,6 +419,25 @@ body {
 .coluna-flutuante section {
   background: var(--color-glass);
   backdrop-filter: blur(14px) saturate(1.08);
+}
+
+/* E o vidro tem que ser UMA superfície, não vidro com caixas opacas dentro.
+
+   Cada painel desenha subcaixas próprias — o estado vazio dos alertas, a linha
+   de veículo selecionada, o seletor de aba. Todas com fundo sólido, o que é
+   certo numa página e errado aqui: o cartão vira um vidro com azulejos por
+   cima, e o efeito de flutuar sobre o mapa some. Elas passam a se apoiar no
+   próprio vidro, com um véu de tinta em vez de uma cor de superfície.
+
+   O seletor é longo porque precisa alcançar o utilitário do Tailwind onde ele
+   estiver, incluindo dentro de estado (`hover:`), sem que cada componente
+   precise saber que hoje está flutuando. */
+.coluna-flutuante :is(section) :is([class*="bg-surface-"]) {
+  background-color: color-mix(in oklab, var(--color-ink) 6%, transparent);
+}
+
+.coluna-flutuante :is(section) :is([class*="bg-surface-"]):hover {
+  background-color: color-mix(in oklab, var(--color-ink) 10%, transparent);
 }
 
 /* Numa tela estreita as duas colunas viram uma folha que rola por cima do

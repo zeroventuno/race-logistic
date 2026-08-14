@@ -28,7 +28,8 @@ export default async function RaceLayout({
     // Fuso da PROVA, não o do servidor nem o do aparelho: duas pessoas em
     // países diferentes olhando esta tela precisam ler o mesmo horário.
     <I18nProvider locale={locale} timeZone={race.timezone}>
-      <div>
+      {/* Mesmo motivo do layout de cima: elo da cadeia de altura. */}
+      <div className="flex min-h-0 flex-1 flex-col">
         <ForaDoAoVivo>
         <div className="border-b border-border bg-surface-1 print:hidden">
           <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">

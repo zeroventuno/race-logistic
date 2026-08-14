@@ -4,6 +4,7 @@ import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { alertGlyphSvg } from "@/components/icons/alerta";
+import { resolverCor } from "@/lib/cor-token";
 import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { useT } from "@/lib/i18n/client";
@@ -47,18 +48,17 @@ export interface DriverMapProps {
  *
  * As cores vêm de tokens porque o percurso é a única linha do mapa que é NOSSA
  * — todo o resto vem do basemap. Sobre mapa claro o azul escuro se sustenta;
- * sobre o escuro ele precisa clarear, senão desaparece nas estradas cinzas. O
- * casing é o inverso do fundo, e é o que impede a rota de sumir justamente onde
- * ela cruza uma rodovia da mesma largura.
+ * sobre o escuro ele precisa clarear, senão desaparece nas estradas cinzas.
+ *
+ * A resolução passa por `resolverCor` e não por `getPropertyValue`: o token é
+ * um `light-dark()`, e ler a propriedade direto devolve o texto cru, que o
+ * MapLibre não interpreta. Foi assim que a rota sumiu do mapa uma vez.
  */
 function corDaRota(): { linha: string; casing: string } {
-  if (typeof window === "undefined") {
-    return { linha: "#78bef0", casing: "rgba(10,13,16,.6)" };
-  }
-  const cs = getComputedStyle(document.documentElement);
-  const linha = cs.getPropertyValue("--route-line").trim() || "#78bef0";
-  const casing = cs.getPropertyValue("--route-casing").trim() || "rgba(10,13,16,.6)";
-  return { linha, casing };
+  return {
+    linha: resolverCor("--route-line", "#78bef0"),
+    casing: resolverCor("--route-casing", "rgba(10,13,16,.6)"),
+  };
 }
 
 export function DriverMap({

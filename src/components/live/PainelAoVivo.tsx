@@ -171,7 +171,7 @@ export function PainelAoVivo({
       />
 
       <main
-        className="relative h-full min-h-[36rem] w-full overflow-hidden bg-surface-0"
+        className="relative min-h-[36rem] w-full flex-1 overflow-hidden bg-surface-0"
         style={{ paddingTop: alturaBarra > 0 ? alturaBarra : undefined }}
       >
         {/* O mapa por baixo de tudo. Sem percurso não há mapa — e não há

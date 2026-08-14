@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { sair } from "@/app/login/actions";
+import { Bandeirola } from "@/components/marketing/marca";
 import { TemaBotao } from "@/components/TemaBotao";
 import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 import { I18nProvider } from "@/lib/i18n/client";
@@ -44,10 +45,15 @@ export default async function DirectorLayout({
             tela que se imprime aqui é o painel de códigos. */}
         <header className="sticky top-0 z-30 border-b border-border bg-surface-0/95 backdrop-blur print:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+            {/* Monocromática por dentro: `currentColor` faz a bandeirinha
+                herdar a cor do texto, então ela acompanha o tema e o estado de
+                foco sem nenhuma regra a mais — e o rouge fica do lado de fora,
+                onde ele não compete com alerta. */}
             <Link
               href="/dashboard"
-              className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint transition hover:text-ink"
+              className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.24em] text-ink-faint transition hover:text-ink"
             >
+              <Bandeirola size={17} color="currentColor" />
               {t("meta.appName")}
             </Link>
 
@@ -72,7 +78,11 @@ export default async function DirectorLayout({
           </div>
         </header>
 
-        <div className="flex-1">{children}</div>
+        {/* Coluna flex, e não um bloco solto: a tela Ao vivo precisa que a
+            altura desça por toda a cadeia até o mapa. Para as outras páginas
+            não muda nada — elas não pedem altura, então crescem pelo
+            conteúdo, como antes. */}
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
     </I18nProvider>
   );
