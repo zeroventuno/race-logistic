@@ -33,7 +33,20 @@ export type GapMethod =
 
 export interface VehicleGapInput {
   offsetM: number;
+  /** Relógio do DISPOSITIVO. Serve para ordenar, não para medir idade. */
   atMs: number;
+  /**
+   * Relógio do SERVIDOR quando o ping chegou. É o único que serve para decidir
+   * se o dado está velho.
+   *
+   * Sem isto, um celular com relógio adiantado neutraliza completamente a
+   * detecção de dado velho: um aparelho 14 minutos adiantado carimba o ping de
+   * agora com hora do futuro, e a partir daí o veículo pode PARAR de transmitir
+   * por 14 minutos que o painel continua mostrando "idade: 0 s, dado fresco".
+   * Quatorze minutos a 40 km/h são 9 km de estrada em que o vassoura pode estar
+   * em qualquer lugar — exibidos como posição atual.
+   */
+  receivedAtMs?: number;
   /** Histórico ordenado por tempo crescente. */
   history: OffsetSample[];
 }
@@ -58,9 +71,15 @@ export interface GapResult {
   leadOffsetM: number | null;
   sweepOffsetM: number | null;
   sweepSpeedMps: number | null;
-  /** Idade do dado mais velho entre os dois veículos, em segundos. */
+  /**
+   * Idade do dado mais velho entre os dois veículos, em segundos, medida
+   * contra o relógio do servidor. Pode ser negativa se o dispositivo carimbou
+   * o ping no futuro — e nesse caso `clockSuspect` fica verdadeiro.
+   */
   dataAgeSeconds: number | null;
   stale: boolean;
+  /** Relógio de algum dispositivo está claramente errado. */
+  clockSuspect: boolean;
   /** Vassoura ultrapassou o abertura — sempre um erro operacional. */
   sweepAheadOfLead: boolean;
 }
@@ -83,6 +102,7 @@ export function computeGap(input: GapInput): GapResult {
     sweepSpeedMps: null,
     dataAgeSeconds: null,
     stale: false,
+    clockSuspect: false,
     sweepAheadOfLead: false,
   };
 
@@ -104,9 +124,22 @@ export function computeGap(input: GapInput): GapResult {
     };
   }
 
-  const oldestMs = Math.min(lead.atMs, sweep.atMs);
-  const dataAgeSeconds = Math.max(0, (nowMs - oldestMs) / 1000);
+  // Idade medida contra o relógio do SERVIDOR. `Math.max(0, …)` foi removido de
+  // propósito: ele era exatamente o que escondia o relógio adiantado, virando
+  // "idade negativa" em "idade zero" e declarando fresco um dado congelado.
+  const leadAtMs = lead.receivedAtMs ?? lead.atMs;
+  const sweepAtMs = sweep.receivedAtMs ?? sweep.atMs;
+  const oldestMs = Math.min(leadAtMs, sweepAtMs);
+
+  const dataAgeSeconds = (nowMs - oldestMs) / 1000;
   const stale = nowMs - oldestMs > staleThresholdMs;
+
+  // Carimbo no futuro só é possível com relógio errado. Não dá para confiar em
+  // nenhuma medida de idade nesse caso, e o painel precisa saber disso.
+  const clockSuspect =
+    lead.receivedAtMs === undefined || sweep.receivedAtMs === undefined
+      ? lead.atMs > nowMs + 60_000 || sweep.atMs > nowMs + 60_000
+      : false;
 
   const gapM = lead.offsetM - sweep.offsetM;
   const sweepAheadOfLead = gapM < -50; // 50 m de folga para ruído de GPS
@@ -119,6 +152,7 @@ export function computeGap(input: GapInput): GapResult {
     sweepSpeedMps,
     dataAgeSeconds,
     stale,
+    clockSuspect,
     sweepAheadOfLead,
   };
 
@@ -145,7 +179,7 @@ export function computeGap(input: GapInput): GapResult {
         ...base,
         ...common,
         gapM,
-        gapSeconds: measuredSeconds,
+        gapSeconds: Math.max(0, measuredSeconds),
         method: "measured",
         explanation:
           "Medido: diferença de horário entre a passagem dos dois veículos pelo mesmo ponto do percurso.",
@@ -159,7 +193,11 @@ export function computeGap(input: GapInput): GapResult {
       ...base,
       ...common,
       gapM,
-      gapSeconds: gapM / sweepSpeedMps,
+      // Preso em zero. `gapM` pode ser levemente negativo dentro da folga de
+      // 50 m que absorve ruído de GPS, e dividir isso pela velocidade produzia
+      // "separação de −6 segundos" — que não significa nada e envenena
+      // qualquer consumidor que faça conta com o campo.
+      gapSeconds: Math.max(0, gapM / sweepSpeedMps),
       method: "projected",
       explanation: `Projetado: ${formatKm(gapM)} pela estrada na velocidade média atual do fechamento (${(sweepSpeedMps * 3.6).toFixed(0)} km/h).`,
     };

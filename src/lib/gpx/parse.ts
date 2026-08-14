@@ -86,6 +86,26 @@ export function parseGpx(xml: string): GpxParseResult {
   const metadata = gpx.metadata as Record<string, unknown> | undefined;
   const metadataName = asText(metadata?.name);
 
+  /**
+   * Pontos que o arquivo tinha e que não puderam ser lidos.
+   *
+   * Contar isto não é preciosismo. Um exportador europeu que escreve
+   * `lat="44,7009"` com vírgula decimal produz um arquivo que parece válido e
+   * do qual metade dos pontos é ilegível. Pior: quando os pontos ilegíveis são
+   * um bloco CONTÍGUO — um desvio, uma subida — o percurso não fica "com
+   * buracos", ele fica CURTO. Medido num caso de teste: 43% da prova evaporou
+   * e nem o leitor nem a construção do percurso disseram uma palavra. Todos os
+   * quilômetros da prova ficam deslocados, e o sistema passa a dizer
+   * "vassoura no km 30" com o veículo no km 33.
+   */
+  let droppedPoints = 0;
+
+  const readPoints = (nodes: Record<string, unknown>[]): RawRoutePoint[] => {
+    const parsed = nodes.map(toPoint);
+    droppedPoints += parsed.filter((p) => p === null).length;
+    return parsed.filter(isPoint);
+  };
+
   // --- trilhas -------------------------------------------------------------
   const tracks = (gpx.trk as Record<string, unknown>[] | undefined) ?? [];
 
@@ -96,7 +116,7 @@ export function parseGpx(xml: string): GpxParseResult {
 
     for (const seg of segs) {
       const trkpts = (seg.trkpt as Record<string, unknown>[] | undefined) ?? [];
-      const parsed = trkpts.map(toPoint).filter(isPoint);
+      const parsed = readPoints(trkpts);
       if (parsed.length > 0) {
         points.push(...parsed);
         segmentCount++;
@@ -122,7 +142,7 @@ export function parseGpx(xml: string): GpxParseResult {
 
   for (const rte of routes) {
     const rtepts = (rte.rtept as Record<string, unknown>[] | undefined) ?? [];
-    const points = rtepts.map(toPoint).filter(isPoint);
+    const points = readPoints(rtepts);
 
     if (points.length >= 2) {
       segments.push({
@@ -136,7 +156,7 @@ export function parseGpx(xml: string): GpxParseResult {
   // --- waypoints soltos ----------------------------------------------------
   if (segments.length === 0) {
     const wpts = (gpx.wpt as Record<string, unknown>[] | undefined) ?? [];
-    const points = wpts.map(toPoint).filter(isPoint);
+    const points = readPoints(wpts);
 
     if (points.length >= 2) {
       warnings.push(
@@ -155,6 +175,19 @@ export function parseGpx(xml: string): GpxParseResult {
   if (segments.length > 1) {
     warnings.push(
       `O arquivo tem ${segments.length} percursos. Escolha qual é o da prova.`,
+    );
+  }
+
+  if (droppedPoints > 0) {
+    const kept = segments.reduce((n, s) => n + s.points.length, 0);
+    const share = Math.round((droppedPoints / (droppedPoints + kept)) * 100);
+
+    warnings.push(
+      `${droppedPoints} ponto(s) do arquivo não puderam ser lidos e foram descartados (${share}% do total). ` +
+        `A causa mais comum é vírgula decimal nas coordenadas (lat="44,7009" em vez de lat="44.7009"), ` +
+        `que alguns programas exportam conforme a configuração regional. ` +
+        `CONFIRA A DISTÂNCIA TOTAL E O TRAÇADO NO MAPA antes de salvar: se os pontos perdidos estiverem em sequência, ` +
+        `o percurso fica mais curto do que a prova de verdade e todos os quilômetros ficam deslocados.`,
     );
   }
 

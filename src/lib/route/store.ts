@@ -1,7 +1,8 @@
 import "server-only";
 
+import { haversineMeters } from "@/lib/geo/distance";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { RouteIndex, type RouteTrack } from "@/lib/route/track";
+import { computeBBox, RouteIndex, type RouteTrack } from "@/lib/route/track";
 import type { RouteTrackRow } from "@/lib/types";
 
 /**
@@ -73,11 +74,45 @@ export async function loadRaceRoute(
     "id" | "points" | "total_distance_m" | "bbox" | "elevation_gain_m"
   >;
 
+  // O que vem do banco é JSONB — texto livre do ponto de vista do TypeScript.
+  // Uma bbox desatualizada em relação aos pontos coloca TODOS os pontos fora
+  // da grade do índice espacial, e a ancoragem passa a errar por quilômetros.
+  // Como a bbox é persistida separada da geometria, ela pode divergir; então
+  // ela é RECALCULADA aqui em vez de aceita.
+  if (!Array.isArray(row.points) || row.points.length < 2) {
+    throw new Error(
+      `Percurso ${row.id} tem geometria inválida no banco (${Array.isArray(row.points) ? row.points.length : "não é lista"} pontos).`,
+    );
+  }
+
+  for (const pt of row.points) {
+    if (
+      !Array.isArray(pt) ||
+      pt.length < 3 ||
+      !Number.isFinite(pt[0]) ||
+      !Number.isFinite(pt[1]) ||
+      !Number.isFinite(pt[2])
+    ) {
+      throw new Error(
+        `Percurso ${row.id} tem ponto inválido no banco. Recarregue o percurso da prova.`,
+      );
+    }
+  }
+
+  const first = row.points[0]!;
+  const last = row.points[row.points.length - 1]!;
+  const startFinishGapM = haversineMeters(
+    { lat: first[1], lng: first[0] },
+    { lat: last[1], lng: last[0] },
+  );
+
   const track: RouteTrack = {
     points: row.points,
     totalDistanceM: row.total_distance_m,
-    bbox: row.bbox,
+    bbox: computeBBox(row.points),
     elevationGainM: row.elevation_gain_m,
+    isLoop: row.total_distance_m > 1_000 && startFinishGapM < 200,
+    startFinishGapM,
   };
 
   const entry: CacheEntry = {

@@ -64,7 +64,28 @@ function defaultRandomBytes(n: number): Uint8Array {
 export function normalizeBindCode(input: string): string | null {
   if (typeof input !== "string") return null;
 
+  // Limite de tamanho ANTES de qualquer processamento: sem isto, uma entrada
+  // de megabytes passa por normalização Unicode e várias regex antes de ser
+  // recusada, e a rota de vínculo vira um alvo de negação de serviço barato.
+  if (input.length > 64) return null;
+
   const cleaned = input
+    // NFKC resolve o caso que mais aparece na prática: entrada em largura
+    // total ("Ａ１Ｂ２Ｃ３"), que é o que um teclado IME ou uma colagem de PDF
+    // produz. Sem ela, o código certo é descartado como lixo.
+    //
+    // O que NFKC NÃO resolve, e vale registrar: ligaduras continuam expandindo.
+    // "ﬁ" é um único caractere que vira "fi", então uma entrada de 5 caracteres
+    // pode sair com 6 e passar na checagem de comprimento. Não é falha de
+    // segurança — o resultado ainda precisa coincidir com um código real, e o
+    // limite de tentativas cobre adivinhação — mas significa que
+    // `cleaned.length === 6` não prova que a pessoa digitou 6 caracteres.
+    //
+    // Homóglifos de outros alfabetos (o "А" cirílico, que é visualmente
+    // idêntico ao "A" latino) NÃO são convertidos, de propósito: são recusados
+    // pelo filtro seguinte. Converter seria adivinhar, e adivinhar errado aqui
+    // vincula o celular ao veículo errado.
+    .normalize("NFKC")
     .toUpperCase()
     // Tudo que não é alfanumérico é separador: hífen, espaço, ponto.
     .replace(/[^A-Z0-9]/g, "")

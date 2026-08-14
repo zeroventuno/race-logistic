@@ -105,7 +105,12 @@ export function simplifyToBudget(
 
   // Rede de segurança: amostragem uniforme. Feia, mas limitada — melhor que
   // devolver 20 mil pontos e travar o celular do motorista.
-  const step = Math.ceil(points.length / maxPoints);
+  //
+  // O `maxPoints - 1` reserva a vaga do último ponto ANTES de amostrar. Sem
+  // isso, uma entrada de 6000 pontos com teto de 3000 produzia exatamente 3000
+  // amostras e o `push` do extremo entregava 3001 — o teto que a função promete
+  // sendo furado justamente no caminho que existe para garanti-lo.
+  const step = Math.ceil(points.length / Math.max(1, maxPoints - 1));
   const sampled = points.filter((_, i) => i % step === 0);
   const last = points[points.length - 1]!;
   if (sampled[sampled.length - 1] !== last) sampled.push(last);

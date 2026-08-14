@@ -42,6 +42,11 @@ export interface SnapPrevious {
    * `rolling_speed_mps` de `position_state`.
    */
   speedMps?: number | null;
+  /**
+   * Volta em que o veículo estava (0 = primeira). Só usado em circuito.
+   * Sem isto, um veículo na segunda volta é indistinguível de um na primeira.
+   */
+  lap?: number;
 }
 
 export interface SnapOptions {
@@ -80,8 +85,18 @@ export type SnapMethod =
   | "window_low_confidence";
 
 export interface SnapResult {
-  /** Metros percorridos de prova. É *o* número que o resto do sistema usa. */
+  /** Posição dentro de UMA volta do traçado, em metros. */
   offsetM: number;
+  /** Volta atual (0 = primeira). Sempre 0 em percurso ponto-a-ponto. */
+  lap: number;
+  /**
+   * Metros percorridos de prova contando as voltas: `lap × total + offsetM`.
+   *
+   * É ESTE o número que o cálculo de janela e a sugestão de apoio devem usar.
+   * Usar `offsetM` num circuito compara a segunda volta com a primeira e
+   * produz respostas confiantes e erradas.
+   */
+  absoluteOffsetM: number;
   /** Distância perpendicular do GPS ao percurso. */
   snapDistanceM: number;
   point: LatLng;
@@ -89,6 +104,13 @@ export interface SnapResult {
   offRoute: boolean;
   method: SnapMethod;
   confidence: "high" | "medium" | "low";
+  /**
+   * O traçado passa por aqui em mais de um ponto a distâncias
+   * estatisticamente iguais, e a escolha foi por desempate, não por geometria.
+   * O consumidor precisa saber que este número pode estar a quilômetros do
+   * certo mesmo com a distância perpendicular pequena.
+   */
+  ambiguous: boolean;
 }
 
 const DEFAULTS = {
@@ -122,9 +144,15 @@ const MIN_GPS_SIGMA_M = 12;
 
 interface Candidate {
   segmentIndex: number;
+  /** Posição dentro de uma volta do traçado. */
   offsetM: number;
+  lap: number;
+  /** `lap × total + offsetM`. É nesta escala que os custos são comparados. */
+  absoluteOffsetM: number;
   distanceM: number;
   point: LatLng;
+  /** Havia outra passagem estatisticamente empatada com esta. */
+  ambiguous: boolean;
 }
 
 export function snapToRoute(
@@ -139,7 +167,17 @@ export function snapToRoute(
   const offRouteThreshold = opts.offRouteThresholdM ?? DEFAULTS.offRouteThresholdM;
   const staleAfterMs = opts.staleAfterMs ?? DEFAULTS.staleAfterMs;
 
+  // Entrada não confiável vinda de JSON de dispositivo: um NaN atravessando
+  // silenciosamente faz `offRoute` virar false (NaN > x é false) e o veículo
+  // passa como se estivesse sobre o percurso. Melhor recusar aqui.
+  if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) {
+    throw new SnapInputError(
+      "Coordenada inválida: lat e lng precisam ser números finitos.",
+    );
+  }
+
   const previous = opts.previous ?? null;
+  const previousLap = previous?.lap ?? 0;
   const elapsedMs = previous ? opts.recordedAtMs - previous.recordedAtMs : Infinity;
 
   // Janela só vale se o ping anterior for recente e não vier do futuro
@@ -147,29 +185,48 @@ export function snapToRoute(
   const windowUsable =
     previous !== null && elapsedMs >= 0 && elapsedMs <= staleAfterMs;
 
-  const globalBest = searchGlobal(index, p);
+  const globalBest = searchGlobal(index, p, previousLap);
 
   if (!windowUsable) {
-    return finalize(globalBest, "global", offRouteThreshold, track, previous === null ? "medium" : "low");
+    // Sem continuidade num circuito não há como saber a volta: o mesmo ponto
+    // do mapa serve a todas elas. Marcamos como ambíguo em vez de fingir.
+    const ambiguousLap = track.isLoop;
+    return finalize(
+      globalBest,
+      "global",
+      offRouteThreshold,
+      track,
+      previous === null ? "medium" : "low",
+      ambiguousLap,
+    );
   }
 
   const elapsedSec = elapsedMs / 1000;
   const forward = Math.max(DEFAULTS.minForwardWindowM, elapsedSec * maxSpeedMps);
 
-  const windowStart = previous!.offsetM - maxBacktrackM;
-  const windowEnd = previous!.offsetM + forward;
+  const previousAbsolute = previousLap * track.totalDistanceM + previous!.offsetM;
 
-  const expectedSpeedMps =
-    opts.expectedSpeedMps ?? previous!.speedMps ?? 0;
+  const expectedSpeedMps = opts.expectedSpeedMps ?? previous!.speedMps ?? 0;
 
-  const windowBest = searchOffsetWindow(track, p, windowStart, windowEnd, {
-    expectedOffsetM: previous!.offsetM + expectedSpeedMps * elapsedSec,
-    sigmaMotionM: Math.max(
-      MIN_MOTION_SIGMA_M,
-      elapsedSec * SPEED_UNCERTAINTY_MPS,
-    ),
-    sigmaGpsM: Math.max(MIN_GPS_SIGMA_M, opts.accuracyM ?? 0),
-  });
+  const sigmaGpsM = Math.max(
+    MIN_GPS_SIGMA_M,
+    Number.isFinite(opts.accuracyM ?? 0) ? (opts.accuracyM ?? 0) : 0,
+  );
+
+  const windowBest = searchAbsoluteWindow(
+    track,
+    p,
+    previousAbsolute - maxBacktrackM,
+    previousAbsolute + forward,
+    {
+      expectedOffsetM: previousAbsolute + expectedSpeedMps * elapsedSec,
+      sigmaMotionM: Math.max(
+        MIN_MOTION_SIGMA_M,
+        elapsedSec * SPEED_UNCERTAINTY_MPS,
+      ),
+      sigmaGpsM,
+    },
+  );
 
   if (!windowBest) {
     return finalize(globalBest, "global_recovery", offRouteThreshold, track, "low");
@@ -194,36 +251,60 @@ export function snapToRoute(
   return finalize(windowBest, "window_low_confidence", offRouteThreshold, track, "low");
 }
 
+export class SnapInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SnapInputError";
+  }
+}
+
 function finalize(
   c: Candidate | null,
   method: SnapMethod,
   offRouteThreshold: number,
   track: RouteTrack,
   confidence: SnapResult["confidence"],
+  forceAmbiguous = false,
 ): SnapResult {
   if (!c) {
     // Só acontece se o percurso estiver vazio, o que buildRouteTrack impede.
     return {
       offsetM: 0,
+      lap: 0,
+      absoluteOffsetM: 0,
       snapDistanceM: Infinity,
       point: { lat: track.points[0]?.[1] ?? 0, lng: track.points[0]?.[0] ?? 0 },
       segmentIndex: 0,
       offRoute: true,
       method,
       confidence: "low",
+      ambiguous: true,
     };
   }
 
   const offRoute = c.distanceM > offRouteThreshold;
+  const ambiguous = c.ambiguous || forceAmbiguous;
+
+  // Ambiguidade rebaixa a confiança independentemente da distância
+  // perpendicular. Era esta a lacuna que fazia um erro de quilômetros ser
+  // rotulado igual a um snap perfeito: `finalize` só rebaixava quando o
+  // veículo estava fora do percurso, e no caso ambíguo ele está EM CIMA do
+  // percurso — só que possivelmente no trecho errado.
+  let finalConfidence = confidence;
+  if (offRoute && finalConfidence === "high") finalConfidence = "medium";
+  if (ambiguous && finalConfidence !== "low") finalConfidence = "low";
 
   return {
     offsetM: c.offsetM,
+    lap: c.lap,
+    absoluteOffsetM: c.absoluteOffsetM,
     snapDistanceM: c.distanceM,
     point: c.point,
     segmentIndex: c.segmentIndex,
     offRoute,
     method,
-    confidence: offRoute && confidence === "high" ? "medium" : confidence,
+    confidence: finalConfidence,
+    ambiguous,
   };
 }
 
@@ -260,7 +341,11 @@ const PASSAGE_TIE_TOLERANCE_M = 30;
  * reportado atrás do que está mantém a rua fechada por mais tempo; reportado à
  * frente, abre a rua com o pelotão ainda dentro.
  */
-function searchGlobal(index: RouteIndex, p: LatLng): Candidate | null {
+function searchGlobal(
+  index: RouteIndex,
+  p: LatLng,
+  lap: number,
+): Candidate | null {
   const candidates = index.candidatesNear(p);
 
   const projections =
@@ -268,8 +353,8 @@ function searchGlobal(index: RouteIndex, p: LatLng): Candidate | null {
       ? // Ponto longe demais de qualquer célula da grade: varre tudo. Custa
         // caro, mas só acontece quando o veículo está a quilômetros do
         // percurso, o que por si só já é informação que o diretor precisa ver.
-        projectRange(index.track, p, 0, index.track.points.length - 2)
-      : projectSegments(index.track, p, candidates);
+        projectRange(index.track, p, 0, index.track.points.length - 2, lap)
+      : projectSegments(index.track, p, candidates, lap);
 
   const passages = clusterIntoPassages(projections);
   if (passages.length === 0) return null;
@@ -325,10 +410,12 @@ function pickAmongTies(
 
   let best = passages[0]!;
   let bestCost = Infinity;
+  let tiedCount = 0;
 
   for (const passage of passages) {
     if (passage.distanceM > minDistance + PASSAGE_TIE_TOLERANCE_M) continue;
 
+    tiedCount++;
     const c = cost(passage);
     if (c < bestCost) {
       bestCost = c;
@@ -336,7 +423,10 @@ function pickAmongTies(
     }
   }
 
-  return best;
+  // Mais de uma passagem empatada significa que a escolha veio do desempate,
+  // não da geometria. Quem consome precisa saber: o número pode estar a
+  // quilômetros do certo mesmo com a distância perpendicular em poucos metros.
+  return tiedCount > 1 ? { ...best, ambiguous: true } : best;
 }
 
 interface MotionPrior {
@@ -374,35 +464,51 @@ interface MotionPrior {
  * tempo decorrido e o termo simplesmente perde força — sem nunca travar o
  * veículo no lugar.
  */
-function searchOffsetWindow(
+function searchAbsoluteWindow(
   track: RouteTrack,
   p: LatLng,
-  startM: number,
-  endM: number,
+  startAbsM: number,
+  endAbsM: number,
   motion: MotionPrior,
 ): Candidate | null {
-  const pts = track.points;
-  const lo = Math.max(0, findSegmentIndex(track, Math.max(0, startM)));
-  const hiSeed = findSegmentIndex(track, Math.min(track.totalDistanceM, endM));
-  const hi = Math.min(pts.length - 2, hiSeed);
+  const total = track.totalDistanceM;
 
-  if (hi < lo) return null;
+  // Percurso ponto-a-ponto: uma volta só, janela presa ao traçado.
+  // Circuito: a janela pode atravessar a linha de largada, e é exatamente isso
+  // que impedia o veículo de avançar — a busca parava no fim do traçado e ele
+  // ficava preso lá, com confiança alta, enquanto dava mais uma volta inteira.
+  const firstLap = track.isLoop ? Math.floor(startAbsM / total) : 0;
+  const lastLap = track.isLoop ? Math.floor(endAbsM / total) : 0;
 
   let best: Candidate | null = null;
   let bestCost = Infinity;
 
-  for (let i = lo; i <= hi; i++) {
-    const c = projectOnSegment(track, p, i);
-    if (!c) continue;
+  for (let lap = Math.max(0, firstLap); lap <= Math.max(0, lastLap); lap++) {
+    const lapBase = lap * total;
+    const localStart = Math.max(0, startAbsM - lapBase);
+    const localEnd = Math.min(total, endAbsM - lapBase);
 
-    const geometryTerm = c.distanceM / motion.sigmaGpsM;
-    const motionTerm =
-      (c.offsetM - motion.expectedOffsetM) / motion.sigmaMotionM;
-    const cost = geometryTerm * geometryTerm + motionTerm * motionTerm;
+    if (localEnd < localStart) continue;
 
-    if (cost < bestCost) {
-      bestCost = cost;
-      best = c;
+    const lo = Math.max(0, findSegmentIndex(track, localStart));
+    const hi = Math.min(
+      track.points.length - 2,
+      findSegmentIndex(track, localEnd),
+    );
+
+    for (let i = lo; i <= hi; i++) {
+      const c = projectOnSegment(track, p, i, lap);
+      if (!c) continue;
+
+      const geometryTerm = c.distanceM / motion.sigmaGpsM;
+      const motionTerm =
+        (c.absoluteOffsetM - motion.expectedOffsetM) / motion.sigmaMotionM;
+      const cost = geometryTerm * geometryTerm + motionTerm * motionTerm;
+
+      if (cost < bestCost) {
+        bestCost = cost;
+        best = c;
+      }
     }
   }
 
@@ -414,10 +520,11 @@ function projectRange(
   p: LatLng,
   fromIdx: number,
   toIdx: number,
+  lap: number,
 ): Candidate[] {
   const out: Candidate[] = [];
   for (let i = fromIdx; i <= toIdx; i++) {
-    const c = projectOnSegment(track, p, i);
+    const c = projectOnSegment(track, p, i, lap);
     if (c) out.push(c);
   }
   return out;
@@ -427,10 +534,11 @@ function projectSegments(
   track: RouteTrack,
   p: LatLng,
   segmentIndices: number[],
+  lap: number,
 ): Candidate[] {
   const out: Candidate[] = [];
   for (const i of segmentIndices) {
-    const c = projectOnSegment(track, p, i);
+    const c = projectOnSegment(track, p, i, lap);
     if (c) out.push(c);
   }
   return out;
@@ -440,6 +548,7 @@ function projectOnSegment(
   track: RouteTrack,
   p: LatLng,
   segIdx: number,
+  lap: number,
 ): Candidate | null {
   const pts = track.points;
   const a = pts[segIdx];
@@ -453,12 +562,16 @@ function projectOnSegment(
   );
 
   const segLen = b[2] - a[2];
+  const offsetM = a[2] + segLen * proj.t;
 
   return {
     segmentIndex: segIdx,
-    offsetM: a[2] + segLen * proj.t,
+    offsetM,
+    lap,
+    absoluteOffsetM: lap * track.totalDistanceM + offsetM,
     distanceM: proj.distanceM,
     point: proj.point,
+    ambiguous: false,
   };
 }
 

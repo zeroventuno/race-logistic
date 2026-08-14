@@ -57,13 +57,46 @@ async function main() {
   console.log(`  Conectado em ${dbInfo[0].db}`);
 
   if (RESET) {
-    console.log("\n  --reset: derrubando o schema public inteiro.\n");
+    // `--reset` apaga TUDO. Sem trava, um `npm run db:reset` com o .env.local
+    // de produção carregado derruba o banco da prova sem uma única pergunta.
+    if (process.env.ALLOW_DB_RESET !== "yes") {
+      throw new Error(
+        "--reset apaga o schema public inteiro (todas as provas, posições, alertas e histórico).\n" +
+          "  Para confirmar que é isso mesmo, rode com ALLOW_DB_RESET=yes:\n" +
+          "    ALLOW_DB_RESET=yes npm run db:reset",
+      );
+    }
+
+    const { rows: counts } = await client.query(`
+      select coalesce((select count(*) from public.races), 0) as races
+    `).catch(() => ({ rows: [{ races: 0 }] }));
+
+    console.log(
+      `\n  --reset: derrubando o schema public inteiro (${counts[0].races} prova(s) serão apagadas).\n`,
+    );
+
     await client.query(`
       drop schema if exists public cascade;
       create schema public;
       grant usage on schema public to anon, authenticated, service_role;
       grant all on schema public to postgres;
     `);
+
+    // Restaurar os privilégios PADRÃO, e não só os do schema.
+    //
+    // `drop schema cascade` leva junto as entradas de pg_default_acl. Sem
+    // recriá-las, toda tabela criada DEPOIS nasce sem permissão nenhuma para
+    // anon/authenticated/service_role, e o PostgREST responde 42501 em tudo —
+    // um banco que parece migrado e não responde a nada.
+    await client.query(`
+      alter default privileges in schema public
+        grant all on tables to anon, authenticated, service_role;
+      alter default privileges in schema public
+        grant all on functions to anon, authenticated, service_role;
+      alter default privileges in schema public
+        grant all on sequences to anon, authenticated, service_role;
+    `);
+
     // Os tipos enum ficam no schema public, então o drop acima já os levou.
     // O trigger em auth.users precisa ser removido à mão porque vive em auth.
     await client.query(
@@ -71,12 +104,22 @@ async function main() {
     );
   }
 
+  // O ledger de migrações é criado aqui, e não por uma migração — então o
+  // "RLS em tudo" das migrações nunca o cobriu. Era a única tabela do schema
+  // sem RLS, e com privilégios totais para `authenticated`: qualquer usuário
+  // cadastrado (o cadastro é aberto) podia apagar a linha de uma migração já
+  // aplicada e fazer o próximo deploy morrer em "policy already exists", ou
+  // inserir um nome futuro com hash errado e travar o migrate para sempre.
   await client.query(`
     create table if not exists public._migrations (
       name        text primary key,
       hash        text not null,
       applied_at  timestamptz not null default now()
-    )
+    );
+
+    alter table public._migrations enable row level security;
+
+    revoke all on public._migrations from anon, authenticated;
   `);
 
   const files = readdirSync(MIGRATIONS_DIR)
