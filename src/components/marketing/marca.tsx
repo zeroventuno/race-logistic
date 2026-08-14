@@ -1,0 +1,104 @@
+/**
+ * A marca na landing.
+ *
+ * A geometria vem de `@/brand/mark` — o mesmo polígono do favicon, dos ícones
+ * do PWA e do timbre da folha de códigos. Copiar os vértices para cá criaria a
+ * sétima bandeirola ligeiramente diferente do projeto, que é exatamente o que
+ * aquele módulo existe para impedir.
+ *
+ * Aqui a aplicação é `rouge`: material comercial não tem estado operacional na
+ * tela, então o vermelho não disputa significado com nada. Dentro do produto a
+ * regra é outra e continua valendo.
+ */
+
+import { BRAND, PENNANT_WITH_POLE } from "@/brand/mark";
+
+interface BandeirolaProps {
+  /** Lado em px. */
+  size?: number;
+  /** Cor do símbolo. Padrão: o rouge da marca. */
+  color?: string;
+  /** Tremular como o arco de verdade. Desligado sob `prefers-reduced-motion`. */
+  tremular?: boolean;
+  className?: string;
+}
+
+export function Bandeirola({
+  size = 28,
+  color = BRAND.color.rouge,
+  tremular = false,
+  className,
+}: BandeirolaProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+    >
+      <rect
+        x={PENNANT_WITH_POLE.pole.x}
+        y={PENNANT_WITH_POLE.pole.y}
+        width={PENNANT_WITH_POLE.pole.width}
+        height={PENNANT_WITH_POLE.pole.height}
+        fill={color}
+      />
+      <polygon
+        points={PENNANT_WITH_POLE.flag}
+        fill={color}
+        className={tremular ? "fr-flutter" : undefined}
+      />
+    </svg>
+  );
+}
+
+interface AssinaturaProps {
+  size?: number;
+  /** Cor da parte "FLAMME" — "ROUGE" é sempre rouge. */
+  color?: string;
+  tremular?: boolean;
+  className?: string;
+}
+
+/**
+ * Assinatura em HTML, não em `<img>`.
+ *
+ * O SVG de `public/brand/signature.svg` traz o texto vetorizado em Helvetica —
+ * ótimo para impresso, ruim aqui: não é selecionável, não é lido por leitor de
+ * tela e não acompanha o zoom de fonte do sistema. Texto de verdade com o
+ * símbolo ao lado resolve os três.
+ */
+export function Assinatura({
+  size = 30,
+  color,
+  tremular = false,
+  className,
+}: AssinaturaProps) {
+  return (
+    <span className={`fr-assinatura ${className ?? ""}`}>
+      <Bandeirola size={size} tremular={tremular} />
+      <span className="fr-assinatura__nome" style={color ? { color } : undefined}>
+        Flamme
+        <span className="fr-assinatura__rouge">Rouge</span>
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Endosso.
+ *
+ * O lime do TRAKR (#A6E51A) sobre branco dá 1,5:1 — ilegível. Como fundo de
+ * uma palavra em asfalto, dá 11,9:1. A regra da marca (lime só no endosso,
+ * nunca sozinho) e a regra de contraste apontam para a mesma solução.
+ */
+export function ChipTrakr({ className }: { className?: string }) {
+  return (
+    <span className={`fr-trakr ${className ?? ""}`}>
+      <span>by</span>
+      <span className="fr-trakr__chip">{"TRAKR"}</span>
+    </span>
+  );
+}

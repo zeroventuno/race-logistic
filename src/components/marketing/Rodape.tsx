@@ -1,0 +1,48 @@
+import Link from "next/link";
+
+import { BRAND } from "@/brand/mark";
+import { LOCALES, LOCALE_META } from "@/lib/i18n/config";
+import { Assinatura, ChipTrakr } from "@/components/marketing/marca";
+
+export function Rodape() {
+  return (
+    <footer className="fr-rodape">
+      <div className="fr-shell fr-rodape__grade">
+        <div className="fr-pilha">
+          <Assinatura size={34} />
+          <ChipTrakr />
+          <p className="fr-body" style={{ maxWidth: "34ch" }}>
+            {BRAND.tagline["pt-BR"]} para ciclismo de estrada.
+          </p>
+        </div>
+
+        <div className="fr-pilha">
+          <span className="fr-eyebrow">O app do motorista fala</span>
+          <ul
+            className="fr-idiomas"
+            style={{ listStyle: "none", padding: 0, margin: 0 }}
+          >
+            {LOCALES.map((l) => (
+              <li className="fr-idioma" key={l}>
+                {LOCALE_META[l].nativeName}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="fr-pilha">
+          <span className="fr-eyebrow">Entrar</span>
+          <Link className="fr-topo__link" href="/login">
+            Direção de prova
+          </Link>
+          <Link className="fr-topo__link" href="/cadastro">
+            Criar conta
+          </Link>
+          <Link className="fr-topo__link" href="/motorista">
+            Motorista com código
+          </Link>
+        </div>
+      </div>
+    </footer>
+  );
+}

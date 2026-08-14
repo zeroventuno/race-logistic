@@ -1,0 +1,1391 @@
+/* ===========================================================================
+   Linguagem visual da landing — clara, de estrada
+   ===========================================================================
+
+   O PRODUTO É ESCURO. ESTA PÁGINA NÃO.
+
+   O painel fica ligado seis horas numa sala de direção, muitas vezes
+   projetado; ali o escuro é ergonomia. Esta página é lida de dia, no celular,
+   por um organizador em pé no meio de outra coisa, decidindo se compra. São
+   contextos opostos, e copiar a paleta do produto para cá seria confundir
+   coerência de marca com coerência de uso.
+
+   ESCOPO. Nada aqui vaza para o produto. `globals.css` pinta o `body` de
+   `--color-surface-0` para todo o app; as duas regras de `:has()` abaixo
+   trocam isso APENAS nas páginas que contêm `.fr-landing`. Nenhum arquivo
+   compartilhado foi tocado — não dá para quebrar o painel de outra pessoa
+   editando um seletor que só existe quando a landing está na tela.
+
+   O VERMELHO. Dentro do produto, vermelho é uma pessoa no chão. Aqui não há
+   estado operacional, então o rouge da marca pode estruturar a página — mas
+   ele nunca é decorativo por acaso: marca o ponto do acidente no diagrama, a
+   bandeirola, e a régua de quilometragem. Se um dia entrar um screenshot real
+   do painel, o vermelho de dentro dele continua significando socorro.
+
+   Sem fonte de CDN, sem biblioteca de animação. Pilha do sistema e keyframes.
+   =========================================================================== */
+
+html:has(.fr-landing) {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body:has(.fr-landing) {
+  background: #ffffff;
+  color: #12171c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.fr-landing) {
+    scroll-behavior: auto;
+  }
+}
+
+.fr-landing {
+  /* Papel: cinza-asfalto muito claro, nunca creme. Creme + serifa é o
+     visual genérico de página gerada; a estrada é cinza. */
+  --fr-paper: #ffffff;
+  --fr-paper-2: #f2f4f6;
+  --fr-paper-3: #e6eaed;
+  --fr-ink: #12171c;
+  --fr-ink-2: #4a5560;
+  --fr-ink-3: #616c77;
+  --fr-line: #d5dade;
+  --fr-line-2: #b3bcc4;
+  --fr-line-strong: #12171c;
+  --fr-rouge: #d92d20;
+  --fr-rouge-deep: #8f1a12;
+  --fr-lime: #a6e51a;
+  --fr-night: #0b0f13;
+
+  --fr-shell: 78rem;
+  --fr-gutter: 1.25rem;
+
+  --fr-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --fr-mono: var(--font-mono, ui-monospace, "Cascadia Mono", Menlo, monospace);
+
+  background: var(--fr-paper);
+  color: var(--fr-ink);
+  font-family: var(--fr-sans);
+  min-height: 100vh;
+  overflow-x: clip;
+}
+
+/* Contraste do foco: o ciano do produto (#38bdf8) some no branco. */
+.fr-landing :focus-visible {
+  outline: 3px solid var(--fr-rouge);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.fr-landing ::selection {
+  background: var(--fr-rouge);
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------- *
+   Estrutura
+ * --------------------------------------------------------------------- */
+
+.fr-shell {
+  width: 100%;
+  max-width: var(--fr-shell);
+  margin-inline: auto;
+  padding-inline: var(--fr-gutter);
+}
+
+@media (min-width: 48rem) {
+  .fr-landing {
+    --fr-gutter: 2rem;
+  }
+}
+
+.fr-section {
+  padding-block: 4.5rem;
+  border-top: 1px solid var(--fr-line);
+  /* O cabeçalho é fixo: sem isto, o link do menu deixa o título da seção
+     escondido atrás dele. */
+  scroll-margin-top: 4.5rem;
+}
+
+@media (min-width: 64rem) {
+  .fr-section {
+    padding-block: 7rem;
+  }
+}
+
+.fr-section--flat {
+  border-top: 0;
+}
+
+.fr-section--dark {
+  background: var(--fr-night);
+  color: #e8ecf2;
+  border-top: 0;
+}
+
+/* Régua de quilometragem: o marco de estrada que abre cada seção.
+   Não é ornamento aleatório — a página é lida como um road book, de
+   largada a chegada, e o leitor sabe sempre onde está no percurso. */
+.fr-marco {
+  display: flex;
+  align-items: baseline;
+  gap: 0.875rem;
+  margin-bottom: 2rem;
+}
+
+.fr-marco__km {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border: 2px solid var(--fr-line-strong);
+  background: var(--fr-paper);
+  font-family: var(--fr-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.fr-marco__km--rouge {
+  border-color: var(--fr-rouge);
+  color: var(--fr-rouge-deep);
+}
+
+.fr-section--dark .fr-marco__km {
+  border-color: #3a444f;
+  background: transparent;
+  color: #e8ecf2;
+}
+
+.fr-marco__label {
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fr-ink-3);
+}
+
+.fr-section--dark .fr-marco__label {
+  color: #97a3b1;
+}
+
+.fr-marco__rule {
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--fr-line) 0 8px,
+    transparent 8px 16px
+  );
+}
+
+.fr-section--dark .fr-marco__rule {
+  background: repeating-linear-gradient(
+    90deg,
+    #2b343d 0 8px,
+    transparent 8px 16px
+  );
+}
+
+/* --------------------------------------------------------------------- *
+   Tipografia
+ * --------------------------------------------------------------------- */
+
+.fr-h1 {
+  font-size: clamp(2.25rem, 7.2vw, 4.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.fr-h2 {
+  font-size: clamp(1.75rem, 4.4vw, 2.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.fr-h3 {
+  font-size: 1.125rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+.fr-lead {
+  font-size: clamp(1.0625rem, 2.1vw, 1.3125rem);
+  line-height: 1.5;
+  color: var(--fr-ink-2);
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+
+.fr-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--fr-ink-2);
+  text-wrap: pretty;
+}
+
+.fr-section--dark .fr-lead,
+.fr-section--dark .fr-body {
+  color: #b6c0cb;
+}
+
+.fr-eyebrow {
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fr-ink-3);
+}
+
+/* Números: sempre mono e tabular. É a mesma convenção da folha de
+   cronometragem, e é o que diferencia um dado medido de um adjetivo. */
+.fr-num {
+  font-family: var(--fr-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fr-num--xl {
+  font-size: clamp(2rem, 5.5vw, 3rem);
+  line-height: 1;
+}
+
+.fr-num--rouge {
+  color: var(--fr-rouge-deep);
+}
+
+.fr-unit {
+  font-size: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--fr-ink-3);
+  margin-left: 0.2em;
+}
+
+/* --------------------------------------------------------------------- *
+   Marca
+ * --------------------------------------------------------------------- */
+
+.fr-assinatura {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  /* Também é link no cabeçalho: o alvo de toque não pode ser a altura do
+     desenho. */
+  min-height: 2.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.fr-assinatura__nome {
+  font-family: var(--fr-sans);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  font-size: 0.8125rem;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.fr-assinatura__rouge {
+  color: var(--fr-rouge);
+  display: block;
+}
+
+.fr-section--dark .fr-assinatura__rouge,
+.fr-hero__marca .fr-assinatura__rouge {
+  /* Sobre fundo escuro o rouge puro perde contraste; clareia sem trocar
+     de matiz. */
+  color: #ff6a5e;
+}
+
+/* Chip do endosso. O lime do TRAKR nunca vira texto sobre branco (daria
+   1,5:1) — vira fundo, com a palavra em asfalto: 11,9:1. */
+.fr-trakr {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fr-ink-3);
+}
+
+/* Sobre a faixa escura, o cinza do endosso caía para 3,6:1. */
+.fr-section--dark .fr-trakr {
+  color: #b6c0cb;
+}
+
+.fr-trakr__chip {
+  background: var(--fr-lime);
+  color: #12171c;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  padding: 0.15rem 0.4rem;
+  line-height: 1;
+}
+
+/* Bandeirola tremulando. O movimento sai do mastro, como no arco de
+   verdade: o pano perto do cabo quase não anda, a ponta anda. */
+@keyframes fr-flutter {
+  0%,
+  100% {
+    transform: skewY(0deg) scaleY(1);
+  }
+  28% {
+    transform: skewY(-1.6deg) scaleY(1.035);
+  }
+  62% {
+    transform: skewY(1.9deg) scaleY(0.968);
+  }
+}
+
+.fr-flutter {
+  transform-origin: 16% 50%;
+  animation: fr-flutter 3.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-flutter {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------- *
+   Cabeçalho
+ * --------------------------------------------------------------------- */
+
+.fr-topo {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: saturate(1.4) blur(8px);
+  border-bottom: 1px solid var(--fr-line);
+}
+
+.fr-topo__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.75rem;
+}
+
+.fr-topo__nav {
+  display: none;
+  gap: 1.5rem;
+}
+
+@media (min-width: 60rem) {
+  .fr-topo__nav {
+    display: flex;
+  }
+}
+
+.fr-topo__link {
+  display: inline-flex;
+  align-items: center;
+  /* Serve também de link de rodapé no celular, onde 39 px de alvo é pouco. */
+  min-height: 2.75rem;
+  font-size: 0.875rem;
+  color: var(--fr-ink-2);
+  text-decoration: none;
+  padding-block: 0.5rem;
+  border-bottom: 2px solid transparent;
+}
+
+.fr-topo__link:hover {
+  color: var(--fr-ink);
+  border-bottom-color: var(--fr-rouge);
+}
+
+/* --------------------------------------------------------------------- *
+   Botões — placa de sinalização, canto vivo. Nada de rounded-lg.
+ * --------------------------------------------------------------------- */
+
+.fr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid transparent;
+  border-radius: 2px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.fr-btn:active {
+  transform: translateY(1px);
+}
+
+.fr-btn--rouge {
+  background: var(--fr-rouge);
+  color: #fff;
+  border-color: var(--fr-rouge);
+}
+
+.fr-btn--rouge:hover {
+  background: var(--fr-rouge-deep);
+  border-color: var(--fr-rouge-deep);
+}
+
+.fr-btn--ink {
+  background: var(--fr-ink);
+  color: #fff;
+  border-color: var(--fr-ink);
+}
+
+.fr-btn--ink:hover {
+  background: #000;
+}
+
+.fr-btn--linha {
+  background: transparent;
+  color: var(--fr-ink);
+  border-color: var(--fr-line-2);
+}
+
+.fr-btn--linha:hover {
+  border-color: var(--fr-ink);
+}
+
+.fr-section--dark .fr-btn--linha {
+  color: #e8ecf2;
+  border-color: #47525d;
+}
+
+.fr-section--dark .fr-btn--linha:hover {
+  border-color: #e8ecf2;
+}
+
+/* --------------------------------------------------------------------- *
+   HERÓI EM VÍDEO
+ * --------------------------------------------------------------------- */
+
+/* O véu é o problema central deste herói: pavé sob sol é textura de alto
+   contraste, e texto por cima disso some. A solução aqui é de composição,
+   não de opacidade — o escuro fica CONTIDO no palco do vídeo, com moldura
+   branca em volta, e o texto pesado (h1, lead, CTA) vive no branco logo
+   abaixo. Sobre o vídeo ficam só a marca e uma linha curta, que o gradiente
+   de baixo sustenta com folga. A página continua clara; o vídeo continua
+   cinematográfico. */
+
+.fr-hero {
+  padding-top: 1.5rem;
+}
+
+.fr-hero__palco {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--fr-night);
+  border-radius: 2px;
+  /* Reserva a caixa antes de qualquer byte de mídia chegar: sem CLS. */
+  aspect-ratio: 4 / 5;
+}
+
+@media (min-width: 48rem) {
+  .fr-hero__palco {
+    aspect-ratio: 2 / 1;
+  }
+}
+
+@media (min-width: 80rem) {
+  .fr-hero__palco {
+    aspect-ratio: 21 / 9;
+  }
+}
+
+.fr-hero__video,
+.fr-hero__poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fr-hero__veu {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to top,
+      rgb(6 9 12 / 0.9) 0%,
+      rgb(6 9 12 / 0.66) 22%,
+      rgb(6 9 12 / 0.28) 46%,
+      rgb(6 9 12 / 0.04) 70%,
+      rgb(6 9 12 / 0) 100%
+    ),
+    /* vinheta lateral discreta, só para segurar a marca no canto */
+      radial-gradient(
+        120% 90% at 50% 40%,
+        rgb(6 9 12 / 0) 55%,
+        rgb(6 9 12 / 0.35) 100%
+      );
+}
+
+.fr-hero__conteudo {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+@media (min-width: 48rem) {
+  .fr-hero__conteudo {
+    padding: 2rem 2.25rem;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+}
+
+/* A MARCA ASSENTANDO NO QUADRO EM QUE O ARCO SAI DE CENA.
+   O arco do último quilômetro é o logotipo — o objeto físico pendurado sobre a
+   estrada é o mesmo desenho do favicon. Quando ele passa por cima da câmera e
+   sai, a assinatura assenta no lugar dele.
+
+   Dois caminhos, e nenhum deles deixa a marca presa em opacity:0:
+
+   1. SEM JS, ou sem vídeo: animação CSS com `both` e atraso de 2,8 s. O `both`
+      aplica o estado inicial já no primeiro quadro pintado, então não existe o
+      lampejo de "aparece, some, volta" que um estado de React causaria depois
+      da hidratação. 2,8 s é quando o arco da cena desenhada passa.
+   2. COM VÍDEO: o script põe `data-marca` e passa a mandar, cronometrado pelo
+      `currentTime` do próprio vídeo — que é o único relógio que sabe quando o
+      arco realmente cruzou o quadro, mesmo com o autoplay atrasado. */
+@keyframes fr-marca-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fr-hero__marca {
+  color: #fff;
+  animation: fr-marca-entra 700ms cubic-bezier(0.16, 1, 0.3, 1) 2800ms both;
+}
+
+.fr-hero__marca .fr-assinatura__nome {
+  font-size: clamp(1rem, 3.4vw, 1.5rem);
+  letter-spacing: 0.2em;
+}
+
+.fr-hero[data-marca] .fr-hero__marca {
+  animation: none;
+}
+
+.fr-hero[data-marca="espera"] .fr-hero__marca {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fr-hero[data-marca="entrou"] .fr-hero__marca {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Menos movimento: a marca está lá desde o primeiro quadro. A regra global de
+   `globals.css` zera durações, mas não zera ATRASO — sem isto, quem pediu
+   menos movimento ficaria 2,8 s olhando um herói sem marca. */
+@media (prefers-reduced-motion: reduce) {
+  .fr-hero__marca,
+  .fr-hero[data-marca] .fr-hero__marca {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fr-hero__kicker {
+  color: #dfe5ec;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  max-width: 34ch;
+  text-wrap: pretty;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.65);
+}
+
+@media (min-width: 48rem) {
+  .fr-hero__kicker {
+    text-align: right;
+    font-size: 0.9375rem;
+  }
+}
+
+/* O H1 ocupa a largura inteira em vez de dividir a linha com o texto de
+   apoio. Numa coluna de 600 px a mesma frase quebrava em quatro linhas de
+   68 px e virava um bloco alto e apertado — a manchete perdia a força
+   justamente por estar grande demais para o espaço que tinha. */
+.fr-hero__texto {
+  padding-block: 2.5rem 0;
+}
+
+@media (min-width: 64rem) {
+  .fr-hero__texto {
+    padding-block: 3.5rem 0;
+  }
+}
+
+.fr-hero__base {
+  display: grid;
+  gap: 1.75rem;
+  margin-top: 1.75rem;
+  align-items: end;
+}
+
+@media (min-width: 64rem) {
+  .fr-hero__base {
+    grid-template-columns: 1fr auto;
+    gap: 3.5rem;
+    margin-top: 2.5rem;
+  }
+}
+
+.fr-hero__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Faixa de provas: três números medidos, em fonte de cronometragem. */
+.fr-provas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: 3rem;
+  border-top: 2px solid var(--fr-ink);
+  border-bottom: 1px solid var(--fr-line);
+}
+
+@media (min-width: 40rem) {
+  .fr-provas {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.fr-provas__item {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--fr-line);
+}
+
+@media (min-width: 40rem) {
+  .fr-provas__item {
+    padding: 1.5rem 1.5rem 1.5rem 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--fr-line);
+  }
+
+  .fr-provas__item:last-child {
+    border-right: 0;
+  }
+
+  .fr-provas__item + .fr-provas__item {
+    padding-left: 1.5rem;
+  }
+}
+
+.fr-provas__item:last-child {
+  border-bottom: 0;
+}
+
+/* --------------------------------------------------------------------- *
+   Cena de reserva do herói (SVG) — vale como pôster enquanto a filmagem
+   não chega, e como fundo se o vídeo falhar.
+ * --------------------------------------------------------------------- */
+
+/* Uma escala de exatamente 1,28 em torno do ponto de fuga leva cada junta do
+   calçamento para a posição da junta seguinte. O último quadro é idêntico ao
+   primeiro: o loop não tem costura, e a perspectiva sai correta de graça —
+   junta longe anda devagar, junta perto anda rápido. */
+@keyframes fr-pave-rolando {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.28);
+  }
+}
+
+.fr-cena__pave,
+.fr-cena__arco {
+  transform-box: view-box;
+  transform-origin: 600px 190px;
+}
+
+.fr-cena__pave {
+  animation: fr-pave-rolando 1s linear infinite;
+}
+
+/* O arco vem do mesmo ponto de fuga: cresce, desce e sai por cima da câmera.
+   O atraso negativo põe a primeira passagem por volta de 2,8 s — é nela que a
+   marca assenta. */
+@keyframes fr-arco-passando {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  30% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(26);
+    opacity: 0;
+  }
+}
+
+.fr-cena__arco {
+  animation: fr-arco-passando 8s cubic-bezier(0.62, 0, 0.86, 0.4) -5.2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-cena__pave,
+  .fr-cena__arco {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------- *
+   Cartões e listas
+ * --------------------------------------------------------------------- */
+
+.fr-grade {
+  display: grid;
+  gap: 1px;
+  background: var(--fr-line);
+  border: 1px solid var(--fr-line);
+}
+
+@media (min-width: 44rem) {
+  .fr-grade--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 62rem) {
+  .fr-grade--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.fr-card {
+  background: var(--fr-paper);
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fr-card__indice {
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--fr-rouge);
+}
+
+.fr-destaque {
+  border: 2px solid var(--fr-ink);
+  background: var(--fr-paper);
+  padding: 1.75rem 1.5rem;
+}
+
+@media (min-width: 62rem) {
+  .fr-destaque {
+    padding: 2.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+}
+
+/* Lista de falhas do jeito atual: risco vermelho na margem, como
+   anotação de comissário em folha impressa. */
+.fr-falhas {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--fr-line);
+  border-block: 1px solid var(--fr-line);
+}
+
+.fr-falhas__item {
+  background: var(--fr-paper);
+  padding: 1.125rem 1.25rem 1.125rem 1.5rem;
+  border-left: 3px solid var(--fr-rouge);
+  display: grid;
+  gap: 0.3rem;
+}
+
+@media (min-width: 56rem) {
+  .fr-falhas__item {
+    grid-template-columns: 15rem 1fr;
+    gap: 1.5rem;
+    align-items: baseline;
+  }
+}
+
+.fr-falhas__fala {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+/* Passos numerados */
+.fr-passos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 2rem;
+  counter-reset: passo;
+}
+
+@media (min-width: 56rem) {
+  .fr-passos {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+  }
+}
+
+.fr-passo {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 3px solid var(--fr-ink);
+}
+
+.fr-passo__n {
+  font-family: var(--fr-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--fr-ink-3);
+}
+
+/* --------------------------------------------------------------------- *
+   Slots de mídia
+ * --------------------------------------------------------------------- */
+
+.fr-slot {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: var(--fr-paper-2);
+  border: 1px solid var(--fr-line);
+  border-radius: 2px;
+}
+
+.fr-section--dark .fr-slot {
+  background: #151b21;
+  border-color: #2b343d;
+}
+
+.fr-slot__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fr-slot__vazio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  background-image:
+    linear-gradient(
+      135deg,
+      rgb(18 23 28 / 0.045) 25%,
+      transparent 25% 50%,
+      rgb(18 23 28 / 0.045) 50% 75%,
+      transparent 75%
+    );
+  background-size: 14px 14px;
+}
+
+.fr-section--dark .fr-slot__vazio {
+  background-image:
+    linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.04) 25%,
+      transparent 25% 50%,
+      rgb(255 255 255 / 0.04) 50% 75%,
+      transparent 75%
+    );
+}
+
+.fr-slot__ficha {
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fr-ink-3);
+}
+
+.fr-section--dark .fr-slot__ficha {
+  color: #8b97a4;
+}
+
+.fr-slot__titulo {
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fr-ink-2);
+  align-self: flex-start;
+  border: 1px solid var(--fr-line-2);
+  background: var(--fr-paper);
+  padding: 0.25rem 0.5rem;
+}
+
+.fr-section--dark .fr-slot__titulo {
+  color: #c3ccd6;
+  background: #1c242c;
+  border-color: #37424d;
+}
+
+/* --------------------------------------------------------------------- *
+   Revelação na rolagem
+ * --------------------------------------------------------------------- */
+
+/* Sem JS o conteúdo está visível. O atributo no <html> só é posto depois
+   que o observer existe — então nunca há texto preso em opacity:0. */
+html[data-fr-reveal="on"] .fr-landing [data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-fr-reveal="on"] .fr-landing [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------- *
+   Traçado que se desenha
+ * --------------------------------------------------------------------- */
+
+@keyframes fr-desenhar {
+  from {
+    stroke-dashoffset: var(--fr-len, 1200);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Estado base = desenhado. A animação só regride o começo, então em
+   `prefers-reduced-motion` (onde globals.css corta a duração para 0,01ms)
+   o traçado aparece inteiro em vez de sumir. */
+.fr-tracado {
+  stroke-dasharray: var(--fr-len, 1200);
+  stroke-dashoffset: 0;
+}
+
+.fr-visivel .fr-tracado,
+.fr-tracado--auto {
+  animation: fr-desenhar 2.2s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-visivel .fr-tracado,
+  .fr-tracado--auto {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* --------------------------------------------------------------------- *
+   Portas de entrada e rodapé
+ * --------------------------------------------------------------------- */
+
+.fr-porta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.75rem 1.5rem;
+  min-height: 3.5rem;
+  text-decoration: none;
+  color: inherit;
+  background: #11171d;
+  border: 2px solid #2b343d;
+  border-radius: 2px;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.fr-porta:hover {
+  border-color: #5d6b79;
+  background: #161d25;
+}
+
+.fr-porta--principal {
+  background: #fff;
+  color: var(--fr-ink);
+  border-color: #fff;
+}
+
+.fr-porta--principal:hover {
+  background: #f2f4f6;
+  border-color: #f2f4f6;
+}
+
+.fr-porta__seta {
+  margin-top: auto;
+  font-family: var(--fr-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fr-rodape {
+  background: var(--fr-paper);
+  border-top: 3px solid var(--fr-ink);
+  padding-block: 2.5rem 3rem;
+}
+
+.fr-rodape__grade {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  justify-content: space-between;
+}
+
+@media (min-width: 48rem) {
+  .fr-rodape__grade {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+.fr-idiomas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fr-idioma {
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fr-ink-2);
+  border: 1px solid var(--fr-line);
+  padding: 0.25rem 0.45rem;
+  white-space: nowrap;
+}
+
+.fr-section--dark .fr-idioma {
+  color: #b6c0cb;
+  border-color: #2f3941;
+}
+
+/* --------------------------------------------------------------------- *
+   Blocos de seção
+ * --------------------------------------------------------------------- */
+
+.fr-duas-colunas {
+  display: grid;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .fr-duas-colunas {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 4rem;
+  }
+}
+
+.fr-marco__flag {
+  margin-right: 0.1rem;
+  translate: 0 1px;
+}
+
+/* Número-chave do cartão: a linha que o olho pega antes do parágrafo. */
+.fr-chave {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--fr-rouge-deep);
+  letter-spacing: -0.02em;
+  margin-top: -0.25rem;
+}
+
+/* Diagrama do desvio */
+.fr-diagrama {
+  margin: 2rem 0 0;
+}
+
+@media (min-width: 62rem) {
+  .fr-diagrama {
+    margin: 0;
+  }
+}
+
+.fr-diagrama__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--fr-paper-2);
+  border: 1px solid var(--fr-line);
+}
+
+/* No celular o desenho sangra até a borda do cartão. São 52 px a mais de
+   largura, e num esquema desta proporção 52 px é a diferença entre enxergar
+   as duas pernas do percurso e ver uma listra. */
+@media (max-width: 61.99rem) {
+  .fr-diagrama__svg {
+    margin-inline: -1.5rem;
+    width: calc(100% + 3rem);
+    border-inline: 0;
+  }
+}
+
+.fr-legenda {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.875rem;
+}
+
+.fr-legenda__item {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--fr-ink-2);
+}
+
+.fr-legenda__item b {
+  font-size: 1.0625rem;
+  color: var(--fr-ink);
+}
+
+.fr-legenda__item b.fr-num--rouge {
+  color: var(--fr-rouge-deep);
+}
+
+.fr-legenda__marca {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  border: 2px solid var(--fr-ink);
+  background: var(--fr-paper);
+  border-radius: 50%;
+}
+
+.fr-legenda__marca--rota {
+  border-radius: 0;
+  height: 0.4rem;
+  margin-top: 0.6rem;
+  background: var(--fr-rouge);
+  border: 0;
+}
+
+.fr-legenda__marca--amb {
+  border-radius: 1px;
+  background: var(--fr-ink);
+}
+
+.fr-diagrama__nota {
+  margin-top: 1rem;
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fr-ink-3);
+}
+
+/* As duas telas */
+.fr-telas {
+  display: grid;
+  gap: 2.5rem;
+}
+
+@media (min-width: 64rem) {
+  .fr-telas {
+    grid-template-columns: 1.55fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+}
+
+.fr-tela {
+  display: grid;
+  gap: 1.5rem;
+  align-content: start;
+}
+
+.fr-tela__texto {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.fr-slot--telefone {
+  max-width: 17rem;
+  margin-inline: auto;
+  border-width: 8px;
+  border-color: var(--fr-ink);
+  border-radius: 18px;
+}
+
+.fr-marcadores {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.fr-marcadores li {
+  position: relative;
+  padding-left: 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--fr-ink-2);
+}
+
+/* Marcador de lista: traço de sinalização horizontal, não bolinha e
+   definitivamente não emoji. */
+.fr-marcadores li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 0.75rem;
+  height: 2px;
+  background: var(--fr-rouge);
+}
+
+/* Fecho */
+.fr-fecho {
+  display: grid;
+  gap: 2.5rem;
+}
+
+@media (min-width: 64rem) {
+  .fr-fecho {
+    grid-template-columns: 1fr 1.1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+}
+
+.fr-portas {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 30rem) {
+  .fr-portas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Utilitários mínimos — só o que se repete. */
+.fr-pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* O "pular para o conteúdo" só serve se aparecer quando recebe foco. Escondido
+   para sempre ele atende o leitor de tela e abandona quem navega por teclado
+   enxergando a tela. */
+.fr-sr:focus {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 50;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  clip: auto;
+  background: var(--fr-ink);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
