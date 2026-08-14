@@ -55,7 +55,7 @@ const CARTOES = [
 
 export function Argumentos() {
   return (
-    <Secao id="diferenciais" km="34" rotulo="O que o sistema mede">
+    <Secao id="diferenciais" km="34" rotulo="O que a estrada mede">
       <h2 className="fr-h2" id="diferenciais-titulo">
         Seis decisões de engenharia
         <br />
@@ -86,14 +86,32 @@ export function Argumentos() {
       </div>
 
       <div className="fr-grade fr-grade--2" style={{ marginTop: "2rem" }}>
-        {CARTOES.map((c) => (
-          <article className="fr-card" key={c.indice} data-reveal>
+        {CARTOES.map((c, i) => (
+          <article
+            className="fr-card"
+            key={c.indice}
+            data-reveal
+            data-delay={(i % 2) * 60}
+          >
             <span className="fr-card__indice">{c.indice}</span>
             <h3 className="fr-h3">{c.titulo}</h3>
             <p className="fr-chave fr-num">{c.numero}</p>
             <p className="fr-body">{c.corpo}</p>
           </article>
         ))}
+
+        {/* São cinco cartões numa grade de duas colunas, então sobra uma
+            célula. Deixá-la vazia é um buraco cinza no meio do argumento;
+            preenchê-la com um sexto cartão diluiria a lista. O resumo resolve
+            os dois: fecha a seção com a frase que o leitor levaria daqui de
+            qualquer jeito, e ocupa o vão. */}
+        <aside className="fr-card fr-card--resumo" data-reveal data-delay="120">
+          <span className="fr-eyebrow">Resumo</span>
+          <p className="fr-resumo__frase">
+            Seis decisões, um efeito: a direção deixa de perguntar onde está
+            cada carro.
+          </p>
+        </aside>
       </div>
     </Secao>
   );

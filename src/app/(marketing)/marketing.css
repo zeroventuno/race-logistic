@@ -387,6 +387,19 @@ body:has(.fr-landing) {
   font-weight: 300;
 }
 
+/* Letreiro numa linha: é a forma do cabeçalho. Aqui as palavras não casam de
+   largura — não há empilhamento para alinhar — e o que dá ritmo é a
+   entreletra larga, que também é o que impede a condensada em caixa alta de
+   virar mancha em corpo pequeno. */
+.fr-assinatura__nome--linha {
+  display: inline;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .fr-assinatura__rouge {
   color: var(--fr-rouge);
   font-weight: 700;
@@ -559,7 +572,21 @@ body:has(.fr-landing) {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  min-height: 3.75rem;
+  min-height: 3.25rem;
+  padding-block: 0.5rem;
+  transition: padding var(--fr-dur-ui) var(--fr-ease);
+}
+
+/* Antes de assentar a barra tem mais respiro — ela está sobre a foto, sem
+   fundo, e ali o aperto não tem função. Assentada, ela encolhe. */
+.fr-topo:not([data-assentado="sim"]) .fr-topo__inner {
+  padding-block: 0.875rem;
+}
+
+/* O botão do cabeçalho é quem definia a altura da barra. Ele encolhe junto. */
+.fr-topo .fr-btn--sm {
+  min-height: 2.25rem;
+  padding: 0.5625rem 1.125rem;
 }
 
 .fr-topo__nav {
@@ -690,45 +717,34 @@ body:has(.fr-landing) {
    HERÓI EM VÍDEO
  * --------------------------------------------------------------------- */
 
-/* O véu é o problema central deste herói: pavé sob sol é textura de alto
-   contraste, e texto por cima disso some. A solução aqui é de composição,
-   não de opacidade — o escuro fica CONTIDO no palco do vídeo, com moldura
-   branca em volta, e o texto pesado (h1, lead, CTA) vive no branco logo
-   abaixo. Sobre o vídeo ficam só a marca e uma linha curta, que o gradiente
-   de baixo sustenta com folga. A página continua clara; o vídeo continua
-   cinematográfico. */
+/* O véu é o problema central deste herói: pavé sob sol é a textura de mais
+   alto contraste que existe numa estrada, e texto por cima disso some.
+
+   A versão anterior resolvia por composição — o escuro contido num palco
+   emoldurado de branco, o texto pesado no papel logo abaixo. Funcionava e
+   partia a primeira tela em dois: a foto de um lado, a promessa do outro.
+
+   Agora o quadro sangra a janela inteira e o texto vive dentro dele. O
+   gradiente faz o trabalho, e faz em QUATRO paradas em vez de duas: escuro no
+   topo, onde passa o cabeçalho; quase limpo no terço em que está o sol, que é
+   a parte da foto que não pode ser abafada; fechando de novo da metade para
+   baixo, onde ficam o H1 e os botões. Duas paradas dariam ou um véu chapado
+   sobre o sol, ou texto sem base. */
 
 .fr-hero {
-  padding-top: 1.5rem;
-}
-
-.fr-hero__palco {
   position: relative;
   isolation: isolate;
+  /* Sangra a largura da JANELA, não a da casca. `100vw` sozinho estoura em
+     navegador com barra de rolagem clássica; a margem negativa em torno de um
+     bloco que já é 100% de largura resolve sem depender de unidade de viewport. */
+  width: 100%;
+  min-height: 40rem;
+  height: 100svh;
   overflow: hidden;
   background: var(--fr-night);
-  border-radius: 2px;
-  /* Reserva a caixa antes de qualquer byte de mídia chegar: sem CLS.
-     As proporções seguem a COMPOSIÇÃO, não um formato bonito no papel: o arco
-     ocupa o topo do quadro, a bandeirola pende no centro e o guidão da moto
-     ancora a base. Um palco panorâmico demais decepa os dois extremos e sobra
-     só a estrada — que é a parte que menos diz. */
-  aspect-ratio: 1 / 1;
-}
-
-@media (min-width: 48rem) {
-  .fr-hero__palco {
-    /* Proporção nativa da foto: nada é cortado. */
-    aspect-ratio: 3 / 2;
-  }
-}
-
-@media (min-width: 80rem) {
-  .fr-hero__palco {
-    /* Corta ~16% da altura. Suporta, porque o corte é distribuído com viés
-       para cima (ver object-position) e o arco sobrevive inteiro. */
-    aspect-ratio: 16 / 9;
-  }
+  color: var(--fr-paper);
+  display: flex;
+  align-items: stretch;
 }
 
 .fr-hero__video,
@@ -736,12 +752,16 @@ body:has(.fr-landing) {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 100%;
+  /* 8% a mais de altura, deslocada para cima: é a folga que o parallax
+     consome. Sem ela, o deslocamento revelaria a borda do quadro. */
+  top: -4%;
+  height: 108%;
   object-fit: cover;
-  /* Viés para cima: quando há corte, quem tem de sobrear é o arco, não o
+  /* Viés para cima: quando há corte, quem tem de sobrar é o arco, não o
      asfalto. Centrado, o topo do arco seria a primeira coisa a sair. */
-  object-position: center 42%;
+  object-position: center 44%;
   display: block;
+  will-change: transform;
 }
 
 .fr-hero__veu {
@@ -751,64 +771,155 @@ body:has(.fr-landing) {
   pointer-events: none;
   background:
     linear-gradient(
-      to top,
-      rgb(6 9 12 / 0.9) 0%,
-      rgb(6 9 12 / 0.66) 22%,
-      rgb(6 9 12 / 0.28) 46%,
-      rgb(6 9 12 / 0.04) 70%,
-      rgb(6 9 12 / 0) 100%
+      180deg,
+      rgb(12 15 18 / 0.76) 0%,
+      rgb(12 15 18 / 0.2) 32%,
+      rgb(12 15 18 / 0.52) 70%,
+      rgb(12 15 18 / 0.95) 100%
     ),
-    /* vinheta lateral discreta, só para segurar a marca no canto */
+    /* Brasa em volta do sol: devolve à foto o calor que o véu tira, e é a
+       única vez em que o rouge aparece sem marcar coisa alguma. */
       radial-gradient(
-        120% 90% at 50% 40%,
-        rgb(6 9 12 / 0) 55%,
-        rgb(6 9 12 / 0.35) 100%
+        120% 80% at 50% 28%,
+        rgb(217 45 32 / 0.14) 0%,
+        rgb(217 45 32 / 0) 62%
       );
 }
 
 .fr-hero__conteudo {
-  position: absolute;
+  position: relative;
   z-index: 2;
-  inset-inline: 0;
-  bottom: 0;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-content: end;
+  /* O cabeçalho é fixo e transparente sobre o herói: sem o respiro no topo, o
+     conteúdo alto passaria por baixo dele em tela curta. */
+  padding-block: 4.5rem 1.75rem;
+  min-height: 0;
 }
 
 @media (min-width: 48rem) {
   .fr-hero__conteudo {
-    padding: 2rem 2.25rem;
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 2rem;
+    padding-block: 5.5rem 1.75rem;
   }
 }
 
-/* A MARCA ASSENTANDO NO QUADRO EM QUE O ARCO SAI DE CENA.
-   O arco do último quilômetro é o logotipo — o objeto físico pendurado sobre a
-   estrada é o mesmo desenho do favicon. Quando ele passa por cima da câmera e
-   sai, a assinatura assenta no lugar dele.
+.fr-hero__texto {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: 57.5rem;
+  min-height: 0;
+  padding-bottom: 1.75rem;
+}
 
-   Dois caminhos, e nenhum deles deixa a marca presa em opacity:0:
-
-   1. SEM JS, ou sem vídeo: animação CSS com `both` e atraso de 2,8 s. O `both`
-      aplica o estado inicial já no primeiro quadro pintado, então não existe o
-      lampejo de "aparece, some, volta" que um estado de React causaria depois
-      da hidratação. 2,8 s é quando o arco da cena desenhada passa.
-   2. COM VÍDEO: o script põe `data-marca` e passa a mandar, cronometrado pelo
-      `currentTime` do próprio vídeo — que é o único relógio que sabe quando o
-      arco realmente cruzou o quadro, mesmo com o autoplay atrasado. */
-@keyframes fr-marca-entra {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+@media (min-width: 48rem) {
+  .fr-hero__texto {
+    padding-bottom: 2.75rem;
   }
-  to {
-    opacity: 1;
-    transform: none;
+}
+
+.fr-hero__olho {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin: 0 0 1.625rem;
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgb(246 245 242 / 0.72);
+}
+
+.fr-hero__risco {
+  display: block;
+  width: 2.75rem;
+  height: 1px;
+  background: var(--fr-rouge);
+  flex: none;
+}
+
+.fr-hero__titulo {
+  margin: 0;
+  color: var(--fr-paper);
+}
+
+.fr-hero__lead {
+  margin: 1.75rem 0 0;
+  max-width: 37.5rem;
+  color: rgb(246 245 242 / 0.78);
+}
+
+.fr-hero__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  margin-top: 2.375rem;
+}
+
+/* No celular a régua inteira sai. A nota explica de onde vem o nome e o
+   convite manda rolar — as duas coisas menos necessárias da tela, e as duas
+   que sobrariam espremendo o H1 numa janela estreita. Quem está no celular já
+   rola sem ser convidado. */
+.fr-hero__base {
+  display: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+@media (min-width: 48rem) {
+  .fr-hero__base {
+    display: flex;
+  }
+}
+
+.fr-hero__nota {
+  margin: 0;
+  max-width: 27.5rem;
+  font-family: var(--fr-mono);
+  font-size: 0.625rem;
+  line-height: 1.8;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(246 245 242 / 0.44);
+}
+
+.fr-hero__percorra {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: var(--fr-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(246 245 242 / 0.6);
+  white-space: nowrap;
+}
+
+@keyframes fr-percorra {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  60% {
+    transform: translateY(9px);
+    opacity: 0.25;
+  }
+}
+
+.fr-hero__seta {
+  display: inline-block;
+  animation: fr-percorra 1.9s ease-in-out infinite;
+}
+
+/* A nota e o convite são a informação menos importante da tela. Numa janela
+   baixa — celular deitado, notebook de 13" — eles saem antes de espremer o
+   H1. */
+@media (max-height: 40rem) {
+  .fr-hero__base {
+    display: none;
   }
 }
 
@@ -849,98 +960,6 @@ body:has(.fr-landing) {
     opacity: 1;
     transform: none;
   }
-}
-
-.fr-hero__kicker {
-  color: #dfe5ec;
-  font-size: 0.875rem;
-  line-height: 1.45;
-  max-width: 34ch;
-  text-wrap: pretty;
-  text-shadow: 0 1px 12px rgb(0 0 0 / 0.65);
-}
-
-@media (min-width: 48rem) {
-  .fr-hero__kicker {
-    text-align: right;
-    font-size: 0.9375rem;
-  }
-}
-
-/* O H1 ocupa a largura inteira em vez de dividir a linha com o texto de
-   apoio. Numa coluna de 600 px a mesma frase quebrava em quatro linhas de
-   68 px e virava um bloco alto e apertado — a manchete perdia a força
-   justamente por estar grande demais para o espaço que tinha. */
-.fr-hero__texto {
-  padding-block: 2.5rem 0;
-}
-
-@media (min-width: 64rem) {
-  .fr-hero__texto {
-    padding-block: 3.5rem 0;
-  }
-}
-
-.fr-hero__base {
-  display: grid;
-  gap: 1.75rem;
-  margin-top: 1.75rem;
-  align-items: end;
-}
-
-@media (min-width: 64rem) {
-  .fr-hero__base {
-    grid-template-columns: 1fr auto;
-    gap: 3.5rem;
-    margin-top: 2.5rem;
-  }
-}
-
-.fr-hero__acoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-/* Faixa de provas: três números medidos, em fonte de cronometragem. */
-.fr-provas {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  margin-top: 3rem;
-  border-top: 2px solid var(--fr-ink);
-  border-bottom: 1px solid var(--fr-line);
-}
-
-@media (min-width: 40rem) {
-  .fr-provas {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.fr-provas__item {
-  padding: 1.25rem 0;
-  border-bottom: 1px solid var(--fr-line);
-}
-
-@media (min-width: 40rem) {
-  .fr-provas__item {
-    padding: 1.5rem 1.5rem 1.5rem 0;
-    border-bottom: 0;
-    border-right: 1px solid var(--fr-line);
-  }
-
-  .fr-provas__item:last-child {
-    border-right: 0;
-  }
-
-  .fr-provas__item + .fr-provas__item {
-    padding-left: 1.5rem;
-  }
-}
-
-.fr-provas__item:last-child {
-  border-bottom: 0;
 }
 
 /* --------------------------------------------------------------------- *
@@ -1392,13 +1411,18 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
   translate: 0 1px;
 }
 
-/* Número-chave do cartão: a linha que o olho pega antes do parágrafo. */
+/* A etiqueta do cartão: "40 pontos", "fila local", "6 idiomas".
+   É legenda do título, não manchete. Em condensada pesada a 24px ela
+   competia com o próprio título logo acima e o cartão passava a ter duas
+   entradas. Em mono pequeno ela vira o que é: a medida que prova a frase. */
 .fr-chave {
-  font-size: 1.5rem;
-  line-height: 1;
-  color: var(--fr-rouge-deep);
-  letter-spacing: -0.02em;
-  margin-top: -0.25rem;
+  font-family: var(--fr-mono);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--fr-rouge);
+  letter-spacing: 0.06em;
+  margin-top: -0.125rem;
 }
 
 /* Diagrama do desvio */
@@ -1702,4 +1726,29 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
 .fr-slot--parallax .fr-slot__img {
   height: 118%;
   will-change: transform;
+}
+
+/* A célula de resumo que fecha a grade dos argumentos. Sem borda e em areia:
+   ela não é mais um item da lista, é o que sobra depois de lê-la. */
+.fr-card--resumo {
+  background: var(--fr-paper-2);
+  border-color: transparent;
+  justify-content: flex-end;
+  gap: 0.875rem;
+}
+
+.fr-card--resumo:hover {
+  background: var(--fr-paper-2);
+  transform: none;
+}
+
+.fr-resumo__frase {
+  margin: 0;
+  font-family: var(--fr-wordmark);
+  font-weight: 300;
+  font-size: 1.75rem;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  color: var(--fr-ink);
+  text-wrap: pretty;
 }

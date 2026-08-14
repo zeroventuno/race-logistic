@@ -60,6 +60,18 @@ interface AssinaturaProps {
   color?: string;
   tremular?: boolean;
   className?: string;
+  /**
+   * Letreiro numa linha só, em vez das duas palavras empilhadas.
+   *
+   * É a forma do CABEÇALHO, e a razão é altura: empilhado, o letreiro define
+   * a altura da barra e a barra come a foto do herói. Numa linha ele cabe na
+   * altura de um botão, e a barra fica fina.
+   *
+   * Empilhado continua sendo a forma da marca em qualquer lugar onde ela tem
+   * espaço — herói e rodapé —, porque é lá que o bloco de duas palavras com a
+   * mesma largura funciona como desenho.
+   */
+  linha?: boolean;
 }
 
 /**
@@ -75,6 +87,7 @@ export function Assinatura({
   color,
   tremular = false,
   className,
+  linha = false,
 }: AssinaturaProps) {
   return (
     <span className={`fr-assinatura ${className ?? ""}`}>
@@ -82,13 +95,27 @@ export function Assinatura({
       {/* O nome é lido daqui; as letras abaixo são desenho. Sem isto, o leitor
           de tela soletraria "F, L, A, M, M, E". */}
       <span
-        className="fr-assinatura__nome"
+        className={`fr-assinatura__nome${linha ? " fr-assinatura__nome--linha" : ""}`}
         role="img"
         aria-label="Flamme Rouge"
         style={color ? { color } : undefined}
       >
-        <Palavra texto="Flamme" classe="fr-assinatura__flamme" />
-        <Palavra texto="Rouge" classe="fr-assinatura__rouge" />
+        {linha ? (
+          <>
+            {/* Numa linha as duas palavras não precisam casar de largura, e a
+                distribuição letra a letra só atrapalharia: o que dá ritmo aqui
+                é a entreletra corrida. */}
+            <span aria-hidden="true">Flamme </span>
+            <span aria-hidden="true" className="fr-assinatura__rouge">
+              Rouge
+            </span>
+          </>
+        ) : (
+          <>
+            <Palavra texto="Flamme" classe="fr-assinatura__flamme" />
+            <Palavra texto="Rouge" classe="fr-assinatura__rouge" />
+          </>
+        )}
       </span>
     </span>
   );

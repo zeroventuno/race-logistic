@@ -27,7 +27,7 @@ export function Cabecalho() {
             className="fr-assinatura"
             aria-label="Flamme Rouge, início"
           >
-            <Assinatura size={26} />
+            <Assinatura size={22} linha />
           </Link>
 
           <nav className="fr-topo__nav" aria-label="Seções da página">
@@ -35,7 +35,7 @@ export function Cabecalho() {
               O problema
             </a>
             <a className="fr-topo__link" href="#diferenciais">
-              O que o sistema mede
+              O que a estrada mede
             </a>
             <a className="fr-topo__link" href="#telas">
               As duas telas
