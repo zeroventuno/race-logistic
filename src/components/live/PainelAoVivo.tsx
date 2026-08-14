@@ -16,15 +16,32 @@ import { useLiveState } from "./useLiveState";
 /**
  * O painel operacional ao vivo.
  *
- * A hierarquia da tela é a hierarquia da urgência, de cima para baixo e da
- * esquerda para a direita:
+ * O MAPA É A TELA. Antes esta página era uma grade de três colunas com o mapa
+ * espremido no meio, e por baixo dela havia uma suposição errada: a de que o
+ * mapa é mais um painel. Não é. Ele é o único lugar onde a prova acontece —
+ * "onde está o fechamento" é uma pergunta sobre a estrada, e respondê-la numa
+ * janelinha de 40% da largura obriga o diretor a dar zoom para enxergar o que
+ * já deveria estar enxergando.
  *
- *   1. A barra fixa de alerta não reconhecido, que cobre tudo.
- *   2. A janela abertura ↔ fechamento, em corpo 60, porque é a decisão que o
- *      diretor toma o dia inteiro: já posso liberar esta rua?
- *   3. Os alertas ativos, à esquerda, com as ações a um clique.
- *   4. O mapa, no centro, que é contexto e não decisão.
- *   5. A lista de veículos, à direita, que responde perguntas de detalhe.
+ * Agora o mapa ocupa a viewport inteira e TUDO flutua sobre ele em vidro. O
+ * ganho não é estético: os números continuam à vista enquanto o olho segue um
+ * veículo, em vez de estarem numa coluna que exige desviar a atenção.
+ *
+ * A hierarquia continua sendo a da urgência, e ela sobreviveu à mudança:
+ *
+ *   1. A barra fixa de alerta não reconhecido, que cobre tudo, inclusive isto.
+ *   2. À ESQUERDA, o que decide: identidade da prova e a janela abertura ↔
+ *      fechamento, que é a pergunta do dia inteiro — já posso liberar esta rua?
+ *   3. À DIREITA, o que exige ação e o que responde detalhe: alertas em cima,
+ *      veículos embaixo.
+ *   4. EMBAIXO, numa faixa só, o que é referência e nunca decisão: legenda,
+ *      escala, avisos não bloqueantes e zoom.
+ *
+ * Aquela faixa de baixo é UM flex com `flex-wrap`, de propósito. Posicionar os
+ * três blocos absolutamente — um à esquerda, um no meio, um à direita — é o
+ * que se faria naturalmente, e é o que colide em tela curta ou em janela
+ * estreita: o aviso âmbar passa por baixo do zoom e some. Com um flex só, eles
+ * se empurram.
  *
  * Nada aqui pisca, gira ou muda de cor por decoração. A única animação da tela
  * é o pulso de um alerta que ninguém reconheceu — e ela é a única porque
@@ -154,108 +171,140 @@ export function PainelAoVivo({
       />
 
       <main
-        className="mx-auto max-w-[1800px] px-3 py-4 sm:px-5"
-        style={{ paddingTop: alturaBarra > 0 ? alturaBarra + 16 : undefined }}
+        className="relative h-full min-h-[36rem] w-full overflow-hidden bg-surface-0"
+        style={{ paddingTop: alturaBarra > 0 ? alturaBarra : undefined }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <ControleProva
-            raceId={raceId}
-            status={snapshot.race.status}
-            actualStart={snapshot.race.actualStart}
-            finishedAt={snapshot.race.finishedAt}
-            podeEditar={podeEditar}
-            pronta={pronta}
-            pendencias={pendencias}
-            aoMudar={recarregar}
-          />
-
-          <SaudeConexao
-            connection={connection}
-            health={health}
-            localNowMs={Date.now()}
-            atualizando={atualizando}
-            onRecarregar={recarregar}
-            somBloqueado={semSom}
-            onAtivarSom={() => void ativarSom(true).then((ok) => setSemSom(!ok))}
-          />
+        {/* O mapa por baixo de tudo. Sem percurso não há mapa — e não há
+            quilometragem nem janela —, então o lugar dele recebe a explicação
+            em vez de um retângulo cinza. */}
+        <div className="absolute inset-0">
+          {renderPoints.length >= 2 ? (
+            <MapaAoVivo
+              renderPoints={renderPoints}
+              vehicles={snapshot.vehicles}
+              alerts={snapshot.alerts}
+              occupiedSegment={snapshot.occupiedSegment}
+              nowMs={nowMs}
+              selecionado={selecionado}
+              onSelecionar={selecionarVeiculo}
+              focar={focar}
+              className="h-full w-full"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-muted">
+              {/* i18n: precisa de chave — prova sem percurso ativo */}
+              Esta prova não tem percurso ativo. Sem ele não há mapa, não há
+              quilometragem e não há janela abertura ↔ fechamento.
+            </div>
+          )}
         </div>
 
-        {snapshot.warnings.length > 0 ? (
-          <ul className="mt-3 space-y-1">
-            {snapshot.warnings.map((w) => (
-              <li
-                key={w}
-                role="alert"
-                className="border border-warn/45 bg-warn/10 px-3 py-2 text-sm text-warn"
-              >
-                {w}
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {/* Vinheta: escurece as bordas para os cartões de vidro terem contra o
+            que se apoiar, sem escurecer o miolo do mapa, que é onde os
+            veículos estão. Não intercepta clique. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[1]"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 50% 50%, transparent 34%, var(--color-vignette) 100%)",
+          }}
+        />
 
-        <div className="mt-4">
+        {/* Faixa de estado no alto do mapa.
+            Fica sobre um gradiente, não sobre uma barra sólida: uma faixa
+            opaca em cima de um mapa em tela cheia devolve a moldura que a
+            tela inteira existe para tirar. O gradiente escurece o suficiente
+            para o texto se sustentar e deixa a estrada aparecer por baixo. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end px-3 py-3 sm:px-5"
+          style={{
+            background:
+              "linear-gradient(180deg, var(--color-vignette), transparent)",
+          }}
+        >
+          <div className="pointer-events-auto">
+            <SaudeConexao
+              connection={connection}
+              health={health}
+              localNowMs={Date.now()}
+              atualizando={atualizando}
+              onRecarregar={recarregar}
+              somBloqueado={semSom}
+              onAtivarSom={() =>
+                void ativarSom(true).then((ok) => setSemSom(!ok))
+              }
+            />
+          </div>
+        </div>
+
+        {/* --- Coluna esquerda: o que decide ------------------------------ */}
+        <div className="coluna-flutuante left-3 w-[22rem] sm:left-5">
+          <div className="vidro p-4">
+            <ControleProva
+              raceId={raceId}
+              status={snapshot.race.status}
+              actualStart={snapshot.race.actualStart}
+              finishedAt={snapshot.race.finishedAt}
+              podeEditar={podeEditar}
+              pronta={pronta}
+              pendencias={pendencias}
+              aoMudar={recarregar}
+            />
+          </div>
+
           <JanelaGap gap={snapshot.gap} race={snapshot.race} nowMs={nowMs} />
         </div>
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-[23rem_minmax(0,1fr)_20rem]">
-          <div className="flex h-[26rem] min-h-0 flex-col xl:h-[calc(100dvh-21rem)] xl:min-h-[30rem]">
-            <PainelAlertas
-              alerts={snapshot.alerts}
-              vehicles={snapshot.vehicles}
-              usuarioId={usuarioId}
-              podeEditar={podeEditar}
-              nowMs={nowMs}
-              onFocarAlerta={(a) => focarEm(a.lng, a.lat)}
-              aoAgir={recarregar}
-            />
-          </div>
+        {/* --- Coluna direita: o que exige ação, e o detalhe --------------- */}
+        <div className="coluna-flutuante right-3 w-[21rem] sm:right-5">
+          <PainelAlertas
+            alerts={snapshot.alerts}
+            vehicles={snapshot.vehicles}
+            usuarioId={usuarioId}
+            podeEditar={podeEditar}
+            nowMs={nowMs}
+            onFocarAlerta={(a) => focarEm(a.lng, a.lat)}
+            aoAgir={recarregar}
+          />
 
-          <div className="h-[24rem] overflow-hidden border border-border sm:h-[32rem] xl:h-[calc(100dvh-21rem)] xl:min-h-[30rem]">
-            {renderPoints.length >= 2 ? (
-              <MapaAoVivo
-                renderPoints={renderPoints}
-                vehicles={snapshot.vehicles}
-                alerts={snapshot.alerts}
-                occupiedSegment={snapshot.occupiedSegment}
-                nowMs={nowMs}
-                selecionado={selecionado}
-                onSelecionar={selecionarVeiculo}
-                focar={focar}
-                className="h-full w-full"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-muted">
-                {/* i18n: precisa de chave — prova sem percurso ativo */}
-                Esta prova não tem percurso ativo. Sem ele não há mapa, não há
-                quilometragem e não há janela abertura ↔ fechamento.
-              </div>
-            )}
-          </div>
-
-          <div className="flex h-[26rem] min-h-0 flex-col xl:h-[calc(100dvh-21rem)] xl:min-h-[30rem]">
-            <ListaVeiculos
-              vehicles={snapshot.vehicles}
-              nowMs={nowMs}
-              laps={snapshot.race.laps}
-              sort={ordem}
-              onSort={setOrdem}
-              selecionado={selecionado}
-              onSelecionar={selecionarVeiculo}
-            />
-          </div>
+          <ListaVeiculos
+            vehicles={snapshot.vehicles}
+            nowMs={nowMs}
+            laps={snapshot.race.laps}
+            sort={ordem}
+            onSort={setOrdem}
+            selecionado={selecionado}
+            onSelecionar={selecionarVeiculo}
+          />
         </div>
 
-        <p className="mt-3 text-center text-[11px] text-ink-faint">
-          {/* i18n: precisa de chave — nota de rodapé sobre relógio e fuso */}
-          Idades medidas contra o relógio do servidor, não contra o deste
-          computador. Horários no fuso da prova ({snapshot.race.timezone}).
-          {alertasPendentes > 0 ? (
-            <span className="ml-2 font-semibold text-critical">
-              {alertasPendentes} alerta(s) sem reconhecer.
-            </span>
+        {/* --- Faixa de baixo: referência, nunca decisão ------------------- */}
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex flex-wrap items-end justify-between gap-2 sm:inset-x-5 sm:bottom-5">
+          <p className="vidro pointer-events-auto px-3 py-2 font-mono text-[0.6rem] uppercase leading-relaxed tracking-[0.14em] text-ink-faint">
+            {/* i18n: precisa de chave — nota de rodapé sobre relógio e fuso */}
+            Idades contra o relógio do servidor · fuso {snapshot.race.timezone}
+            {alertasPendentes > 0 ? (
+              <span className="ml-2 font-semibold text-critical">
+                {alertasPendentes} sem reconhecer
+              </span>
+            ) : null}
+          </p>
+
+          {snapshot.warnings.length > 0 ? (
+            <ul className="pointer-events-auto max-w-[35rem] flex-1 basis-[18rem] space-y-1">
+              {snapshot.warnings.map((w) => (
+                <li
+                  key={w}
+                  role="alert"
+                  className="border border-warn-line bg-warn-dim px-3 py-2 text-sm text-warn-ink backdrop-blur-md"
+                >
+                  {w}
+                </li>
+              ))}
+            </ul>
           ) : null}
-        </p>
+        </div>
       </main>
     </>
   );

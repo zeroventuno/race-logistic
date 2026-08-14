@@ -41,6 +41,26 @@ export interface DriverMapProps {
   className?: string;
 }
 
+/**
+ * A rota, exatamente como o handoff especifica: casing de 9 px, traço de 4,5,
+ * junta arredondada.
+ *
+ * As cores vêm de tokens porque o percurso é a única linha do mapa que é NOSSA
+ * — todo o resto vem do basemap. Sobre mapa claro o azul escuro se sustenta;
+ * sobre o escuro ele precisa clarear, senão desaparece nas estradas cinzas. O
+ * casing é o inverso do fundo, e é o que impede a rota de sumir justamente onde
+ * ela cruza uma rodovia da mesma largura.
+ */
+function corDaRota(): { linha: string; casing: string } {
+  if (typeof window === "undefined") {
+    return { linha: "#78bef0", casing: "rgba(10,13,16,.6)" };
+  }
+  const cs = getComputedStyle(document.documentElement);
+  const linha = cs.getPropertyValue("--route-line").trim() || "#78bef0";
+  const casing = cs.getPropertyValue("--route-casing").trim() || "rgba(10,13,16,.6)";
+  return { linha, casing };
+}
+
 export function DriverMap({
   route,
   vehicles,
@@ -81,7 +101,7 @@ export function DriverMap({
       type: "line",
       source: "race-route",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#0a0c10", "line-width": 9, "line-opacity": 0.85 },
+      paint: { "line-color": corDaRota().casing, "line-width": 9 },
     });
 
     map.addLayer({
@@ -89,7 +109,7 @@ export function DriverMap({
       type: "line",
       source: "race-route",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#38bdf8", "line-width": 4 },
+      paint: { "line-color": corDaRota().linha, "line-width": 4.5 },
     });
 
     if (!fittedRef.current) {

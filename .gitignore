@@ -25,3 +25,8 @@ scratch/
 !/public/icon-*.png
 !/public/apple-touch-icon.png
 !/public/favicon-*.png
+
+# Pacotes de handoff de design. Ficam na raiz para conveniência de quem os
+# recebe, mas são entrada de trabalho, não código — e um deles são 2 MB de
+# imagem que o repositório não precisa carregar para sempre.
+/*.zip

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ForaDoAoVivo } from "@/components/director/ForaDoAoVivo";
 import { RaceNav } from "@/components/director/RaceNav";
 import { Selo } from "@/components/director/ui";
 import { I18nProvider } from "@/lib/i18n/client";
@@ -28,6 +29,7 @@ export default async function RaceLayout({
     // países diferentes olhando esta tela precisam ler o mesmo horário.
     <I18nProvider locale={locale} timeZone={race.timezone}>
       <div>
+        <ForaDoAoVivo>
         <div className="border-b border-border bg-surface-1 print:hidden">
           <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
             <Link
@@ -105,6 +107,7 @@ export default async function RaceLayout({
             </div>
           </div>
         </div>
+        </ForaDoAoVivo>
 
         {children}
       </div>

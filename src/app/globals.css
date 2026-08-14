@@ -58,25 +58,76 @@
    é máquina quebrada.
    =========================================================================== */
 
+/* Os valores abaixo vêm do handoff de design, tabela "Tema (área interna)".
+   Os NOMES continuam sendo os nossos, semânticos: `surface-1` diz onde a cor
+   é usada, `--fr-card` diz como ela se parece. Manter as duas famílias de
+   nomes lado a lado criaria dois vocabulários para a mesma tinta, e em três
+   meses ninguém saberia qual é o verdadeiro. A tabela de equivalência:
+
+     --fr-bg          → surface-0     --fr-ink    → ink
+     --fr-card        → surface-1     --fr-slate  → ink-muted
+     --fr-card-hover  → surface-2     --fr-faint  → ink-faint
+     --fr-alt         → surface-3     --fr-faint2 → ink-ghost
+     --fr-line        → border        --fr-line2  → border-strong
+
+   A paleta antiga era azulada (#0a0c10, #12151c). Esta é neutra e um pouco
+   quente, e é a mesma da landing — o produto e a página que o vende deixam de
+   ser dois cinzas diferentes. */
+
 @theme {
-  --color-surface-0: #0a0c10;
-  --color-surface-1: #12151c;
-  --color-surface-2: #1a1f29;
-  --color-surface-3: #242b38;
-  --color-border: #2e3644;
-  --color-border-strong: #414c5f;
+  --color-surface-0: light-dark(#f6f5f2, #0c0f12);
+  --color-surface-1: light-dark(#ffffff, #12171c);
+  --color-surface-2: light-dark(#fbfaf8, #1a2127);
+  --color-surface-3: light-dark(#efede8, #171d23);
+  --color-border: light-dark(rgb(18 23 28 / 0.14), rgb(246 245 242 / 0.14));
+  --color-border-soft: light-dark(rgb(18 23 28 / 0.1), rgb(246 245 242 / 0.1));
+  --color-border-strong: light-dark(
+    rgb(18 23 28 / 0.2),
+    rgb(246 245 242 / 0.24)
+  );
 
-  --color-ink: #e8ecf2;
-  --color-ink-muted: #9aa5b5;
-  --color-ink-faint: #6b7688;
+  --color-ink: light-dark(#12171c, #f6f5f2);
+  --color-ink-muted: light-dark(#4a525c, rgb(246 245 242 / 0.7));
+  --color-ink-faint: light-dark(#7a828c, rgb(246 245 242 / 0.5));
+  --color-ink-ghost: light-dark(#9aa0a8, rgb(246 245 242 / 0.36));
 
-  --color-critical: #ff3b3b;
-  --color-critical-dim: #7a1414;
-  --color-warn: #ffa726;
-  --color-warn-dim: #7a4a08;
-  --color-ok: #22c55e;
-  --color-ok-dim: #0d4a24;
-  --color-info: #38bdf8;
+  /* O par do botão e do selo.
+     Regra do handoff, e vinha de um bug real: texto e fundo do MESMO elemento
+     nunca podem sair de dois tokens que invertem na mesma direção — no outro
+     tema viram tinta sobre tinta. Estes dois invertem em direções OPOSTAS, e
+     é por isso que existem como par nomeado em vez de "use ink e surface". */
+  --color-btn-bg: light-dark(#12171c, #f6f5f2);
+  --color-btn-fg: light-dark(#f6f5f2, #12171c);
+
+  /* Cartão flutuante sobre o mapa. Não é `surface-1` com opacidade: o vidro
+     precisa deixar a estrada passar por baixo sem deixar o texto ilegível, e
+     esse equilíbrio é um valor próprio, medido contra o basemap. */
+  --color-glass: light-dark(rgb(255 255 255 / 0.92), rgb(12 15 18 / 0.78));
+  --color-glass-strong: light-dark(
+    rgb(255 255 255 / 0.96),
+    rgb(12 15 18 / 0.88)
+  );
+  --color-vignette: light-dark(rgb(239 237 231 / 0.5), rgb(10 13 16 / 0.72));
+
+  /* Vermelho é uma pessoa no chão; âmbar é o sistema admitindo que não sabe;
+     verde é confirmado. Nada decorativo usa as três — e o rouge da marca
+     (#D92D20) só aparece dentro do produto por este caminho, como alerta. */
+  --color-critical: light-dark(#d92d20, #ff6b5c);
+  --color-critical-dim: light-dark(
+    rgb(217 45 32 / 0.1),
+    rgb(217 45 32 / 0.16)
+  );
+  --color-critical-ink: light-dark(#a81e14, #ff8a7a);
+  --color-warn: light-dark(#b07c14, #f0b429);
+  --color-warn-dim: light-dark(
+    rgb(240 180 41 / 0.16),
+    rgb(240 180 41 / 0.12)
+  );
+  --color-warn-line: light-dark(rgb(176 124 20 / 0.5), rgb(240 180 41 / 0.4));
+  --color-warn-ink: light-dark(#7a5510, #f6e3b8);
+  --color-ok: light-dark(#2e7d57, #4fb783);
+  --color-ok-dim: light-dark(rgb(46 125 87 / 0.12), rgb(46 125 87 / 0.22));
+  --color-info: light-dark(#1f6fb2, #78bef0);
 
   /* O mono é da mesma família em toda a ferramenta, e não é enfeite de
      terminal: é a fonte de tudo que a estrada mediu ou que alguém digita —
@@ -99,132 +150,77 @@
 }
 
 /* ---------------------------------------------------------------------------
-   TEMA CLARO
+   OS DOIS TEMAS, NUMA DECLARAÇÃO SÓ
 
-   O escuro continua sendo o padrão do produto, pelo motivo original: a tela
+   O escuro continua sendo o padrão do produto, pelo motivo de sempre: a tela
    fica ligada seis horas numa sala de direção ou num trailer, muitas vezes
-   projetada. Mas quem monta a prova trabalha de dia, numa mesa, e ali o escuro
+   projetada. Mas quem MONTA a prova trabalha de dia, numa mesa, e ali o escuro
    pesa. Os dois contextos são reais, então a escolha é de quem está usando.
 
-   Os tokens são redefinidos em três estados, e a ordem importa: `[data-theme]`
-   vence a preferência do sistema nos dois sentidos, para que a escolha
-   explícita não seja desfeita pelo relógio do sistema operacional ao anoitecer.
+   Antes isto eram cinco blocos: o escuro no @theme, e o claro repetido duas
+   vezes (uma na consulta de mídia, outra no atributo explícito) — para cada
+   uma das duas famílias de token. Vinte e poucos valores escritos três vezes.
+   Com o handoff acrescentando dez tokens, seriam trinta linhas de hexadecimal
+   duplicado, e duplicata de cor não envelhece: alguém corrige um vermelho num
+   bloco e esquece dos outros dois.
 
-   As cores de ESTADO (vermelho de socorro, âmbar de dado incerto, verde de
-   confirmado) mudam de tom mas não de significado — e são recalculadas para
-   manter contraste sobre fundo claro, porque um vermelho pensado para preto
-   fica lavado sobre branco justamente onde ele precisa gritar.
+   `light-dark()` resolve na origem. Cada token é escrito UMA vez, com o par
+   claro/escuro lado a lado, e quem decide qual dos dois vale é a propriedade
+   `color-scheme` — que é a única coisa que os seletores abaixo mudam.
+
+   A ordem dos seletores importa e é a de sempre: `[data-theme]` vence a
+   preferência do sistema NOS DOIS SENTIDOS, para que a escolha explícita de
+   quem clicou no botão não seja desfeita pelo relógio do sistema operacional
+   ao anoitecer.
    --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --color-surface-0: #f4f5f7;
-    --color-surface-1: #ffffff;
-    --color-surface-2: #f0f2f5;
-    --color-surface-3: #e5e8ed;
-    --color-border: #d6dae1;
-    --color-border-strong: #b4bcc7;
-
-    --color-ink: #11151b;
-    --color-ink-muted: #525c6a;
-    --color-ink-faint: #78828f;
-
-    --color-critical: #d02318;
-    --color-critical-dim: #fbdedb;
-    --color-warn: #a35a00;
-    --color-warn-dim: #fdeacf;
-    --color-ok: #14743c;
-    --color-ok-dim: #d6f0e0;
-    --color-info: #0369a1;
-
     color-scheme: light;
   }
 }
 
 :root[data-theme="light"] {
-  --color-surface-0: #f4f5f7;
-  --color-surface-1: #ffffff;
-  --color-surface-2: #f0f2f5;
-  --color-surface-3: #e5e8ed;
-  --color-border: #d6dae1;
-  --color-border-strong: #b4bcc7;
-
-  --color-ink: #11151b;
-  --color-ink-muted: #525c6a;
-  --color-ink-faint: #78828f;
-
-  --color-critical: #d02318;
-  --color-critical-dim: #fbdedb;
-  --color-warn: #a35a00;
-  --color-warn-dim: #fdeacf;
-  --color-ok: #14743c;
-  --color-ok-dim: #d6f0e0;
-  --color-info: #0369a1;
-
   color-scheme: light;
 }
 
-:root {
-  /* Cores por papel no mapa e nas listas. Escolhidas para continuarem
-     distinguíveis lado a lado num mapa e para quem tem daltonismo de
-     vermelho-verde: variam também em luminosidade, não só em matiz. */
-  --role-lead: #4ade80;
-  --role-sweep: #f472b6;
-  --role-broom: #c084fc;
-  --role-moto: #60a5fa;
-  --role-ambulance: #ff3b3b;
-  --role-mechanic: #fbbf24;
-  --role-support: #a78bfa;
-  --role-marshal: #2dd4bf;
-  --role-other: #94a3b8;
-
-  --signal-live: #22c55e;
-  --signal-delayed: #fbbf24;
-  --signal-stale: #ffa726;
-  --signal-lost: #ff3b3b;
-  --signal-never: #6b7688;
-
+:root[data-theme="dark"] {
   color-scheme: dark;
 }
 
-/* No claro, os marcadores de papel e de sinal precisam de tons mais fechados:
-   um verde-menta que brilha sobre preto some sobre branco, e o marcador de
-   veículo tem que continuar legível sobre o mapa em qualquer tema. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --role-lead: #15803d;
-    --role-sweep: #be185d;
-    --role-broom: #7e22ce;
-    --role-moto: #1d4ed8;
-    --role-ambulance: #c1170d;
-    --role-mechanic: #a16207;
-    --role-support: #6d28d9;
-    --role-marshal: #0f766e;
-    --role-other: #475569;
+/* ---------------------------------------------------------------------------
+   Cores por papel e por saúde de sinal.
 
-    --signal-live: #14743c;
-    --signal-delayed: #a16207;
-    --signal-stale: #a35a00;
-    --signal-lost: #c1170d;
-    --signal-never: #78828f;
-  }
-}
+   Ficam fora do @theme porque não são utilitários do Tailwind — são lidas em
+   JavaScript, pelo desenho dos marcadores do mapa.
 
-:root[data-theme="light"] {
-  --role-lead: #15803d;
-  --role-sweep: #be185d;
-  --role-broom: #7e22ce;
-  --role-moto: #1d4ed8;
-  --role-ambulance: #c1170d;
-  --role-mechanic: #a16207;
-  --role-support: #6d28d9;
-  --role-marshal: #0f766e;
-  --role-other: #475569;
+   Escolhidas para continuarem distinguíveis lado a lado num mapa e para quem
+   tem daltonismo de vermelho-verde: variam também em luminosidade, não só em
+   matiz. No claro elas fecham, porque um verde-menta que brilha sobre preto
+   some sobre branco — e o marcador tem que ser legível nos dois temas.
+   --------------------------------------------------------------------------- */
+:root {
+  --role-lead: light-dark(#15803d, #4ade80);
+  --role-sweep: light-dark(#be185d, #f472b6);
+  --role-broom: light-dark(#7e22ce, #c084fc);
+  --role-moto: light-dark(#1d4ed8, #60a5fa);
+  --role-ambulance: light-dark(#c1170d, #ff6b5c);
+  --role-mechanic: light-dark(#a16207, #fbbf24);
+  --role-support: light-dark(#6d28d9, #a78bfa);
+  --role-marshal: light-dark(#0f766e, #2dd4bf);
+  --role-other: light-dark(#475569, #94a3b8);
 
-  --signal-live: #14743c;
-  --signal-delayed: #a16207;
-  --signal-stale: #a35a00;
-  --signal-lost: #c1170d;
-  --signal-never: #78828f;
+  /* Os três limiares que o handoff fixa: verde < 15 s, âmbar 15–90 s, rouge
+     acima disso. `stale` e `delayed` são as duas metades da faixa âmbar. */
+  --signal-live: light-dark(#2e7d57, #4fb783);
+  --signal-delayed: light-dark(#a16207, #f0b429);
+  --signal-stale: light-dark(#7a5510, #d9a441);
+  --signal-lost: light-dark(#d92d20, #ff6b5c);
+  --signal-never: light-dark(#7a828c, rgb(246 245 242 / 0.36));
 }
 
 html,
@@ -357,4 +353,84 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-info);
   outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   A TELA AO VIVO: MAPA INTEIRO, INFORMAÇÃO EM VIDRO
+
+   Duas classes só, e as duas existem porque o mapa é o fundo de tudo.
+   --------------------------------------------------------------------------- */
+
+/* Vidro: o cartão que flutua sobre o mapa.
+   Não é `surface-1` com opacidade — é um token próprio, calibrado contra o
+   basemap. Com `backdrop-filter` a estrada continua visível por baixo, o que
+   é a diferença entre um painel que cobre o mapa e um que se apoia nele. O
+   `saturate` compensa a lavagem que o desfoque causa nas cores do mapa. */
+.vidro {
+  background: var(--color-glass);
+  backdrop-filter: blur(14px) saturate(1.08);
+  border: 1px solid var(--color-border);
+}
+
+/* Coluna flutuante: rola sozinha, nunca empurra o mapa.
+   `align-content: start` para os cartões não esticarem quando sobra espaço, e
+   `max-height` descontando a faixa de baixo, para nunca passar por cima dela. */
+.coluna-flutuante {
+  position: absolute;
+  top: 3.5rem;
+  z-index: 20;
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  max-height: calc(100% - 8.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.375rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.coluna-flutuante::-webkit-scrollbar {
+  width: 6px;
+}
+
+.coluna-flutuante::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.coluna-flutuante::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+}
+
+/* Os painéis filhos (janela, alertas, veículos) desenham a própria moldura com
+   `bg-surface-1`, que é o certo quando eles estão numa página. Flutuando sobre
+   o mapa, o certo é vidro. Um seletor de descendente resolve sem passar a
+   moldura como propriedade por três componentes — o que seria transformar uma
+   decisão de LAYOUT em parâmetro de cada peça.
+
+   Especificidade 0,1,1 de propósito: precisa vencer o `bg-surface-1` que o
+   Tailwind emite com 0,1,0. */
+.coluna-flutuante section {
+  background: var(--color-glass);
+  backdrop-filter: blur(14px) saturate(1.08);
+}
+
+/* Numa tela estreita as duas colunas viram uma folha que rola por cima do
+   mapa. Mapa em tela cheia num celular não é sala de direção — é alguém
+   conferindo alguma coisa de pé, e ali a informação vem antes do contexto. */
+@media (max-width: 60rem) {
+  .coluna-flutuante {
+    position: static;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+/* A rota no mapa. Fora do @theme porque é lida em JavaScript, pelo MapLibre,
+   que não entende utilitário do Tailwind — só recebe uma string de cor. */
+:root {
+  --route-line: light-dark(#1f6fb2, #78bef0);
+  --route-casing: light-dark(rgb(255 255 255 / 0.85), rgb(10 13 16 / 0.6));
 }

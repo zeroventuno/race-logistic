@@ -56,6 +56,25 @@ export const DARK_BASEMAP: StyleSpecification = {
   ],
 };
 
+/**
+ * SOBRE A PALETA DO HANDOFF.
+ *
+ * O handoff de design especifica onze tokens de basemap (`--fr-map-bg`,
+ * `--fr-map-water`, `--fr-map-motor`…) e pede um estilo VETORIAL que os
+ * respeite. Não dá para cumprir isso com estes dois estilos: tile raster é
+ * imagem pronta, e as cores dela já vieram assadas do servidor da CARTO.
+ *
+ * A alternativa seria um estilo vetorial, e todo provedor gratuito de tile
+ * vetorial exige chave de API. Uma chave é uma cota que estoura, uma conta que
+ * expira e um serviço que pode cair — no dia do evento, num trailer, com 4G.
+ * A CARTO raster não pede nada e continua desenhando.
+ *
+ * Então o acordo é: o basemap fica APROXIMADO (o `light_all` e o `dark_all`
+ * são muito próximos da paleta pedida), e tudo que é NOSSO em cima dele —
+ * rota, marcador, alerta — segue o token ao pé da letra. Se um dia entrar
+ * orçamento para tile vetorial, é aqui que ele entra, e só aqui.
+ */
+
 /** Variante clara, para quando o mapa é impresso ou visto sob sol direto. */
 export const LIGHT_BASEMAP: StyleSpecification = {
   version: 8,
