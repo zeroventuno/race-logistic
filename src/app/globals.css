@@ -1,28 +1,42 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Barlow, auto-hospedada.
+   As três famílias, auto-hospedadas.
 
    Sem CDN de fonte, e não por preferência: um painel de direção de prova roda
    em 4G de trailer e atrás de portal cativo de hotel. Uma fonte que depende de
    um terceiro é uma fonte que às vezes não chega — e o letreiro cai numa
-   substituta com métricas diferentes justamente no dia do evento.
+   substituta com métricas diferentes justamente no dia do evento. (O sistema
+   de design carrega as três pelo Google Fonts; aqui elas vêm do pacote, mesmo
+   desenho, sem a dependência de rede.)
 
-   Só três pesos. Cada peso é um arquivo que o navegador baixa:
-     300  o "FLAMME" do letreiro
-     500  texto de interface
-     700  o "ROUGE" do letreiro e os números que precisam pesar
+   Cada peso é um arquivo que o navegador baixa, então nenhum entra sem função:
+
+   BARLOW — corpo de texto, botões, listas.
+     400  parágrafo
+     500  interface
+     700  números que precisam pesar
+
+   BARLOW CONDENSED — letreiro e títulos. Nunca em corpo de texto.
+     300  display leve e o "FLAMME" do letreiro
+     600  títulos de cartão
+     700  ênfase e o "ROUGE" do letreiro
+
+   JETBRAINS MONO — rótulo, quilômetro, código, horário, unidade. Tudo que é
+     medido ou digitado. Sempre em caixa alta com entreletra ≥ .1em.
+     400  rótulos
+     500  ênfase dentro do rótulo
    --------------------------------------------------------------------------- */
-@import "@fontsource/barlow/300.css";
+@import "@fontsource/barlow/400.css";
 @import "@fontsource/barlow/500.css";
 @import "@fontsource/barlow/700.css";
 
-/* Barlow CONDENSED, só para o letreiro.
-   Duas larguras da mesma família, cada uma na sua função: a condensada faz o
-   nome de doze caracteres virar um bloco compacto ao lado da bandeirola; a
-   normal é a que se lê em parágrafo sem cansar. */
 @import "@fontsource/barlow-condensed/300.css";
+@import "@fontsource/barlow-condensed/600.css";
 @import "@fontsource/barlow-condensed/700.css";
+
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
 
 /* ===========================================================================
    Linguagem visual — direção de prova

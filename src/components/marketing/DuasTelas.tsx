@@ -37,7 +37,7 @@ export function DuasTelas() {
       <h2 className="fr-h2" id="telas-titulo">
         Uma sala de direção.
         <br />
-        Um celular por veículo.
+        <span className="fr-forte">Um celular por veículo.</span>
       </h2>
 
       <div className="fr-telas" style={{ marginTop: "2.5rem" }}>

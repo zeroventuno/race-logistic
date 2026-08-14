@@ -46,7 +46,8 @@ export function Problema() {
         <div>
           <h2 className="fr-h2" id="problema-titulo">
             A prova acontece no rádio.
-            <br />E o rádio não pega no vale.
+            <br />
+            <span className="fr-forte">E o rádio não pega no vale.</span>
           </h2>
           <p className="fr-lead" style={{ marginTop: "1.25rem" }}>
             Nada disto é falha de quem organiza. É o que sobra quando a única
@@ -54,7 +55,11 @@ export function Problema() {
           </p>
         </div>
         <div data-reveal>
-          <SlotImagemView slot={SLOTS.pave} rotulo="Foto · pelotão esticado" />
+          <SlotImagemView
+            slot={SLOTS.pave}
+            rotulo="Foto · pelotão esticado"
+            parallax={0.14}
+          />
         </div>
       </div>
 

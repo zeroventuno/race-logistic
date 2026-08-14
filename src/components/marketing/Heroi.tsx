@@ -68,6 +68,10 @@ export function Heroi() {
               ))}
               <img
                 className="fr-hero__poster"
+                // Parallax só na imagem. O sistema permite 0.10–0.28 em fundo;
+                // 0.26 é o topo dessa faixa, que é onde a estrada "passa" sem
+                // descolar a foto da moldura.
+                data-parallax="0.26"
                 src={`${HEROI.posterSet!.base}-${HEROI.posterSet!.larguras.at(-1)}.webp`}
                 alt={HEROI.alt}
                 width={1536}
@@ -123,7 +127,7 @@ export function Heroi() {
           <h1 className="fr-h1">
             Direção de prova ao vivo,
             <br />
-            medida pela estrada.
+            <span className="fr-forte">medida pela estrada.</span>
           </h1>
 
           <div className="fr-hero__base">

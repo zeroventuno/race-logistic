@@ -21,6 +21,8 @@ export function Fecho() {
         <div>
           <h2 className="fr-h2" id="entrar-titulo">
             Duas portas.
+            <br />
+            <span className="fr-forte">Nenhuma decisão no meio.</span>
           </h2>
           <p className="fr-lead" style={{ marginTop: "1rem" }}>
             A direção entra pela conta e monta a prova. O motorista entra pelo

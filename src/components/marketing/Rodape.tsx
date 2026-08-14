@@ -9,7 +9,9 @@ export function Rodape() {
     <footer className="fr-rodape">
       <div className="fr-shell fr-rodape__grade">
         <div className="fr-pilha">
-          <Assinatura size={34} />
+          {/* O rodapé é noite: sem a cor explícita, o letreiro herdaria o
+              cinza de 62% do corpo e viraria uma mancha. */}
+          <Assinatura size={34} color="#f6f5f2" />
           <ChipTrakr />
           <p className="fr-body" style={{ maxWidth: "34ch" }}>
             {BRAND.tagline["pt-BR"]} para ciclismo de estrada.

@@ -27,7 +27,7 @@ export function ComoFunciona() {
       <h2 className="fr-h2" id="como-funciona-titulo">
         Três passos antes da largada.
         <br />
-        Nenhum durante.
+        <span className="fr-forte">Nenhum durante.</span>
       </h2>
 
       <ol className="fr-passos" style={{ marginTop: "2.5rem" }}>

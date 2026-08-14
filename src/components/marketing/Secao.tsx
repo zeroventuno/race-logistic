@@ -32,6 +32,9 @@ export function Secao({ id, km, rotulo, flamme, escura, children }: Props) {
       id={id}
       className={`fr-section${escura ? " fr-section--dark" : ""}`}
       aria-labelledby={id ? `${id}-titulo` : undefined}
+      // O que a placa fixa no canto mostra quando esta seção é a que está
+      // sendo lida. Mesmo texto do marco, para não haver duas verdades.
+      data-capitulo={`KM ${km} — ${rotulo.toUpperCase()}`}
     >
       <div className="fr-shell">
         <div className="fr-marco">

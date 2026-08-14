@@ -59,7 +59,7 @@ export function Argumentos() {
       <h2 className="fr-h2" id="diferenciais-titulo">
         Seis decisões de engenharia
         <br />
-        que mudam o que aparece na tela.
+        <span className="fr-forte">que mudam o que aparece na tela.</span>
       </h2>
 
       <div className="fr-destaque" style={{ marginTop: "2.5rem" }} data-reveal>

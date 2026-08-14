@@ -18,6 +18,7 @@ import { ComoFunciona } from "@/components/marketing/ComoFunciona";
 import { DuasTelas } from "@/components/marketing/DuasTelas";
 import { Fecho } from "@/components/marketing/Fecho";
 import { Heroi } from "@/components/marketing/Heroi";
+import { Numeros } from "@/components/marketing/Numeros";
 import { Problema } from "@/components/marketing/Problema";
 import { Rodape } from "@/components/marketing/Rodape";
 
@@ -30,6 +31,7 @@ export default function Home() {
       <Cabecalho />
       <main id="conteudo">
         <Heroi />
+        <Numeros />
         <Problema />
         <Argumentos />
         <ComoFunciona />

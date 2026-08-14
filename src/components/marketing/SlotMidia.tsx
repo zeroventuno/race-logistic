@@ -20,12 +20,27 @@ interface Props {
   className?: string;
   /** A primeira imagem visível não deve ser adiada. */
   prioridade?: boolean;
+  /**
+   * Taxa de parallax da imagem dentro da caixa, entre 0.10 e 0.28.
+   *
+   * O deslocamento vem de `Movimento`. Para ele ter para onde ir, a imagem
+   * é desenhada 18% mais alta que a caixa, que fica com `overflow: hidden` —
+   * é o mesmo truque de sempre, e é por isso que a taxa não pode subir muito:
+   * acima de ~0.28 o excedente acaba e aparece uma faixa vazia na borda.
+   */
+  parallax?: number;
 }
 
-export function SlotImagemView({ slot, rotulo, className, prioridade }: Props) {
+export function SlotImagemView({
+  slot,
+  rotulo,
+  className,
+  prioridade,
+  parallax,
+}: Props) {
   return (
     <div
-      className={`fr-slot ${className ?? ""}`}
+      className={`fr-slot ${parallax ? "fr-slot--parallax " : ""}${className ?? ""}`}
       style={{ aspectRatio: slot.proporcao }}
     >
       {slot.src ? (
@@ -34,6 +49,7 @@ export function SlotImagemView({ slot, rotulo, className, prioridade }: Props) {
         // acrescenta nada e acrescentaria um salto de layout.
         <img
           className="fr-slot__img"
+          data-parallax={parallax}
           src={slot.src}
           alt={slot.alt}
           width={slot.larguraRef}

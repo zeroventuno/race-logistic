@@ -31,7 +31,7 @@ html:has(.fr-landing) {
 }
 
 body:has(.fr-landing) {
-  background: #ffffff;
+  background: #f6f5f2;
   color: #12171c;
 }
 
@@ -42,34 +42,61 @@ body:has(.fr-landing) {
 }
 
 .fr-landing {
-  /* Papel: cinza-asfalto muito claro, nunca creme. Creme + serifa é o
-     visual genérico de página gerada; a estrada é cinza. */
-  --fr-paper: #ffffff;
-  --fr-paper-2: #f2f4f6;
-  --fr-paper-3: #e6eaed;
+  /* Paleta do sistema de design, valor por valor.
+     "Copie os valores; não invente variações" — e a razão é prática: cada
+     variação inventada aqui vira uma cor que o painel um dia vai ter que
+     casar, sem ninguém lembrar de onde ela saiu.
+
+     Papel é cinza-asfalto morno, nunca branco puro nem creme. Branco puro
+     projeta o contraste todo na tipografia e a página fica dura; creme puxa
+     para papelaria. #F6F5F2 é a folha do road book. */
+  --fr-paper: #f6f5f2;
+  --fr-paper-2: #efede8; /* faixa alternada de seção — "sand" */
+  --fr-paper-3: #e4e1da;
+  --fr-card: #ffffff; /* cartão sobre o papel */
+  --fr-card-2: #fbfaf8; /* o mesmo cartão sob o cursor */
   --fr-ink: #12171c;
-  --fr-ink-2: #4a5560;
-  --fr-ink-3: #616c77;
-  --fr-line: #d5dade;
-  --fr-line-2: #b3bcc4;
+  --fr-ink-2: #4a525c; /* corpo de texto secundário — "slate" */
+  --fr-ink-3: #7a828c; /* rótulo mono, metadado, eixo — "mist" */
+  --fr-ink-4: #9aa0a8; /* legenda de rodapé de figura */
+  --fr-line: rgb(18 23 28 / 0.12); /* fio de 1px, a única divisão do sistema */
+  --fr-line-2: rgb(18 23 28 / 0.3);
   --fr-line-strong: #12171c;
   --fr-rouge: #d92d20;
+  --fr-rouge-dark: #a81e14; /* hover e pressionado */
   --fr-rouge-deep: #8f1a12;
   --fr-lime: #a6e51a;
-  --fr-night: #0b0f13;
+  --fr-night: #0c0f12; /* herói, rodapé, mapa em modo noite */
 
-  --fr-shell: 78rem;
+  --fr-shell: 80rem; /* 1280px */
   --fr-gutter: 1.25rem;
+  --fr-section-y: 7.375rem; /* 118px */
+
+  /* Cantos retos. A única curva do sistema é a estrada — e a moldura de
+     aparelho, que é o desenho de um objeto e não do sistema. */
+  --fr-radius: 0;
+
+  /* Movimento. Uma curva só, três durações, um escalonamento.
+     Entrada é opacidade 0→1 com translateY 26px→0, UMA vez. Escalonamento por
+     linha ou cartão, nunca por palavra: texto que aparece letra a letra é
+     ilegível para quem lê rápido e insuportável para quem lê devagar. */
+  --fr-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fr-dur-reveal: 800ms;
+  --fr-dur-ui: 250ms;
+  --fr-stagger: 90ms;
 
   /* Texto corrido em Barlow de largura normal: condensada cansa em parágrafo.
-     O letreiro em Barlow Condensed, que é outra função. */
+     O letreiro e os títulos em Barlow Condensed, que é outra função. O mono
+     não é enfeite de terminal: é a fonte dos números que a estrada mediu, e
+     ela precisa de dígito de largura fixa para o número não pular. */
   --fr-sans:
     "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   --fr-wordmark:
     "Barlow Condensed", "Barlow", "Helvetica Neue Condensed", "Arial Narrow",
     system-ui, sans-serif;
-  --fr-mono: var(--font-mono, ui-monospace, "Cascadia Mono", Menlo, monospace);
+  --fr-mono:
+    "JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
 
   background: var(--fr-paper);
   color: var(--fr-ink);
@@ -141,31 +168,38 @@ body:has(.fr-landing) {
   margin-bottom: 2rem;
 }
 
+/* A placa é sólida, não contornada. Numa página de fios de 1px, a única
+   mancha escura de cada seção é o número do quilômetro — é ele que o olho
+   encontra ao rolar rápido, e um contorno vazado não tem esse peso. */
 .fr-marco__km {
   display: inline-flex;
   align-items: baseline;
   gap: 0.35rem;
-  padding: 0.3rem 0.55rem;
-  border: 2px solid var(--fr-line-strong);
-  background: var(--fr-paper);
+  padding: 0.32rem 0.56rem;
+  background: var(--fr-ink);
+  color: var(--fr-paper);
   font-family: var(--fr-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   line-height: 1;
   white-space: nowrap;
 }
 
 .fr-marco__km--rouge {
-  border-color: var(--fr-rouge);
-  color: var(--fr-rouge-deep);
+  background: var(--fr-rouge);
+  color: #fff;
 }
 
 .fr-section--dark .fr-marco__km {
-  border-color: #3a444f;
-  background: transparent;
-  color: #e8ecf2;
+  background: var(--fr-paper);
+  color: var(--fr-night);
+}
+
+.fr-section--dark .fr-marco__km--rouge {
+  background: var(--fr-rouge);
+  color: #fff;
 }
 
 .fr-marco__label {
@@ -182,19 +216,19 @@ body:has(.fr-landing) {
 
 .fr-marco__rule {
   flex: 1;
-  height: 2px;
+  height: 1px;
   background: repeating-linear-gradient(
     90deg,
-    var(--fr-line) 0 8px,
-    transparent 8px 16px
+    var(--fr-line-2) 0 6px,
+    transparent 6px 12px
   );
 }
 
 .fr-section--dark .fr-marco__rule {
   background: repeating-linear-gradient(
     90deg,
-    #2b343d 0 8px,
-    transparent 8px 16px
+    rgb(246 245 242 / 0.34) 0 6px,
+    transparent 6px 12px
   );
 }
 
@@ -202,32 +236,47 @@ body:has(.fr-landing) {
    Tipografia
  * --------------------------------------------------------------------- */
 
+/* Títulos em Barlow Condensed, e o contraste de peso DENTRO do título.
+   O sistema pede duas linhas: a primeira em 300, que estabelece o assunto, a
+   segunda em 700, que é a afirmação. Não é enfeite tipográfico — é a forma de
+   dar ênfase sem itálico, sem cor e sem aumentar o corpo, num idioma em que a
+   frase de venda tem duas partes ("Direção de prova ao vivo, / medida pela
+   estrada"). O peso pesado marca a segunda, e a classe `.fr-forte` é o que
+   qualquer título usa para isso. */
 .fr-h1 {
-  font-size: clamp(2.25rem, 7.2vw, 4.25rem);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  font-weight: 700;
+  font-family: var(--fr-wordmark);
+  font-size: clamp(2.875rem, 7.2vw, 7rem);
+  line-height: 0.94;
+  letter-spacing: -0.015em;
+  font-weight: 300;
   text-wrap: balance;
 }
 
 .fr-h2 {
-  font-size: clamp(1.75rem, 4.4vw, 2.75rem);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  font-weight: 700;
+  font-family: var(--fr-wordmark);
+  font-size: clamp(2.125rem, 4.2vw, 3.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  font-weight: 300;
   text-wrap: balance;
 }
 
 .fr-h3 {
-  font-size: 1.125rem;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+  font-family: var(--fr-wordmark);
+  font-size: 1.6875rem;
+  line-height: 1.14;
+  letter-spacing: -0.005em;
+  font-weight: 600;
+}
+
+/* A metade pesada do título. */
+.fr-forte {
   font-weight: 700;
 }
 
 .fr-lead {
-  font-size: clamp(1.0625rem, 2.1vw, 1.3125rem);
-  line-height: 1.5;
+  font-size: clamp(1.0625rem, 2.1vw, 1.09375rem);
+  line-height: 1.62;
   color: var(--fr-ink-2);
   max-width: 46ch;
   text-wrap: pretty;
@@ -235,7 +284,7 @@ body:has(.fr-landing) {
 
 .fr-body {
   font-size: 0.9375rem;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--fr-ink-2);
   text-wrap: pretty;
 }
@@ -247,9 +296,9 @@ body:has(.fr-landing) {
 
 .fr-eyebrow {
   font-family: var(--fr-mono);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  font-size: 0.65625rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--fr-ink-3);
 }
@@ -257,15 +306,16 @@ body:has(.fr-landing) {
 /* Números: sempre mono e tabular. É a mesma convenção da folha de
    cronometragem, e é o que diferencia um dado medido de um adjetivo. */
 .fr-num {
-  font-family: var(--fr-mono);
+  font-family: var(--fr-wordmark);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .fr-num--xl {
-  font-size: clamp(2rem, 5.5vw, 3rem);
+  font-size: clamp(2.75rem, 5.5vw, 4.625rem);
   line-height: 1;
 }
 
@@ -274,11 +324,12 @@ body:has(.fr-landing) {
 }
 
 .fr-unit {
-  font-size: 0.5em;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-family: var(--fr-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
   color: var(--fr-ink-3);
-  margin-left: 0.2em;
+  margin-left: 0.45em;
 }
 
 /* --------------------------------------------------------------------- *
@@ -340,6 +391,7 @@ body:has(.fr-landing) {
 }
 
 .fr-section--dark .fr-assinatura__rouge,
+.fr-rodape .fr-assinatura__rouge,
 .fr-hero__marca .fr-assinatura__rouge {
   /* Sobre fundo escuro o rouge puro perde contraste; clareia sem trocar
      de matiz. */
@@ -360,6 +412,7 @@ body:has(.fr-landing) {
 }
 
 /* Sobre a faixa escura, o cinza do endosso caía para 3,6:1. */
+.fr-rodape .fr-trakr,
 .fr-section--dark .fr-trakr {
   color: #b6c0cb;
 }
@@ -404,13 +457,99 @@ body:has(.fr-landing) {
    Cabeçalho
  * --------------------------------------------------------------------- */
 
+/* O cabeçalho começa invisível sobre o herói e assenta depois dos primeiros
+   40 px. Não é efeito: o herói é uma fotografia escura de largura total, e uma
+   barra branca opaca em cima dela corta a imagem exatamente onde ela precisa
+   respirar. Assentado, ele vira vidro escuro — a mesma matéria do herói, não
+   do papel, para a transição não piscar de claro para escuro e de volta. */
 .fr-topo {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 30;
-  background: rgb(255 255 255 / 0.92);
-  backdrop-filter: saturate(1.4) blur(8px);
-  border-bottom: 1px solid var(--fr-line);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgb(12 15 18 / 0);
+  backdrop-filter: blur(0);
+  border-bottom: 1px solid rgb(246 245 242 / 0);
+  color: var(--fr-paper);
+  transition:
+    background 0.45s ease,
+    backdrop-filter 0.45s ease,
+    border-color 0.45s ease,
+    padding 0.45s ease;
+}
+
+.fr-topo[data-assentado="sim"] {
+  background: rgb(12 15 18 / 0.62);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border-bottom-color: rgb(246 245 242 / 0.12);
+}
+
+/* Barra de progresso do percurso: 3 px de rouge no fio de cima da janela.
+   `scaleX` em vez de `width` porque largura recalcula layout a cada quadro e
+   isso é a diferença entre rolar liso e rolar aos trancos num celular. */
+.fr-progresso {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 60;
+  background: var(--fr-rouge);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+/* A placa de quilometragem fixa no canto: onde estou no road book.
+   Só aparece depois que o herói sai, porque enquanto ele está na tela a
+   resposta é óbvia — km 0, largada. */
+.fr-placa {
+  position: fixed;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 45;
+  display: none;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5625rem 0.8125rem;
+  background: rgb(12 15 18 / 0.74);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+  pointer-events: none;
+}
+
+@media (min-width: 60rem) {
+  .fr-placa {
+    display: flex;
+  }
+}
+
+.fr-placa[data-visivel="sim"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fr-placa__ponto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fr-rouge);
+  flex: none;
+}
+
+.fr-placa__texto {
+  font-family: var(--fr-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(246 245 242 / 0.88);
+  white-space: nowrap;
 }
 
 .fr-topo__inner {
@@ -437,15 +576,19 @@ body:has(.fr-landing) {
   align-items: center;
   /* Serve também de link de rodapé no celular, onde 39 px de alvo é pouco. */
   min-height: 2.75rem;
-  font-size: 0.875rem;
-  color: var(--fr-ink-2);
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(246 245 242 / 0.74);
   text-decoration: none;
   padding-block: 0.5rem;
   border-bottom: 2px solid transparent;
+  transition: color 0.35s ease;
 }
 
 .fr-topo__link:hover {
-  color: var(--fr-ink);
+  color: var(--fr-paper);
   border-bottom-color: var(--fr-rouge);
 }
 
@@ -453,29 +596,47 @@ body:has(.fr-landing) {
    Botões — placa de sinalização, canto vivo. Nada de rounded-lg.
  * --------------------------------------------------------------------- */
 
+/* Botão é placa de sinalização: canto vivo, rótulo em mono maiúsculo.
+   O rótulo em mono não é estética de terminal — é a mesma família dos códigos
+   e dos quilômetros, e aqui ela diz "isto é um comando", não uma frase. */
 .fr-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  min-height: 3rem;
-  padding: 0.75rem 1.25rem;
-  border: 2px solid transparent;
-  border-radius: 2px;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  padding: 1.0625rem 1.875rem;
+  border: 1px solid transparent;
+  border-radius: var(--fr-radius);
+  font-family: var(--fr-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition:
-    background-color 140ms ease,
-    color 140ms ease,
-    border-color 140ms ease,
-    transform 140ms ease;
+    background-color var(--fr-dur-ui) var(--fr-ease),
+    color var(--fr-dur-ui) var(--fr-ease),
+    border-color var(--fr-dur-ui) var(--fr-ease),
+    box-shadow var(--fr-dur-ui) var(--fr-ease),
+    transform var(--fr-dur-ui) var(--fr-ease);
+}
+
+.fr-btn:hover {
+  transform: translateY(-2px);
 }
 
 .fr-btn:active {
-  transform: translateY(1px);
+  transform: translateY(0);
+}
+
+/* O do cabeçalho, que divide a altura com o letreiro. */
+.fr-btn--sm {
+  min-height: 2.5rem;
+  padding: 0.6875rem 1.25rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
 }
 
 .fr-btn--rouge {
@@ -485,8 +646,9 @@ body:has(.fr-landing) {
 }
 
 .fr-btn--rouge:hover {
-  background: var(--fr-rouge-deep);
-  border-color: var(--fr-rouge-deep);
+  background: var(--fr-rouge-dark);
+  border-color: var(--fr-rouge-dark);
+  box-shadow: 0 14px 40px rgb(217 45 32 / 0.34);
 }
 
 .fr-btn--ink {
@@ -507,15 +669,19 @@ body:has(.fr-landing) {
 
 .fr-btn--linha:hover {
   border-color: var(--fr-ink);
+  background: rgb(18 23 28 / 0.04);
 }
 
-.fr-section--dark .fr-btn--linha {
-  color: #e8ecf2;
-  border-color: #47525d;
+.fr-section--dark .fr-btn--linha,
+.fr-hero .fr-btn--linha {
+  color: var(--fr-paper);
+  border-color: rgb(246 245 242 / 0.34);
 }
 
-.fr-section--dark .fr-btn--linha:hover {
-  border-color: #e8ecf2;
+.fr-section--dark .fr-btn--linha:hover,
+.fr-hero .fr-btn--linha:hover {
+  border-color: var(--fr-paper);
+  background: rgb(246 245 242 / 0.08);
 }
 
 /* --------------------------------------------------------------------- *
@@ -858,24 +1024,33 @@ body:has(.fr-landing) {
 }
 
 .fr-card {
-  background: var(--fr-paper);
+  background: var(--fr-card);
+  border: 1px solid var(--fr-line);
   padding: 1.75rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  transition:
+    background var(--fr-dur-ui) var(--fr-ease),
+    transform var(--fr-dur-ui) var(--fr-ease);
+}
+
+.fr-card:hover {
+  background: var(--fr-card-2);
+  transform: translateY(-3px);
 }
 
 .fr-card__indice {
   font-family: var(--fr-mono);
   font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   color: var(--fr-rouge);
 }
 
 .fr-destaque {
-  border: 2px solid var(--fr-ink);
-  background: var(--fr-paper);
+  border: 1px solid var(--fr-line);
+  background: var(--fr-card);
   padding: 1.75rem 1.5rem;
 }
 
@@ -902,11 +1077,16 @@ body:has(.fr-landing) {
 }
 
 .fr-falhas__item {
-  background: var(--fr-paper);
+  background: var(--fr-card);
   padding: 1.125rem 1.25rem 1.125rem 1.5rem;
-  border-left: 3px solid var(--fr-rouge);
+  border-left: 2px solid var(--fr-rouge);
   display: grid;
   gap: 0.3rem;
+  transition: background var(--fr-dur-ui) var(--fr-ease);
+}
+
+.fr-falhas__item:hover {
+  background: rgb(217 45 32 / 0.045);
 }
 
 @media (min-width: 56rem) {
@@ -918,9 +1098,11 @@ body:has(.fr-landing) {
 }
 
 .fr-falhas__fala {
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: -0.01em;
+  font-family: var(--fr-wordmark);
+  font-weight: 600;
+  font-size: 1.4rem;
+  line-height: 1.16;
+  letter-spacing: -0.005em;
 }
 
 /* Passos numerados */
@@ -1072,40 +1254,6 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
 }
 
 /* --------------------------------------------------------------------- *
-   Traçado que se desenha
- * --------------------------------------------------------------------- */
-
-@keyframes fr-desenhar {
-  from {
-    stroke-dashoffset: var(--fr-len, 1200);
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* Estado base = desenhado. A animação só regride o começo, então em
-   `prefers-reduced-motion` (onde globals.css corta a duração para 0,01ms)
-   o traçado aparece inteiro em vez de sumir. */
-.fr-tracado {
-  stroke-dasharray: var(--fr-len, 1200);
-  stroke-dashoffset: 0;
-}
-
-.fr-visivel .fr-tracado,
-.fr-tracado--auto {
-  animation: fr-desenhar 2.2s cubic-bezier(0.33, 1, 0.68, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fr-visivel .fr-tracado,
-  .fr-tracado--auto {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-}
-
-/* --------------------------------------------------------------------- *
    Portas de entrada e rodapé
  * --------------------------------------------------------------------- */
 
@@ -1149,23 +1297,52 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
   text-transform: uppercase;
 }
 
+/* O rodapé é noite, como o herói. A página abre e fecha escura, e o miolo —
+   o argumento — é claro. Não é simetria decorativa: o herói é a estrada e o
+   rodapé é o fim da etapa, e os dois pertencem ao mesmo lugar. */
 .fr-rodape {
-  background: var(--fr-paper);
-  border-top: 3px solid var(--fr-ink);
-  padding-block: 2.5rem 3rem;
+  background: var(--fr-night);
+  color: rgb(246 245 242 / 0.62);
+  border-top: 1px solid rgb(246 245 242 / 0.1);
+  padding-block: 3.5rem 4rem;
+}
+
+.fr-rodape .fr-body {
+  color: rgb(246 245 242 / 0.62);
+}
+
+.fr-rodape .fr-eyebrow {
+  color: rgb(246 245 242 / 0.42);
+}
+
+.fr-rodape .fr-topo__link {
+  min-height: 2.25rem;
+  font-family: var(--fr-sans);
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgb(246 245 242 / 0.78);
+}
+
+.fr-rodape .fr-topo__link:hover {
+  color: var(--fr-paper);
+}
+
+.fr-rodape .fr-idioma {
+  color: rgb(246 245 242 / 0.7);
+  border-color: rgb(246 245 242 / 0.18);
 }
 
 .fr-rodape__grade {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  justify-content: space-between;
+  display: grid;
+  gap: 2rem;
 }
 
 @media (min-width: 48rem) {
   .fr-rodape__grade {
-    flex-direction: row;
-    align-items: flex-end;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
   }
 }
 
@@ -1432,4 +1609,95 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
   color: #fff;
   font-weight: 700;
   text-decoration: none;
+}
+
+/* --------------------------------------------------------------------- *
+   Faixa de números medidos (logo abaixo do herói)
+ * --------------------------------------------------------------------- */
+
+.fr-numeros {
+  background: var(--fr-ink);
+  color: var(--fr-paper);
+}
+
+.fr-numeros__grade {
+  display: grid;
+  gap: 0;
+}
+
+@media (min-width: 56rem) {
+  .fr-numeros__grade {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Divisão por fio, e o fio muda de eixo com o layout: empilhado no celular a
+   separação é horizontal, em três colunas ela é vertical. Sem isto, ou sobra
+   um traço solto embaixo da última coluna, ou some a separação no celular. */
+.fr-numeros__item {
+  padding-block: 3.375rem 3.625rem;
+  border-top: 1px solid rgb(246 245 242 / 0.12);
+}
+
+.fr-numeros__item:first-child {
+  border-top: 0;
+}
+
+@media (min-width: 56rem) {
+  .fr-numeros__item {
+    padding-block: 3.375rem 3.625rem;
+    padding-inline: 2.5rem;
+    border-top: 0;
+    border-left: 1px solid rgb(246 245 242 / 0.12);
+  }
+
+  .fr-numeros__item:first-child {
+    padding-inline-start: 0;
+    border-left: 0;
+  }
+
+  .fr-numeros__item:last-child {
+    padding-inline-end: 0;
+  }
+}
+
+.fr-numeros__rotulo {
+  color: rgb(246 245 242 / 0.5);
+}
+
+.fr-numeros__valor {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin: 1rem 0 0;
+}
+
+/* O número da tese é o único rouge da faixa. Os outros dois são papel: se os
+   três gritassem, nenhum seria o argumento. */
+.fr-numeros .fr-num {
+  color: var(--fr-paper);
+}
+
+.fr-numeros .fr-num--rouge {
+  color: var(--fr-rouge);
+}
+
+.fr-numeros .fr-unit {
+  color: rgb(246 245 242 / 0.5);
+}
+
+.fr-numeros__corpo {
+  margin: 1rem 0 0;
+  max-width: 18.125rem;
+  font-size: 0.90625rem;
+  line-height: 1.66;
+  color: rgb(246 245 242 / 0.66);
+  text-wrap: pretty;
+}
+
+/* A imagem com parallax é desenhada mais alta que a caixa para o deslocamento
+   ter de onde sair. Sem o excedente, o movimento revelaria a borda. */
+.fr-slot--parallax .fr-slot__img {
+  height: 118%;
+  will-change: transform;
 }

@@ -72,9 +72,13 @@ export function DesvioDiagrama() {
         />
 
         {/* O caminho que a moto teria que fazer. */}
+        {/* `data-traco` faz `Movimento` medir o comprimento real com
+            `getTotalLength()` e desenhar a linha quando ela entra na tela.
+            O valor era 820 escrito à mão aqui — e um número desses só está
+            certo até alguém mexer no `d`, o que dá uma linha que acaba antes
+            do fim ou um tracejado que não fecha, sem erro nenhum. */}
         <path
-          className="fr-tracado"
-          style={{ "--fr-len": 820 } as React.CSSProperties}
+          data-traco
           d={PELA_ESTRADA}
           fill="none"
           stroke="#d92d20"
