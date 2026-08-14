@@ -653,13 +653,21 @@ async function loadHistories(
 }
 
 /**
- * A estrada que ainda está ocupada pela prova: do fechamento até a abertura.
+ * A via ainda INTERDITADA pela prova: do carro de fechamento até a abertura.
  *
- * É a tradução geográfica do número da janela, e responde a pergunta que o
- * número sozinho não responde — QUAL rua ainda não pode abrir. Desenhado só
- * quando os dois offsets existem e o dado não está velho: uma faixa colorida
- * sobre a estrada é uma afirmação forte, e afirmá-la com dado de 5 minutos
- * atrás é o tipo de coisa que faz alguém liberar cedo demais.
+ * O limite traseiro é o FECHAMENTO, e não a vassoura. A passagem do fechamento
+ * reabre a via: os ciclistas que ficaram para trás seguem em trânsito normal,
+ * junto com os carros, e a vassoura vem depois apenas para recolher quem
+ * abandona — ela não interdita nada.
+ *
+ * Esta faixa é, portanto, a tradução geográfica de um COMPROMISSO
+ * ADMINISTRATIVO: o trecho que a organização combinou com a autoridade de
+ * trânsito manter fechado, e por quanto tempo. Responde a pergunta que o
+ * número da janela sozinho não responde — QUAL rua ainda não pode abrir.
+ *
+ * Desenhada só com os dois offsets presentes e dado fresco: uma faixa colorida
+ * sobre a estrada é uma afirmação forte, e afirmá-la com dado de cinco minutos
+ * atrás é o que faz alguém liberar cedo demais.
  */
 function buildOccupiedSegment(
   track: RouteTrack | null,

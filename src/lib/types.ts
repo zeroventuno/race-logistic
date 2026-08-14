@@ -21,20 +21,33 @@
 export type RaceStatus = "draft" | "armed" | "live" | "finished" | "archived";
 
 /**
- * Papéis na estrada, na ORDEM em que aparecem no comboio.
+ * Papéis na estrada, na ORDEM em que aparecem.
  *
- *   abertura … pelotão … último atleta … vassoura … fechamento
+ *   abertura … pelotão … FECHAMENTO … retardatários … VASSOURA
+ *                            ↑
+ *                    a via reabre aqui
+ *
+ * Entre a abertura e o fechamento circulam, sem posição fixa, as motos, as
+ * ambulâncias e os carros de apoio mecânico.
  *
  * `sweep_car` é o CARRO DE FECHAMENTO, não a vassoura — o identificador é
- * legado e está em 29 arquivos; o significado é este. São veículos distintos e
- * confundi-los apaga um dos dois do cadastro:
+ * legado e está em 29 arquivos; o significado é este. São veículos distintos:
  *
- *   - a VASSOURA (`broom_wagon`) vem atrás do último atleta e recolhe quem
- *     abandona;
- *   - o FECHAMENTO (`sweep_car`) é o último veículo do comboio, e é a passagem
- *     dele que libera a via.
+ *   - o FECHAMENTO (`sweep_car`) encerra a INTERDIÇÃO. Quando ele passa, a
+ *     via reabre ao trânsito normal.
  *
- * Por isso a janela de tempo da prova é abertura ↔ FECHAMENTO.
+ *   - os ciclistas que ficaram atrás dele seguem pedalando entre carros, sem
+ *     a proteção do fechamento de via. É penalização de fato para quem anda
+ *     devagar, e é a realidade aceita das provas amadoras — o sistema relata
+ *     isso com precisão, não tenta corrigi-lo.
+ *
+ *   - a VASSOURA (`broom_wagon`) é o ÚLTIMO veículo, recolhendo quem abandona.
+ *     Ela NÃO interdita nada; vem depois da via já reaberta.
+ *
+ * Daí a natureza da janela abertura ↔ fechamento: ela é antes de tudo um
+ * COMPROMISSO ADMINISTRATIVO com a autoridade de trânsito — quanto tempo a
+ * organização combinou manter a via fechada — e não uma medida interna da
+ * prova. Estourá-la é quebrar acordo com quem autorizou o evento.
  */
 export type PositionRole =
   | "lead_car"
@@ -163,16 +176,7 @@ export const ROLE_META: Record<PositionRole, RoleMeta> = {
     handles: ["other"],
     convoyOrder: 60,
   },
-  broom_wagon: {
-    label: "Vassoura",
-    shortLabel: "Vassoura",
-    icon: "broom",
-    color: "var(--role-broom)",
-    dispatchable: true,
-    handles: ["mechanical", "other"],
-    convoyOrder: 90,
-  },
-  // Último da estrada: é a passagem dele que libera a via.
+  // Encerra o grupo oficial. Atrás dele ainda há ciclistas na estrada.
   sweep_car: {
     label: "Carro de fechamento",
     shortLabel: "Fechamento",
@@ -180,6 +184,16 @@ export const ROLE_META: Record<PositionRole, RoleMeta> = {
     color: "var(--role-sweep)",
     dispatchable: false,
     handles: [],
+    convoyOrder: 90,
+  },
+  // O ÚLTIMO veículo da estrada. É a passagem dele que libera a via.
+  broom_wagon: {
+    label: "Vassoura",
+    shortLabel: "Vassoura",
+    icon: "broom",
+    color: "var(--role-broom)",
+    dispatchable: true,
+    handles: ["mechanical", "other"],
     convoyOrder: 100,
   },
 };
