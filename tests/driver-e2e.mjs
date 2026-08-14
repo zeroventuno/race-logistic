@@ -422,10 +422,22 @@ async function runLapsScenario(track, createdBy) {
   const raceDistance = track.totalDistanceM * LAPS;
   const now = Date.now();
 
+  // A linha do tempo TEM que caber no passado.
+  //
+  // O `drive` avança 25 ms por metro, então a prova inteira leva ~68 min de
+  // relógio simulado. Começar 40 min atrás jogava o último terço dos pings no
+  // futuro, e o servidor os recusava — corretamente, porque relógio adiantado
+  // é sintoma real de aparelho desregulado (seção 9d testa exatamente isso).
+  // O veículo então parava no último ping válido e o teste acusava uma falha
+  // que era artefato dele mesmo.
+  const duracaoAberturaMs = (raceDistance - 2_000) * 25;
+  const margemMs = 5 * 60_000;
+
   // Abertura: quase a prova inteira (fim da 3ª volta).
-  await drive(lapTokens.lead, 0, raceDistance - 2_000, now - 40 * 60_000);
+  await drive(lapTokens.lead, 0, raceDistance - 2_000, now - duracaoAberturaMs - margemMs);
   // Vassoura: mesmo PONTO DO MAPA do abertura, mas duas voltas atrás.
-  await drive(lapTokens.sweep, 0, track.totalDistanceM - 2_000, now - 30 * 60_000);
+  const duracaoVassouraMs = (track.totalDistanceM - 2_000) * 25;
+  await drive(lapTokens.sweep, 0, track.totalDistanceM - 2_000, now - duracaoVassouraMs - margemMs);
 
   const { rows: lapStates } = await client.query(
     `select p.label, s.lap, round(s.route_offset_m::numeric, 0) as local,

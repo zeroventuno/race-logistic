@@ -492,8 +492,34 @@ function buildNote(input: NoteInput): string {
   return parts.join(" ");
 }
 
+/**
+ * Distância na justificativa do acionamento.
+ *
+ * `toFixed` sempre usa ponto decimal, independente do idioma — então a mesma
+ * tela mostrava "4,00 km" na janela abertura↔fechamento e "2.10 km" aqui, lado
+ * a lado. Num painel lido sob pressão, dois separadores decimais diferentes na
+ * mesma frase fazem o olho tropeçar e duvidar do número.
+ *
+ * O fuso e o idioma da prova não chegam até aqui (esta função roda no servidor,
+ * no instante do alerta, e o texto é congelado em `dispatch_reason`), então o
+ * formato segue o padrão europeu que atende cinco dos seis mercados. A troca
+ * completa por idioma acontece quando `dispatch_reason` deixar de ser texto
+ * pronto e passar a ser código + parâmetros — está anotado como pendência.
+ */
+const DISTANCE_FORMAT = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const DISTANCE_FORMAT_LONG = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 function formatDistance(meters: number): string {
   if (meters < 1000) return `${Math.round(meters)} m`;
   const km = meters / 1000;
-  return km >= 10 ? `${km.toFixed(1)} km` : `${km.toFixed(2)} km`;
+  return km >= 10
+    ? `${DISTANCE_FORMAT_LONG.format(km)} km`
+    : `${DISTANCE_FORMAT.format(km)} km`;
 }

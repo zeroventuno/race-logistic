@@ -320,6 +320,30 @@ export function prepareRows(params: PrepareParams): PrepareResult {
   let cursor = params.previous;
   let last: PrepareResult["last"] = null;
 
+  /**
+   * Velocidade OBSERVADA ao longo do percurso, em escala absoluta.
+   *
+   * Não é a mesma coisa que a velocidade do GPS, e a diferença quebrou o
+   * sistema num circuito: o modelo de movimento precisa saber quanto o veículo
+   * avança DE PROVA por segundo, enquanto o GPS reporta quanto ele avança pelo
+   * ESPAÇO. Numa descida sinuosa as duas já divergem; num aparelho cuja leitura
+   * de velocidade está errada, divergem completamente.
+   *
+   * Medido: um veículo cobrindo 300 m de percurso a cada 7,5 s (40 m/s) que
+   * reportava 12 m/s fazia o modelo esperar +90 m. Na linha de largada de um
+   * circuito, essa previsão atrasada favorecia os candidatos ANTES da linha, a
+   * volta nunca era contada, e o offset local passava a andar para trás — o
+   * veículo aparecia dirigindo em sentido contrário. 442 pings, todos gravados
+   * como volta 0, com a posição local correta e a distância de prova errada
+   * por duas voltas inteiras.
+   *
+   * Ordem de preferência, da mais confiável para a menos:
+   *   1. observada neste lote  — mede exatamente a grandeza que se quer prever
+   *   2. média móvel gravada   — mesma grandeza, calculada em escala absoluta
+   *   3. reportada pelo GPS    — grandeza diferente, usada só na falta das duas
+   */
+  let observedSpeedMps: number | null = null;
+
   for (const ping of params.accepted) {
     let routeOffsetM: number | null = null;
     let snapDistanceM: number | null = null;
@@ -340,7 +364,11 @@ export function prepareRows(params: PrepareParams): PrepareResult {
             // A precisão informada pelo GPS afina o peso da geometria contra o
             // modelo de movimento: fixo ruim, geometria vale menos.
             accuracyM: ping.accuracyM,
-            expectedSpeedMps: ping.speedMps ?? cursor?.speedMps ?? null,
+            expectedSpeedMps:
+              observedSpeedMps ??
+              params.rollingSpeedFallbackMps ??
+              ping.speedMps ??
+              null,
           },
         );
 
@@ -354,6 +382,19 @@ export function prepareRows(params: PrepareParams): PrepareResult {
         // volta não pode inventar uma volta que não existe.
         lap = Math.min(snapped.lap, Math.max(0, params.route.laps - 1));
 
+        // Velocidade observada em escala ABSOLUTA: sem contar a volta, a
+        // passagem pela linha de largada faria o offset cair de 54 800 para 30
+        // e a velocidade viraria um número negativo gigante.
+        if (cursor) {
+          const dtSeconds = (ping.recordedAtMs - cursor.recordedAtMs) / 1000;
+          if (dtSeconds > 0 && dtSeconds <= 120) {
+            const antes =
+              (cursor.lap ?? 0) * params.route.totalDistanceM + cursor.offsetM;
+            const agora = lap * params.route.totalDistanceM + snapped.offsetM;
+            observedSpeedMps = Math.max(0, (agora - antes) / dtSeconds);
+          }
+        }
+
         // Cada ping alimenta o próximo — offset, VOLTA e velocidade. É isto
         // que faz um lote acumulado offline ser reconstruído com a mesma
         // qualidade de um fluxo ao vivo, em vez de ser resolvido pela busca
@@ -362,12 +403,14 @@ export function prepareRows(params: PrepareParams): PrepareResult {
           offsetM: snapped.offsetM,
           lap,
           recordedAtMs: ping.recordedAtMs,
-          speedMps: derivedSpeedMps(
-            ping,
-            cursor,
-            snapped.offsetM,
-            params.rollingSpeedFallbackMps,
-          ),
+          // `SnapPrevious.speedMps` documenta "velocidade ao longo do
+          // percurso". Entregar a do GPS aqui cumpria a assinatura e mentia
+          // sobre a grandeza.
+          speedMps:
+            observedSpeedMps ??
+            params.rollingSpeedFallbackMps ??
+            ping.speedMps ??
+            null,
         };
 
         last = {

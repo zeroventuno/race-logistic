@@ -265,7 +265,11 @@ async function loadSnapCursor(
     offsetM: data.route_offset_m,
     lap: data.lap ?? 0,
     recordedAtMs: Date.parse(data.recorded_at),
-    speedMps: data.speed_mps ?? rollingSpeedFallbackMps,
+    // A média móvel primeiro: ela é calculada em escala absoluta e mede avanço
+    // AO LONGO DO PERCURSO, que é a grandeza que o modelo de movimento prevê.
+    // `speed_mps` é a leitura do GPS — velocidade pelo espaço — e só serve
+    // quando não há histórico suficiente para a média.
+    speedMps: rollingSpeedFallbackMps ?? data.speed_mps,
   };
 }
 
