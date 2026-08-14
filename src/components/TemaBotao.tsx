@@ -3,6 +3,8 @@
 import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 
+import { TEMA_COOKIE, TEMA_COOKIE_MAX_AGE, type Tema } from "@/lib/tema";
+
 /**
  * Alternador de tema.
  *
@@ -15,11 +17,11 @@ import { useEffect, useState } from "react";
  * dela para pintar o `<html>` já no primeiro byte. Com `localStorage` o tema
  * só chega depois da hidratação, e a tela pisca branco antes de escurecer —
  * num painel operacional, um flash branco numa sala escura é agressivo.
+ *
+ * O tipo e o leitor do cookie moram em `@/lib/tema`, fora deste arquivo, e não
+ * por organização: exportá-los daqui os tornava referências de CLIENTE, e o
+ * layout do servidor quebrava em produção ao chamá-los.
  */
-
-export type Tema = "system" | "light" | "dark";
-
-const COOKIE = "race_theme";
 
 const ORDEM: Tema[] = ["system", "light", "dark"];
 
@@ -45,7 +47,7 @@ export function TemaBotao({ inicial = "system" }: { inicial?: Tema }) {
       raiz.setAttribute("data-theme", proximo);
     }
 
-    document.cookie = `${COOKIE}=${proximo}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+    document.cookie = `${TEMA_COOKIE}=${proximo}; path=/; max-age=${TEMA_COOKIE_MAX_AGE}; samesite=lax`;
   }
 
   const { rotulo, Icone } = META[tema];
@@ -64,12 +66,4 @@ export function TemaBotao({ inicial = "system" }: { inicial?: Tema }) {
       <Icone size={17} stroke={1.8} aria-hidden="true" />
     </button>
   );
-}
-
-/**
- * Lê a preferência gravada. Usado no layout do servidor para estampar o
- * atributo antes do primeiro byte chegar ao navegador.
- */
-export function temaDoCookie(valor: string | undefined): Tema {
-  return valor === "light" || valor === "dark" ? valor : "system";
 }

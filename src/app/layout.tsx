@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 
-import { temaDoCookie } from "@/components/TemaBotao";
+import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 
 import "./globals.css";
 
@@ -44,7 +44,7 @@ export default async function RootLayout({
   // O tema é estampado no servidor, antes do primeiro byte. Resolver isso no
   // cliente faria a tela piscar clara antes de escurecer — agressivo numa sala
   // de direção às escuras, e um sintoma clássico de app mal terminado.
-  const tema = temaDoCookie((await cookies()).get("race_theme")?.value);
+  const tema = temaDoCookie((await cookies()).get(TEMA_COOKIE)?.value);
 
   return (
     <html lang="pt-BR" data-theme={tema === "system" ? undefined : tema}>

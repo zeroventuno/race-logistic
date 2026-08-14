@@ -2,7 +2,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { sair } from "@/app/login/actions";
-import { TemaBotao, temaDoCookie } from "@/components/TemaBotao";
+import { TemaBotao } from "@/components/TemaBotao";
+import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 import { I18nProvider } from "@/lib/i18n/client";
 import { getTranslator } from "@/lib/i18n/server";
 
@@ -29,7 +30,7 @@ export default async function DirectorLayout({
 }) {
   const { user } = await requireUser();
   const { locale, t } = await getTranslator();
-  const tema = temaDoCookie((await cookies()).get("race_theme")?.value);
+  const tema = temaDoCookie((await cookies()).get(TEMA_COOKIE)?.value);
 
   const nome =
     (user.user_metadata?.full_name as string | undefined) ??
