@@ -26,6 +26,17 @@ import type { ClientPing } from "@/lib/types";
  */
 
 const T0 = Date.UTC(2025, 5, 1, 9, 0, 0);
+
+/**
+ * Trecho do percurso real em que a estrada VOLTA POR SI MESMA.
+ *
+ * O Giro delle Langhe fecha o circuito em Alba, e os últimos 9 km refazem a
+ * mesma via da saída. Medido: uma busca puramente geométrica ancora qualquer
+ * ponto daqui na passagem de IDA — 36 km de erro, consistente ao longo de todo
+ * o trecho. É o pior lugar do percurso, e por isso é onde os testes da fila
+ * offline rodam.
+ */
+const AMBIGUOUS_START_M = 46_000;
 const GPX_PATH = join(process.cwd(), "tests", "fixtures", "real-route.gpx");
 
 function loadRealRoute() {
@@ -241,8 +252,8 @@ describe("reconstrução da fila offline sobre percurso real", () => {
   }
 
   it("reconstrói 2 minutos de fila embaralhada com erro pequeno", () => {
-    // 2 minutos a um ping a cada 3 s = 40 pontos, saindo do km 20.
-    const START = 20_000;
+    // 2 minutos a um ping a cada 3 s = 40 pontos, dentro do trecho ambíguo.
+    const START = AMBIGUOUS_START_M;
     const { raw, truth } = drive(START, 40);
 
     // O lote chega fora de ordem — é o que acontece quando o app manda a fila
@@ -279,70 +290,83 @@ describe("reconstrução da fila offline sobre percurso real", () => {
   });
 
   it("processar na ordem de chegada degrada a reconstrução", () => {
-    const START = 20_000;
+    const START = AMBIGUOUS_START_M;
     const { raw, truth } = drive(START, 40);
 
     const parsed = validatePingBatch({ pings: raw }, T0 + 130_000);
     if (!parsed.ok) throw new Error("lote inválido");
 
-    const ordered = reconstruct(index, parsed.value.accepted, {
-      offsetM: START,
-      recordedAtMs: T0 - 3000,
-      speedMps: 12,
-    });
+    const seed = { offsetM: START, recordedAtMs: T0 - 3000, speedMps: 12 };
 
-    // Mesma entrada, ordem embaralhada e SEM ordenar (o que a rota faria se não
-    // ordenasse): o cursor de continuidade passa a apontar para o futuro e para
-    // o passado alternadamente.
-    const scrambled = [...parsed.value.accepted].reverse();
-    const chaotic = reconstruct(index, scrambled, {
-      offsetM: START,
-      recordedAtMs: T0 - 3000,
-      speedMps: 12,
-    });
+    // Cada ping é comparado com a SUA própria verdade (por `clientSeq`), então
+    // a comparação vale independentemente da ordem de processamento.
+    const errorOf = (pings: ValidatedPing[]) => {
+      const offsets = reconstruct(index, pings, seed);
+      const errors = pings.map((p, i) => Math.abs(offsets[i]! - truth[p.clientSeq - 1]!));
+      return errors.reduce((a, b) => a + b, 0) / errors.length;
+    };
 
-    const orderedError =
-      ordered.reduce((acc, o, i) => acc + Math.abs(o - truth[i]!), 0) / ordered.length;
+    const ordered = errorOf(parsed.value.accepted);
 
-    // Na ordem invertida, cada ping é comparado com o índice errado da verdade;
-    // o ponto é que o resultado deixa de ser utilizável.
-    const reversedTruth = [...truth].reverse();
-    const chaoticError =
-      chaotic.reduce((acc, o, i) => acc + Math.abs(o - reversedTruth[i]!), 0) / chaotic.length;
+    // A ordem de chegada real quando a fila descarrega: os pings novos chegam
+    // primeiro e os antigos atrás. O cursor de continuidade passa a apontar
+    // para o futuro, e a janela de busca do snap defende a posição errada.
+    const arrivalOrder = [...parsed.value.accepted].reverse();
+    const chaotic = errorOf(arrivalOrder);
 
-    expect(orderedError).toBeLessThan(chaoticError);
+    expect(ordered).toBeLessThan(chaotic);
+    // Não é uma diferença cosmética: a ordenação cronológica é o que mantém o
+    // erro na escala do ruído de GPS em vez da escala do trecho.
+    expect(chaotic).toBeGreaterThan(ordered * 3);
   });
 
-  it("sem velocidade informada o erro cresce — é por isso que a passamos", () => {
-    const START = 20_000;
-    const { raw, truth } = drive(START, 40);
+  it("a velocidade informada melhora a reconstrução no percurso inteiro", () => {
+    // Reproduz a medição que motivou o campo: um veículo percorrendo os 55 km
+    // completos, um ping a cada 3 s. O trecho de retorno por si mesma é o que
+    // separa os dois modos — no resto do percurso a geometria já basta.
+    const totalPings = Math.floor(track.totalDistanceM / (12 * 3));
+    const { raw, truth } = drive(0, totalPings);
 
-    const parsed = validatePingBatch({ pings: raw }, T0 + 130_000);
-    if (!parsed.ok) throw new Error("lote inválido");
+    const runAll = (useSpeed: boolean) => {
+      let cursor: SnapPrevious | null = null;
+      const errors: number[] = [];
 
-    const withSpeed = reconstruct(index, parsed.value.accepted, {
-      offsetM: START,
-      recordedAtMs: T0 - 3000,
-      speedMps: 12,
-    });
-
-    const withoutSpeed = (() => {
-      let cursor: SnapPrevious | null = { offsetM: START, recordedAtMs: T0 - 3000 };
-      const offsets: number[] = [];
-      for (const p of parsed.value.accepted) {
+      for (let i = 0; i < raw.length; i++) {
+        const p = raw[i]!;
+        const recordedAtMs = Date.parse(p.recordedAt);
         const snapped = snapToRoute(index, { lat: p.lat, lng: p.lng }, {
           previous: cursor,
-          recordedAtMs: p.recordedAtMs,
+          recordedAtMs,
+          accuracyM: p.accuracyM,
+          expectedSpeedMps: useSpeed ? p.speedMps : null,
         });
-        offsets.push(snapped.offsetM);
-        cursor = { offsetM: snapped.offsetM, recordedAtMs: p.recordedAtMs };
+
+        errors.push(Math.abs(snapped.offsetM - truth[i]!));
+        cursor = {
+          offsetM: snapped.offsetM,
+          recordedAtMs,
+          speedMps: useSpeed ? p.speedMps : null,
+        };
       }
-      return offsets;
-    })();
 
-    const err = (list: number[]) =>
-      list.reduce((acc, o, i) => acc + Math.abs(o - truth[i]!), 0) / list.length;
+      return {
+        mean: errors.reduce((a, b) => a + b, 0) / errors.length,
+        worst: Math.max(...errors),
+        over100: errors.filter((e) => e > 100).length,
+      };
+    };
 
-    expect(err(withSpeed)).toBeLessThanOrEqual(err(withoutSpeed));
+    const withSpeed = runAll(true);
+    const withoutSpeed = runAll(false);
+
+    // Com velocidade o percurso inteiro fica na escala do ruído de GPS.
+    expect(withSpeed.mean).toBeLessThan(20);
+    expect(withSpeed.over100).toBe(0);
+
+    // Sem velocidade, o mesmo trajeto acumula erro no trecho de retorno.
+    // Medido nesta fixture: 11 pings de 1524 acima de 100 m, pico de 537 m.
+    expect(withoutSpeed.over100).toBeGreaterThan(0);
+    expect(withoutSpeed.worst).toBeGreaterThan(300);
+    expect(withSpeed.worst).toBeLessThan(withoutSpeed.worst / 10);
   });
 });

@@ -6,7 +6,7 @@ import { destinationPoint, haversineMeters } from "@/lib/geo/distance";
 import { parseGpx } from "@/lib/gpx/parse";
 import { simplifyToBudget } from "@/lib/geo/simplify";
 import { computeGap } from "@/lib/route/gap";
-import { snapToRoute } from "@/lib/route/snap";
+import { snapToRoute, type SnapPrevious } from "@/lib/route/snap";
 import {
   buildRouteTrack,
   positionAtOffset,
@@ -186,7 +186,7 @@ describe("percurso real — veículo percorrendo a prova inteira", () => {
       method: string;
     }> = [];
 
-    let previous: { offsetM: number; recordedAtMs: number } | null = null;
+    let previous: SnapPrevious | null = null;
     let tMs = Date.UTC(2026, 7, 14, 9, 0, 0);
     const stepM = opts.speedMps * opts.intervalS;
 

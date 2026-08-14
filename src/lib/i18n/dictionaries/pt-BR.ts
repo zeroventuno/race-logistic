@@ -284,4 +284,22 @@ export const ptBR = {
   },
 } as const;
 
-export type Dictionary = typeof ptBR;
+/**
+ * Alarga tipos literais para `string`, preservando a FORMA do objeto.
+ *
+ * O `as const` acima existe para que os caminhos de chave (`alerts.dispatch.
+ * onMyWay`) sejam tipos literais e o `t()` possa validá-los. O efeito colateral
+ * é que cada valor também vira literal: o tipo de `common.save` passa a ser
+ * exatamente `"Salvar"`, e aí `const it: Dictionary` exige que o italiano
+ * também diga "Salvar". Foram 991 erros de compilação — o build inteiro parado,
+ * enquanto os testes passavam, porque teste de runtime não checa tipo.
+ *
+ * `Widen` mantém exatamente a garantia que interessa (mesma árvore de chaves em
+ * todos os idiomas, chave faltando quebra o build) e devolve a liberdade que
+ * precisa existir: o valor.
+ */
+type Widen<T> = T extends string
+  ? string
+  : { [K in keyof T]: Widen<T[K]> };
+
+export type Dictionary = Widen<typeof ptBR>;
