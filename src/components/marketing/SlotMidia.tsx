@@ -34,10 +34,11 @@ interface Props {
 export function SlotImagemView({
   slot,
   rotulo,
+  alt,
   className,
   prioridade,
   parallax,
-}: Props) {
+}: Props & { alt: string }) {
   return (
     <div
       className={`fr-slot ${parallax ? "fr-slot--parallax " : ""}${className ?? ""}`}
@@ -51,7 +52,7 @@ export function SlotImagemView({
           className="fr-slot__img"
           data-parallax={parallax}
           src={slot.src}
-          alt={slot.alt}
+          alt={alt}
           width={slot.larguraRef}
           height={Math.round(
             slot.larguraRef /

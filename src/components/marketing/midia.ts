@@ -13,6 +13,8 @@
  * decisão consciente, não de um "ficou grandinho".
  */
 
+import type { TranslationKey } from "@/lib/i18n/translate";
+
 export type ProporcaoSlot = `${number}/${number}`;
 
 export interface SlotImagem {
@@ -23,7 +25,7 @@ export interface SlotImagem {
   /** Caminho em /public quando o ativo existir. `null` = espaço reservado. */
   src: string | null;
   /** Alternativa de texto. Descreve o que a imagem PROVA, não o que ela é. */
-  alt: string;
+  altChave: TranslationKey;
   /** Teto de peso em KB, já comprimido. */
   maxKB: number;
   /** Formatos aceitos, em ordem de preferência. */
@@ -61,7 +63,7 @@ export interface SlotVideo {
   poster: string | null;
   /** Variantes, para quando o pôster é o próprio conteúdo do palco. */
   posterSet: PosterResponsivo | null;
-  alt: string;
+  altChave: TranslationKey;
   maxKB: number;
   duracaoSegundos: readonly [number, number];
   briefing: string;
@@ -95,10 +97,7 @@ export const SLOTS = {
       larguras: [900, 1536],
       formatos: ["avif", "webp"],
     },
-    alt:
-      "Vista de cima da moto de prova numa estrada de paralelepípedo molhada, " +
-      "dois ciclistas à frente contra o sol baixo, e o arco vermelho do último " +
-      "quilômetro cruzando por cima com a bandeirola pendurada.",
+    altChave: "landing.screens.altHero",
     maxKB: 2500,
     duracaoSegundos: [6, 10],
     briefing:
@@ -111,9 +110,7 @@ export const SLOTS = {
     tipo: "imagem",
     proporcao: "16/10",
     src: null,
-    alt:
-      "Painel da direção de prova: mapa do percurso com os veículos de apoio, " +
-      "janela entre abertura e fechamento marcada como medida, e a fila de alertas.",
+    altChave: "landing.screens.altPanel",
     maxKB: 220,
     formatos: ["avif", "webp"],
     larguraRef: 1600,
@@ -127,9 +124,7 @@ export const SLOTS = {
     tipo: "imagem",
     proporcao: "39/80",
     src: null,
-    alt:
-      "App do motorista no celular: papel do veículo, quilômetro atual no " +
-      "percurso, estado do envio e os botões de alerta.",
+    altChave: "landing.screens.altApp",
     maxKB: 140,
     formatos: ["avif", "webp"],
     larguraRef: 780,
@@ -142,10 +137,7 @@ export const SLOTS = {
     tipo: "imagem",
     proporcao: "3/2",
     src: "/marketing/pave-1400.avif",
-    alt:
-      "Estrada de paralelepípedo serpenteando entre colinas ao pôr do sol, com " +
-      "três ciclistas separados por centenas de metros e um carro de apoio num " +
-      "dos vãos — a prova deixou de ser um pelotão.",
+    altChave: "landing.screens.altPave",
     maxKB: 180,
     formatos: ["avif", "webp"],
     larguraRef: 1400,

@@ -75,7 +75,7 @@ export function Argumentos({ t }: { t: Translator }) {
           </p>
           <p className="fr-body">{t("landing.measures.leadBody2")}</p>
         </div>
-        <DesvioDiagrama />
+        <DesvioDiagrama t={t} />
       </div>
 
       <div className="fr-grade fr-grade--2" style={{ marginTop: "2rem" }}>

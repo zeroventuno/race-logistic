@@ -45,6 +45,7 @@ export function DuasTelas({ t }: { t: Translator }) {
         <article className="fr-tela" data-reveal>
           <SlotImagemView
             slot={SLOTS.painel}
+            alt={t("landing.screens.altPanel")}
             rotulo={t("landing.screens.panelCapture")}
           />
           <div className="fr-tela__texto">
@@ -63,6 +64,7 @@ export function DuasTelas({ t }: { t: Translator }) {
         <article className="fr-tela fr-tela--app" data-reveal>
           <SlotImagemView
             slot={SLOTS.app}
+            alt={t("landing.screens.altApp")}
             rotulo={t("landing.screens.appCapture")}
             className="fr-slot--telefone"
           />

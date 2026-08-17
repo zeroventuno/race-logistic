@@ -74,7 +74,7 @@ export function Heroi({ t }: { t: Translator }) {
             // descolar a foto do quadro.
             data-parallax="0.26"
             src={`${HEROI.posterSet!.base}-${HEROI.posterSet!.larguras.at(-1)}.webp`}
-            alt={HEROI.alt}
+            alt={t(HEROI.altChave)}
             width={1536}
             height={1024}
             // É o elemento de maior pintura da página: carregar tarde atrasa a

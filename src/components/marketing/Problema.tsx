@@ -37,6 +37,7 @@ export function Problema({ t }: { t: Translator }) {
         <div data-reveal>
           <SlotImagemView
             slot={SLOTS.pave}
+            alt={t("landing.screens.altPave")}
             rotulo={t("landing.problem.photo")}
             parallax={0.14}
           />

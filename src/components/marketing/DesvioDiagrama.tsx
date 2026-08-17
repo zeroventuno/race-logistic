@@ -13,6 +13,9 @@
  * o tamanho de fonte do sistema e são lidos em voz alta na ordem certa.
  */
 
+import { Enfase } from "@/components/marketing/Enfase";
+import type { Translator } from "@/lib/i18n/translate";
+
 const ROTA = [
   "M 64 318 Q 150 306 232 316", // largada → ambulância
   "Q 270 321 300 313", // ambulância → acidente (1,5 km)
@@ -41,7 +44,7 @@ const PELA_ESTRADA = [
 /** Da ambulância até o acidente: o caminho curto, o que o sistema escolheu. */
 const AMBULANCIA_ATE_ACIDENTE = "M 232 316 Q 270 321 300 313";
 
-export function DesvioDiagrama() {
+export function DesvioDiagrama({ t }: { t: Translator }) {
   return (
     <figure className="fr-diagrama">
       {/* viewBox recortado no conteúdo, não no papel: o traçado ocupa y 140–335,
@@ -51,7 +54,7 @@ export function DesvioDiagrama() {
         viewBox="24 118 656 252"
         className="fr-diagrama__svg"
         role="img"
-        aria-label="Esquema de um percurso de ida e volta. O ponto do acidente fica na perna de ida; a moto está na perna de volta, a 50 metros em linha reta mas a 37,3 quilômetros pela estrada. A ambulância está 1,5 quilômetro atrás do acidente, na mesma perna e no mesmo sentido."
+        aria-label={t("landing.measures.diagramAria")}
       >
         {/* Leito da estrada */}
         <path
@@ -142,35 +145,26 @@ export function DesvioDiagrama() {
 
       <figcaption className="fr-diagrama__legenda">
         <ul className="fr-legenda">
-          <li className="fr-legenda__item">
-            <span className="fr-legenda__marca fr-legenda__marca--moto" aria-hidden="true" />
-            <span>
-              <b className="fr-num">0,05</b>
-              <span className="fr-unit">km</span> em linha reta entre a moto e o
-              acidente. É este o número que um sistema de proximidade geométrica
-              usa — e por ele a moto seria a escolhida.
-            </span>
-          </li>
-          <li className="fr-legenda__item">
-            <span className="fr-legenda__marca fr-legenda__marca--rota" aria-hidden="true" />
-            <span>
-              <b className="fr-num fr-num--rouge">37,3</b>
-              <span className="fr-unit">km</span> pela estrada, no mesmo
-              instante: a moto está na perna de volta e teria que refazer o
-              retorno inteiro contra o fluxo da prova.
-            </span>
-          </li>
-          <li className="fr-legenda__item">
-            <span className="fr-legenda__marca fr-legenda__marca--amb" aria-hidden="true" />
-            <span>
-              <b className="fr-num">1,5</b>
-              <span className="fr-unit">km</span> atrás, na mesma perna e no
-              mesmo sentido: a ambulância, que foi quem o sistema acionou.
-            </span>
-          </li>
+          {(
+            [
+              ["moto", "landing.measures.diagramMoto"],
+              ["rota", "landing.measures.diagramRoute"],
+              ["amb", "landing.measures.diagramAmb"],
+            ] as const
+          ).map(([marca, chave]) => (
+            <li className="fr-legenda__item" key={marca}>
+              <span
+                className={`fr-legenda__marca fr-legenda__marca--${marca}`}
+                aria-hidden="true"
+              />
+              <span>
+                <Enfase texto={t(chave)} />
+              </span>
+            </li>
+          ))}
         </ul>
         <p className="fr-diagrama__nota">
-          Esquema fora de escala. Números medidos num percurso real de teste.
+          {t("landing.measures.diagramNote")}
         </p>
       </figcaption>
     </figure>
