@@ -37,10 +37,10 @@ export function Rodape({ t }: { t: Translator }) {
           <Link className="fr-topo__link" href="/login">
             {t("landing.footer.director")}
           </Link>
-          <Link className="fr-topo__link" href="/cadastro">
+          <Link className="fr-topo__link" href="/signup">
             {t("landing.footer.signup")}
           </Link>
-          <Link className="fr-topo__link" href="/motorista">
+          <Link className="fr-topo__link" href="/driver">
             {t("landing.footer.driver")}
           </Link>
         </div>

@@ -9,7 +9,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * consegue escrever cookies de forma confiável no App Router, então é aqui que
  * a renovação acontece.
  *
- * As rotas do motorista (`/motorista`, `/api/driver/*`) são deliberadamente
+ * As rotas do motorista (`/driver`, `/api/driver/*`) são deliberadamente
  * ignoradas: elas não usam sessão do Supabase, e sim o token opaco do
  * dispositivo. Passar por aqui só gastaria uma ida ao servidor de auth a cada
  * ping de GPS.

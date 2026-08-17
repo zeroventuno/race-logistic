@@ -54,7 +54,7 @@ export function Fecho({ t }: { t: Translator }) {
             </span>
           </Link>
 
-          <Link href="/motorista" className="fr-porta">
+          <Link href="/driver" className="fr-porta">
             <h3 className="fr-h3" style={{ color: "#e8ecf2" }}>
               {t("landing.close.driverTitle")}
             </h3>

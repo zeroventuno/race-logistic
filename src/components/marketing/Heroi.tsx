@@ -140,7 +140,7 @@ export function Heroi({ t }: { t: Translator }) {
               {t("landing.hero.ctaPanel")}
               <span aria-hidden="true">→</span>
             </Link>
-            <Link href="/motorista" className="fr-btn fr-btn--linha">
+            <Link href="/driver" className="fr-btn fr-btn--linha">
               {t("landing.hero.ctaDriver")}
             </Link>
           </div>

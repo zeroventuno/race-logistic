@@ -142,7 +142,7 @@ export function AuthForm({
           <>
             {t("auth.firstTime")}{" "}
             <Link
-              href="/cadastro"
+              href="/signup"
               className="text-info underline underline-offset-4"
             >
               {t("auth.signUpLink")}

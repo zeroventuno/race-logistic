@@ -32,7 +32,7 @@ export default async function CodigosPage({
 
   const enderecoApp =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ?? "";
-  const enderecoMotorista = `${enderecoApp}/motorista`;
+  const enderecoMotorista = `${enderecoApp}/driver`;
 
   // Posição sem código na folha é papel entregue em branco. Fica de fora e é
   // contada, para o diretor saber quantas ainda precisam de código.

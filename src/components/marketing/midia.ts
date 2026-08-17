@@ -129,7 +129,7 @@ export const SLOTS = {
     formatos: ["avif", "webp"],
     larguraRef: 780,
     briefing:
-      "Captura real do /motorista em tela de celular, em uso, com a mão no " +
+      "Captura real do /driver em tela de celular, em uso, com a mão no " +
       "suporte do painel do carro se possível.",
   },
   pave: {

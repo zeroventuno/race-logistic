@@ -25,11 +25,19 @@
  *    como rede de segurança.
  */
 
-const VERSION = "v1";
+/*
+ * A versão precisa subir SEMPRE que o conteúdo do shell mudar de endereço ou
+ * de forma. Ela é o que faz o `activate` apagar os caches antigos (ver o
+ * filtro logo abaixo) — sem subir, o service worker continua servindo o shell
+ * velho e o motorista fica preso numa versão anterior do app com a tela já
+ * atualizada no servidor. Foi o que aconteceu quando `/motorista` virou
+ * `/driver`: o shell cacheado apontava para uma rota que não existe mais.
+ */
+const VERSION = "v2";
 const SHELL_CACHE = `flamme-rouge-shell-${VERSION}`;
 const ASSET_CACHE = `flamme-rouge-assets-${VERSION}`;
 
-const SHELL_URLS = ["/motorista", "/manifest.webmanifest"];
+const SHELL_URLS = ["/driver", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -113,7 +121,7 @@ async function networkFirst(request) {
     if (response.ok) cache.put(request, response.clone());
     return response;
   } catch (error) {
-    const cached = (await cache.match(request)) || (await cache.match("/motorista"));
+    const cached = (await cache.match(request)) || (await cache.match("/driver"));
     if (cached) return cached;
     return new Response(
       "<!doctype html><meta charset=utf-8><title>Sem conexão</title>" +

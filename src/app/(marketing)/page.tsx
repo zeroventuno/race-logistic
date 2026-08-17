@@ -9,7 +9,7 @@
  * descobre quanto trabalho dá, e só então escolhe uma porta.
  *
  * O conteúdo da antiga raiz (o seletor motorista/direção) virou a seção
- * `Fecho`. Os dois caminhos continuam iguais: /motorista e /dashboard.
+ * `Fecho`. Os dois caminhos continuam iguais: /driver e /dashboard.
  */
 
 import { Argumentos } from "@/components/marketing/Argumentos";
