@@ -3,7 +3,7 @@
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 
-import { DARK_BASEMAP, LIGHT_BASEMAP } from "@/components/map/map-style";
+import { resolverBasemap, type BasemapId } from "@/lib/map/basemaps";
 import { resolverTema, useTemaResolvido } from "@/lib/tema-atual";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -18,6 +18,18 @@ export interface MapCanvasProps {
   className?: string;
   /** Desliga a rotação — num painel operacional, norte sempre para cima. */
   lockBearing?: boolean;
+  /**
+   * Qual mapa de fundo. Vem da prova; um valor desconhecido ou desligado por
+   * licença cai no padrão sem reclamar, porque ficar sem mapa no dia do
+   * evento é pior que ficar com o mapa errado.
+   */
+  basemap?: BasemapId | string | null;
+  /**
+   * Chamado quando o fundo escolhido não consegue carregar tile e o mapa cai
+   * para o padrão. Quem recebe decide como avisar — aqui não se interrompe
+   * ninguém.
+   */
+  onFundoIndisponivel?: (nome: string) => void;
 }
 
 /**
@@ -48,6 +60,8 @@ export function MapCanvas({
   initialZoom = 11,
   className,
   lockBearing = true,
+  basemap,
+  onFundoIndisponivel,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -55,6 +69,11 @@ export function MapCanvas({
   const onTeardownRef = useRef(onTeardown);
   const [failed, setFailed] = useState(false);
   const tema = useTemaResolvido();
+  // Qual par fundo+tema está pintado. Comparar isto é mais direto do que
+  // inferir pela cor de fundo do estilo, que era o que se fazia antes e
+  // deixava de funcionar assim que dois fundos compartilhassem a mesma cor.
+  const estiloAtualRef = useRef<string | null>(null);
+  const avisouRef = useRef(false);
 
   onReadyRef.current = onReady;
   onTeardownRef.current = onTeardown;
@@ -70,7 +89,7 @@ export function MapCanvas({
         // Lido direto, não pelo estado: no primeiro render o hook ainda
         // devolve "dark" para não divergir da hidratação, e montar o mapa
         // escuro para trocar 16 ms depois pisca a tela inteira.
-        style: resolverTema() === "light" ? LIGHT_BASEMAP : DARK_BASEMAP,
+        style: resolverBasemap(basemap).estilo(resolverTema()),
         center: initialCenter,
         zoom: initialZoom,
         attributionControl: { compact: true },
@@ -109,10 +128,29 @@ export function MapCanvas({
 
     // Erro de tile não pode derrubar o painel: sem internet, o mapa fica cinza
     // mas os marcadores e os números continuam corretos, que é o que importa.
+    //
+    // Quando o fundo ESCOLHIDO é que não carrega — chave vencida, cota
+    // estourada, provedor fora do ar —, cai para o padrão sem chave em vez de
+    // deixar o diretor olhando um retângulo cinza. Uma vez só: sem a trava, um
+    // provedor fora do ar dispara isto a cada tile e o mapa fica trocando de
+    // estilo em laço.
     map.on("error", (e) => {
       if (process.env.NODE_ENV !== "production") {
         console.warn("[MapCanvas]", e.error?.message ?? e);
       }
+
+      const escolhido = resolverBasemap(basemap);
+      if (avisouRef.current || escolhido.id === resolverBasemap(null).id) return;
+
+      const ehTile = String(e.error?.message ?? "")
+        .toLowerCase()
+        .match(/tile|fetch|network|403|404|429/);
+      if (!ehTile) return;
+
+      avisouRef.current = true;
+      estiloAtualRef.current = null;
+      map.setStyle(resolverBasemap(null).estilo(resolverTema()), { diff: false });
+      onFundoIndisponivel?.(escolhido.nome);
     });
 
     const observer = new ResizeObserver(() => map.resize());
@@ -145,26 +183,21 @@ export function MapCanvas({
     const map = mapRef.current;
     if (!map) return;
 
-    const estilo = tema === "light" ? LIGHT_BASEMAP : DARK_BASEMAP;
-    const atual = map.getStyle()?.layers?.find((l) => l.id === "background");
-    const corAtual =
-      atual && atual.type === "background"
-        ? (atual.paint as { "background-color"?: string })["background-color"]
-        : undefined;
-    const corAlvo = tema === "light" ? "#f2f4f7" : "#0a0c10";
-    if (corAtual === corAlvo) return;
+    const alvo = `${resolverBasemap(basemap).id}:${tema}`;
+    if (estiloAtualRef.current === alvo) return;
+    estiloAtualRef.current = alvo;
 
     const redesenhar = () => {
       map.off("styledata", redesenhar);
       onReadyRef.current?.(map);
     };
     map.on("styledata", redesenhar);
-    map.setStyle(estilo, { diff: false });
+    map.setStyle(resolverBasemap(basemap).estilo(tema), { diff: false });
 
     return () => {
       map.off("styledata", redesenhar);
     };
-  }, [tema]);
+  }, [tema, basemap]);
 
   if (failed) {
     return (
