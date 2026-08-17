@@ -5,6 +5,7 @@ import { sair } from "@/app/login/actions";
 import { Creditos } from "@/components/Creditos";
 import { ForaDoAoVivo } from "@/components/director/ForaDoAoVivo";
 import { Letreiro } from "@/components/Letreiro";
+import { SeletorIdioma } from "@/components/SeletorIdioma";
 import { TemaBotao } from "@/components/TemaBotao";
 import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 import { I18nProvider } from "@/lib/i18n/client";
@@ -62,6 +63,7 @@ export default async function DirectorLayout({
               >
                 {nome}
               </span>
+              <SeletorIdioma />
               <TemaBotao inicial={tema} />
               <form action={sair}>
                 <button

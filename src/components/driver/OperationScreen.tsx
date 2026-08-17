@@ -36,6 +36,7 @@ export interface OperationScreenProps {
 
 export function OperationScreen({ runtime, session, onUnbind }: OperationScreenProps) {
   const t = useT();
+  const fmt = useFormat();
 
   const snapshot = useSyncExternalStore(
     runtime.subscribe,
@@ -130,6 +131,34 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
   return (
     <div className="flex h-dvh flex-col bg-surface-0">
       <StatusBar snapshot={snapshot} session={session} onUnbind={onUnbind} />
+
+      {/* VOCÊ FICOU INVISÍVEL PARA A DIREÇÃO.
+          O navegador congela a aba que sai da frente, e com ela o GPS. O
+          motorista volta, vê o ponto verde de "transmitindo" e não tem como
+          saber que ficou minutos fora do mapa — a barra de estado mostra o
+          AGORA, e agora está tudo bem. Este é o único lugar que conta o
+          passado.
+
+          Âmbar e não vermelho: não é socorro, é o sistema admitindo o que
+          deixou de saber. E fica até o motorista tocar, porque um aviso que
+          some sozinho é um aviso que ele pode nunca ter visto. */}
+      {snapshot.gapSemTransmitirS !== null ? (
+        <button
+          type="button"
+          onClick={() => runtime.reconhecerLacuna()}
+          className="border-b border-warn-line bg-warn-dim px-4 py-3 text-left text-sm text-warn-ink"
+        >
+          {/* i18n: precisa de chave — lacuna de transmissão e como evitar */}
+          <span className="font-semibold">
+            Você ficou {fmt.age(snapshot.gapSemTransmitirS)} sem transmitir.
+          </span>{" "}
+          A direção não viu sua posição nesse período. Mantenha esta tela à
+          frente e o aparelho ligado na energia.
+          <span className="mt-1 block font-mono text-[0.65rem] uppercase tracking-[0.16em] opacity-70">
+            tocar para dispensar
+          </span>
+        </button>
+      ) : null}
 
       {enRoute.map((alert) => (
         <DispatchBanner

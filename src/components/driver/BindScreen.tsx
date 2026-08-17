@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Creditos } from "@/components/Creditos";
+import { SeletorIdioma } from "@/components/SeletorIdioma";
 import { formatBindCode } from "@/lib/codes/bind-code";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { DriverErrorCode } from "@/lib/driver/protocol";
@@ -115,9 +116,15 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-5 py-10">
       <header>
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
-          {t("meta.appName")}
-        </p>
+        {/* O seletor vem ANTES do código, e é de propósito: é a primeira tela
+            que o motorista vê, e se a língua estiver errada tudo depois dela
+            está errado — inclusive o botão de acidente. */}
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+            {t("meta.appName")}
+          </p>
+          <SeletorIdioma />
+        </div>
         <h1 className="titulo mt-2 font-semibold text-ink text-3xl">{t("driver.bindTitle")}</h1>
         <p className="mt-2 text-sm text-ink-muted">{t("driver.bindSubtitle")}</p>
       </header>

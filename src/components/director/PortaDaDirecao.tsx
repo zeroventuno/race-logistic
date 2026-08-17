@@ -1,7 +1,11 @@
 import Link from "next/link";
 
 import { Creditos } from "@/components/Creditos";
+import { I18nProvider } from "@/lib/i18n/client";
+import { DEFAULT_TIMEZONE } from "@/app/(director)/_lib/timezone";
+import type { Locale } from "@/lib/i18n/config";
 import { Letreiro } from "@/components/Letreiro";
+import { SeletorIdioma } from "@/components/SeletorIdioma";
 import { TemaBotao } from "@/components/TemaBotao";
 import type { Tema } from "@/lib/tema";
 
@@ -31,6 +35,17 @@ export interface PortaDaDirecaoProps {
   /** Uma frase explicando o que acontece depois de entrar. */
   descricao: string;
   tema: Tema;
+  /**
+   * Idioma negociado no servidor.
+   *
+   * Entrar e criar conta estão FORA do grupo `(director)`, então não herdam o
+   * provedor de i18n dele — e sem provedor o seletor de idioma derruba a tela.
+   * A porta monta o seu próprio.
+   *
+   * O fuso é o padrão: aqui ainda não existe prova, e portanto não existe fuso
+   * de prova. Quem tem fuso próprio é cada evento, lá dentro.
+   */
+  locale: Locale;
   children: React.ReactNode;
 }
 
@@ -38,9 +53,11 @@ export function PortaDaDirecao({
   titulo,
   descricao,
   tema,
+  locale,
   children,
 }: PortaDaDirecaoProps) {
   return (
+    <I18nProvider locale={locale} timeZone={DEFAULT_TIMEZONE}>
     <main className="grid min-h-dvh lg:grid-cols-[1.05fr_0.95fr]">
       {/* A coluna da foto some no celular: metade de uma tela de 375 px é
           espaço que o formulário precisa mais do que a atmosfera. */}
@@ -104,7 +121,10 @@ export function PortaDaDirecao({
             >
               <Letreiro tom="rouge" size={13} />
             </Link>
-            <TemaBotao inicial={tema} />
+            <div className="flex items-center gap-2">
+              <SeletorIdioma />
+              <TemaBotao inicial={tema} />
+            </div>
           </div>
 
           <h1 className="titulo mt-7 text-[2.75rem] font-bold leading-[1.02] text-ink">
@@ -120,5 +140,6 @@ export function PortaDaDirecao({
         </div>
       </div>
     </main>
+    </I18nProvider>
   );
 }

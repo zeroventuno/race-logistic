@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { AuthForm } from "@/components/director/AuthForm";
 import { PortaDaDirecao } from "@/components/director/PortaDaDirecao";
 import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
+import { getTranslator } from "@/lib/i18n/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import { entrar } from "./actions";
@@ -20,10 +21,12 @@ export default async function LoginPage() {
   if (data.user) redirect("/dashboard");
 
   const tema = temaDoCookie((await cookies()).get(TEMA_COOKIE)?.value);
+  const { locale } = await getTranslator();
 
   return (
     <PortaDaDirecao
       tema={tema}
+      locale={locale}
       titulo="Painel da direção"
       descricao="Entre para preparar a prova: percurso, posições de apoio e códigos de vínculo."
     >

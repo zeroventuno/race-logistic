@@ -123,6 +123,17 @@ export interface DriverSnapshot {
   stateError: string | null;
   /** Preenchido quando o vínculo morreu e o app precisa pedir código de novo. */
   revokedMessage: string | null;
+  /**
+   * Quanto tempo o aparelho ficou sem registrar posição, em segundos, na
+   * última vez que a tela saiu da frente. `null` quando não houve lacuna
+   * relevante ou depois que o motorista deu ciência.
+   *
+   * Existe porque o navegador CONGELA a aba que sai da frente: sem tela, o
+   * GPS para. O motorista volta para o app, vê o ponto verde de
+   * "transmitindo", e não tem como saber que passou seis minutos invisível
+   * para a direção. Este número é a única forma de ele descobrir.
+   */
+  gapSemTransmitirS: number | null;
 }
 
 const INITIAL: DriverSnapshot = {
@@ -145,6 +156,7 @@ const INITIAL: DriverSnapshot = {
   state: null,
   stateError: null,
   revokedMessage: null,
+  gapSemTransmitirS: null,
 };
 
 export function initialSnapshot(): DriverSnapshot {
@@ -440,10 +452,49 @@ export class DriverRuntime {
     this.patch({ connection: "offline" });
   };
 
+  /**
+   * Abaixo disto não vale avisar.
+   *
+   * Trocar de aba por vinte segundos para ver uma mensagem é normal e não
+   * deixa buraco que importe: o painel da direção só considera o dado velho
+   * depois de 90 s. Avisar a cada troca rápida ensinaria o motorista a
+   * dispensar o aviso sem ler — e aí ele dispensaria também o que importa.
+   */
+  private static readonly LACUNA_MINIMA_S = 45;
+
+  /** Quando a tela saiu da frente. `null` enquanto ela está visível. */
+  private escondidaDesdeMs: number | null = null;
+
   private onVisibility = (): void => {
-    if (document.visibilityState === "visible") {
-      this.nextPollAtMs = 0;
-      this.nextFlushAtMs = Math.min(this.nextFlushAtMs, Date.now());
+    if (document.visibilityState === "hidden") {
+      this.escondidaDesdeMs = Date.now();
+      return;
+    }
+
+    this.nextPollAtMs = 0;
+    this.nextFlushAtMs = Math.min(this.nextFlushAtMs, Date.now());
+
+    // MEDE PELO ÚLTIMO PONTO GRAVADO, não pelo tempo escondido.
+    //
+    // Os dois quase sempre coincidem, mas quando divergem é o ponto que conta:
+    // num Android que continuou rodando em segundo plano não houve lacuna
+    // nenhuma, e avisar seria mentira. O que a direção viu é o que importa.
+    const desde = this.escondidaDesdeMs;
+    this.escondidaDesdeMs = null;
+    if (desde === null) return;
+
+    const ultimo = this.snapshot.lastFixAtMs ?? desde;
+    const lacuna = Math.round((Date.now() - ultimo) / 1000);
+
+    if (lacuna >= DriverRuntime.LACUNA_MINIMA_S) {
+      this.patch({ gapSemTransmitirS: lacuna });
+    }
+  };
+
+  /** O motorista leu o aviso. */
+  reconhecerLacuna = (): void => {
+    if (this.snapshot.gapSemTransmitirS !== null) {
+      this.patch({ gapSemTransmitirS: null });
     }
   };
 
