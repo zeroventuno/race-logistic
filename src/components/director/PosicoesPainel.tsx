@@ -70,12 +70,21 @@ export function PosicoesPainel({
           <TituloSecao>{t("positions.add")}</TituloSecao>
 
           {/* Atalhos primeiro: 90% dos cadastros são "mais uma moto". */}
-          <div className="mt-4 flex flex-wrap gap-2">
+          {/* GRADE, não fila que quebra.
+              Com seis atalhos, deixar o navegador embrulhar produz uma segunda
+              linha com um ou dois botões soltos — que é o que dá a impressão de
+              layout quebrado. Numa grade eles dividem a largura por igual e a
+              linha fecha sempre: seis colunas na tela larga, três no tablet,
+              duas no celular. O botão fica mais largo que o texto, e tudo bem:
+              alvo maior num painel é vantagem. */}
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {ATALHOS.map((role) => (
               <Botao
                 key={role}
                 type="button"
                 variant="secondary"
+                size="sm"
+                className="min-w-0"
                 onClick={() => adicionar(role, 1)}
                 disabled={pendente}
               >

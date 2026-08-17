@@ -122,6 +122,7 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
       {mapReady ? (
         <DriverMap
           className="min-h-0 flex-1"
+          basemap={state?.race.basemap ?? null}
           route={route}
           vehicles={state?.vehicles ?? []}
           alerts={state?.alerts ?? []}

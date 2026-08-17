@@ -40,6 +40,8 @@ export interface DriverSession {
     name: string;
     status: RaceStatus;
     targetGapMinutes: number;
+    /** Mapa de fundo da prova — o mesmo que a direção está vendo. */
+    basemap: string | null;
     /**
      * Fuso DA PROVA. Vai para o app porque o celular do motorista pode estar
      * em outro fuso (ou com fuso errado), e duas pessoas olhando a mesma tela
@@ -77,6 +79,7 @@ interface RaceEmbed {
   id: string;
   name: string;
   status: RaceStatus;
+  map_basemap: string | null;
   target_gap_minutes: number;
   timezone: string;
 }
@@ -101,7 +104,7 @@ export async function authenticateDriver(request: Request): Promise<AuthResult> 
     .select(
       "id, position_id, race_id, revoked_at, revoked_reason, pings_received, " +
         "race_positions!position_id(id, label, role, ordinal, is_reference_lead, is_reference_sweep), " +
-        "races!race_id(id, name, status, target_gap_minutes, timezone)",
+        "races!race_id(id, name, status, target_gap_minutes, timezone, map_basemap)",
     )
     .eq("token_hash", tokenHash)
     .maybeSingle<SessionRow>();
@@ -174,6 +177,7 @@ export async function authenticateDriver(request: Request): Promise<AuthResult> 
         name: race.name,
         status: race.status,
         targetGapMinutes: race.target_gap_minutes,
+        basemap: race.map_basemap ?? null,
         timeZone: race.timezone || "Europe/Rome",
       },
     },

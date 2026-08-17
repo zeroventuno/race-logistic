@@ -1,16 +1,3 @@
-import {
-  IconAmbulance,
-  IconCar,
-  IconFlag,
-  IconFlagCheck,
-  IconMapPin,
-  IconMotorbike,
-  IconTool,
-  IconTrafficCone,
-  IconTrash,
-  type IconProps,
-} from "@tabler/icons-react";
-
 import type { PositionRole, VehicleIconName } from "@/lib/types";
 import { ROLE_META } from "@/lib/types";
 
@@ -39,21 +26,6 @@ import { ROLE_META } from "@/lib/types";
  *   fiscal     cone, que é o que ele planta na estrada
  */
 
-const BY_NAME: Record<
-  VehicleIconName,
-  (props: IconProps) => React.ReactNode
-> = {
-  lead: IconFlag,
-  closing: IconFlagCheck,
-  broom: IconTrash,
-  moto: IconMotorbike,
-  ambulance: IconAmbulance,
-  mechanic: IconTool,
-  support: IconCar,
-  marshal: IconTrafficCone,
-  other: IconMapPin,
-};
-
 export interface VehicleIconProps {
   role: PositionRole;
   size?: number;
@@ -67,6 +39,21 @@ export interface VehicleIconProps {
   title?: string;
 }
 
+/**
+ * UMA GEOMETRIA SÓ, a nossa.
+ *
+ * Antes isto resolvia para um ícone do Tabler e o marcador do mapa desenhava
+ * `MARKER_PATHS` — duas fontes para o mesmo símbolo, que é como a vassoura
+ * acabou virando uma LIXEIRA na lista (o Tabler desta versão não tem vassoura,
+ * e alguém escolheu o que parecia mais próximo) enquanto no mapa ela era uma
+ * vassoura de verdade. Ícone de apagar ao lado da palavra "Vassoura" é pior
+ * que ícone feio.
+ *
+ * Com a mesma fonte nos dois lugares essa divergência deixa de ser possível, e
+ * de quebra some uma dependência: os desenhos simplificados são mais legíveis
+ * nos tamanhos em que este produto os usa (15 a 20 px) do que o traço completo
+ * do Tabler, que foi desenhado para 24.
+ */
 export function VehicleIcon({
   role,
   size = 20,
@@ -74,16 +61,23 @@ export function VehicleIcon({
   className,
   title,
 }: VehicleIconProps) {
-  const Icon = BY_NAME[ROLE_META[role].icon] ?? IconMapPin;
+  const paths = MARKER_PATHS[ROLE_META[role].icon] ?? MARKER_PATHS.other;
 
   return (
-    <Icon
-      size={size}
-      stroke={stroke}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
       aria-hidden={title ? undefined : true}
       aria-label={title}
       role={title ? "img" : undefined}
+      dangerouslySetInnerHTML={{ __html: paths }}
     />
   );
 }

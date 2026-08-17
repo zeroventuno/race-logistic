@@ -32,6 +32,16 @@ export interface DriverRace {
   status: RaceStatus;
   targetGapMinutes: number;
   timeZone: string;
+  /**
+   * Mapa de fundo da prova.
+   *
+   * Vai no payload do motorista pelo mesmo motivo que o fuso: o app dele não
+   * tem sessão de usuário e não pode consultar preferência de conta. E tem
+   * que ser o MESMO fundo da direção — os dois olham o mesmo evento, e fundo
+   * diferente em cada lado faz duas pessoas descreverem a mesma curva de
+   * jeitos diferentes no rádio.
+   */
+  basemap: string | null;
 }
 
 /** `BindResponse` com o fuso da prova junto. Superconjunto do contrato. */

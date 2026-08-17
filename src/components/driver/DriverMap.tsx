@@ -4,7 +4,8 @@ import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { alertGlyphSvg } from "@/components/icons/alerta";
-import { resolverCor } from "@/lib/cor-token";
+import { resolverBasemap } from "@/lib/map/basemaps";
+import { resolverTema } from "@/lib/tema-atual";
 import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { useT } from "@/lib/i18n/client";
@@ -39,6 +40,14 @@ export interface DriverMapProps {
   alerts: DriverAlertView[];
   /** Hora do servidor na última leitura, para calcular idade dos pings. */
   serverTimeMs: number | null;
+  /**
+   * Mapa de fundo da prova.
+   *
+   * O mesmo da direção, de propósito: os dois estão olhando o mesmo evento, e
+   * fundo diferente em cada lado faz duas pessoas descreverem a mesma curva de
+   * jeitos diferentes no rádio.
+   */
+  basemap?: string | null;
   className?: string;
 }
 
@@ -54,11 +63,8 @@ export interface DriverMapProps {
  * um `light-dark()`, e ler a propriedade direto devolve o texto cru, que o
  * MapLibre não interpreta. Foi assim que a rota sumiu do mapa uma vez.
  */
-function corDaRota(): { linha: string; casing: string } {
-  return {
-    linha: resolverCor("--route-line", "#78bef0"),
-    casing: resolverCor("--route-casing", "rgba(10,13,16,.6)"),
-  };
+function corDaRota(basemap?: string | null): { linha: string; casing: string } {
+  return resolverBasemap(basemap).rota[resolverTema()];
 }
 
 export function DriverMap({
@@ -66,6 +72,7 @@ export function DriverMap({
   vehicles,
   alerts,
   serverTimeMs,
+  basemap,
   className,
 }: DriverMapProps) {
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -101,7 +108,7 @@ export function DriverMap({
       type: "line",
       source: "race-route",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": corDaRota().casing, "line-width": 9 },
+      paint: { "line-color": corDaRota(basemap).casing, "line-width": 9 },
     });
 
     map.addLayer({
@@ -109,7 +116,7 @@ export function DriverMap({
       type: "line",
       source: "race-route",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": corDaRota().linha, "line-width": 4.5 },
+      paint: { "line-color": corDaRota(basemap).linha, "line-width": 4.5 },
     });
 
     if (!fittedRef.current) {
@@ -272,7 +279,12 @@ export function DriverMap({
 
   return (
     <div className={`relative ${className ?? ""}`}>
-      <MapCanvas onReady={handleReady} className="h-full w-full" initialZoom={13} />
+      <MapCanvas
+        basemap={basemap}
+        onReady={handleReady}
+        className="h-full w-full"
+        initialZoom={13}
+      />
 
       {!following ? (
         <button

@@ -81,6 +81,7 @@ interface RaceRow {
   status: RaceStatus;
   target_gap_minutes: number;
   timezone: string;
+  map_basemap: string | null;
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -159,7 +160,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { data: race, error: raceError } = await admin
     .from("races")
-    .select("id, name, status, target_gap_minutes, timezone")
+    .select("id, name, status, target_gap_minutes, timezone, map_basemap")
     .eq("id", position.race_id)
     .maybeSingle<RaceRow>();
 
@@ -222,6 +223,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       name: race.name,
       status: race.status,
       targetGapMinutes: race.target_gap_minutes,
+      basemap: race.map_basemap ?? null,
       timeZone: race.timezone || "Europe/Rome",
     },
     route: await loadRenderRoute(position.race_id),
