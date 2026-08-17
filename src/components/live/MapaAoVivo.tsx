@@ -110,6 +110,29 @@ export function MapaAoVivo({
   const t = useT();
 
   /**
+   * Enquadrar o percurso inteiro, quando o cartão de identidade pedir.
+   *
+   * O gatilho é um número que só cresce, e não um booleano: a ação é "enquadre
+   * de novo", e o diretor pode querer isso duas vezes seguidas depois de
+   * arrastar o mapa. Um booleano não sabe pedir a mesma coisa duas vezes.
+   *
+   * O valor inicial da referência é o token que chegou, não zero: assim a
+   * montagem nunca dispara um enquadramento. O mapa já se enquadra sozinho ao
+   * carregar o percurso, e refazer isso na montagem desfaria o zoom que o
+   * diretor tivesse dado antes de o painel terminar de acordar.
+   */
+  const enquadrouRef = useRef(enquadrarToken ?? 0);
+
+  useEffect(() => {
+    const token = enquadrarToken ?? 0;
+    if (token === enquadrouRef.current) return;
+    enquadrouRef.current = token;
+
+    const map = mapRef.current;
+    if (map && renderPoints.length >= 2) enquadrar(map, renderPoints);
+  }, [enquadrarToken, renderPoints]);
+
+  /**
    * O mapa pode nunca ficar pronto — e um mapa vazio parece uma prova sem
    * veículos.
    *
