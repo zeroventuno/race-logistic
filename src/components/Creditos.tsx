@@ -10,14 +10,20 @@
  * mapa, junto com a nota do relógio.
  */
 
+"use client";
+
+import { useT } from "@/lib/i18n/client";
+
 const ANO_INICIAL = 2026;
 
 export function Creditos({ className }: { className?: string }) {
+  const t = useT();
+
   return (
     <p
       className={`font-mono text-[0.6rem] uppercase tracking-[0.18em] text-ink-ghost ${className ?? ""}`}
     >
-      Flamme Rouge · uma ferramenta{" "}
+      {t("meta.appName")} · {t("landing.footer.credits")}{" "}
       <a
         href="https://zeroventuno.com"
         target="_blank"

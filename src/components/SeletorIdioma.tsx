@@ -38,12 +38,13 @@ import { LOCALES, LOCALE_META, type Locale } from "@/lib/i18n/config";
 export function SeletorIdioma({
   className,
   /** Rótulo acessível. A tela decide se mostra texto ao lado. */
-  rotulo = "Idioma",
+  rotulo,
 }: {
   className?: string;
   rotulo?: string;
 }) {
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale, t } = useI18n();
+  const nome = rotulo ?? t("common.language");
   const ref = useRef<HTMLSelectElement | null>(null);
 
   useEffect(() => {
@@ -53,12 +54,12 @@ export function SeletorIdioma({
 
   return (
     <label className={`inline-flex items-center ${className ?? ""}`}>
-      <span className="sr-only">{rotulo}</span>
+      <span className="sr-only">{nome}</span>
       <select
         ref={ref}
         value={locale}
         onChange={(e) => setLocale(e.target.value as Locale)}
-        aria-label={rotulo}
+        aria-label={nome}
         autoComplete="off"
         className="min-h-9 border border-border bg-transparent px-2 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-ink-muted transition hover:border-border-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-info"
       >

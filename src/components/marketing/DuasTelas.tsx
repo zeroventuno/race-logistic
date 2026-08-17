@@ -16,39 +16,45 @@
 import { SlotImagemView } from "@/components/marketing/SlotMidia";
 import { Secao } from "@/components/marketing/Secao";
 import { SLOTS } from "@/components/marketing/midia";
+import type { TranslationKey, Translator } from "@/lib/i18n/translate";
 
-const PAINEL = [
-  "Mapa ao vivo com todos os veículos, cada papel com sua cor e sua idade de dado.",
-  "Janela entre abertura e fechamento, marcada como medida ou projetada.",
-  "Fila de alertas com o apoio mais próximo já sugerido — e o porquê da sugestão por escrito.",
-  "Saúde de conexão veículo a veículo: quem está ao vivo, quem atrasou, quem sumiu.",
+const PAINEL: TranslationKey[] = [
+  "landing.screens.p1",
+  "landing.screens.p2",
+  "landing.screens.p3",
+  "landing.screens.p4",
 ];
 
-const APP = [
-  "Entra com o código de 6 caracteres. Sem conta, sem loja de aplicativos.",
-  "Botões de alerta grandes, para mão com luva e carro em movimento.",
-  "Continua enviando com a tela apagada e acumula tudo quando o sinal cai.",
-  "No idioma do aparelho, a partir do mesmo link que todo mundo recebeu.",
+const APP: TranslationKey[] = [
+  "landing.screens.a1",
+  "landing.screens.a2",
+  "landing.screens.a3",
+  "landing.screens.a4",
 ];
 
-export function DuasTelas() {
+export function DuasTelas({ t }: { t: Translator }) {
   return (
-    <Secao id="telas" km="124" rotulo="As duas telas">
+    <Secao id="telas" km="124" rotulo={t("landing.screens.marker")}>
       <h2 className="fr-h2" id="telas-titulo">
-        Uma sala de direção.
+        {t("landing.screens.title")}
         <br />
-        <span className="fr-forte">Um celular por veículo.</span>
+        <span className="fr-forte">{t("landing.screens.titleStrong")}</span>
       </h2>
 
       <div className="fr-telas" style={{ marginTop: "2.5rem" }}>
         <article className="fr-tela" data-reveal>
-          <SlotImagemView slot={SLOTS.painel} rotulo="Captura · painel /dashboard" />
+          <SlotImagemView
+            slot={SLOTS.painel}
+            rotulo={t("landing.screens.panelCapture")}
+          />
           <div className="fr-tela__texto">
-            <span className="fr-eyebrow">Painel da direção</span>
-            <h3 className="fr-h3">O que a direção vê</h3>
+            <span className="fr-eyebrow">
+              {t("landing.screens.panelEyebrow")}
+            </span>
+            <h3 className="fr-h3">{t("landing.screens.panelTitle")}</h3>
             <ul className="fr-marcadores">
               {PAINEL.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}>{t(item)}</li>
               ))}
             </ul>
           </div>
@@ -57,15 +63,15 @@ export function DuasTelas() {
         <article className="fr-tela fr-tela--app" data-reveal>
           <SlotImagemView
             slot={SLOTS.app}
-            rotulo="Captura · app /motorista"
+            rotulo={t("landing.screens.appCapture")}
             className="fr-slot--telefone"
           />
           <div className="fr-tela__texto">
-            <span className="fr-eyebrow">App do motorista</span>
-            <h3 className="fr-h3">O que o motorista vê</h3>
+            <span className="fr-eyebrow">{t("landing.screens.appEyebrow")}</span>
+            <h3 className="fr-h3">{t("landing.screens.appTitle")}</h3>
             <ul className="fr-marcadores">
               {APP.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}>{t(item)}</li>
               ))}
             </ul>
           </div>

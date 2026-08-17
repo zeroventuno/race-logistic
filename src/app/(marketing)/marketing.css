@@ -592,6 +592,39 @@ body:has(.fr-landing) {
   padding: 0.5625rem 1.125rem;
 }
 
+/* O seletor de idioma e o botão de entrar andam juntos na ponta direita.
+   O seletor vem ANTES do botão: quem precisa dele ainda não decidiu entrar, e
+   pôr a troca de língua depois do call to action é oferecê-la tarde demais. */
+.fr-topo__acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+/* O `<select>` nativo herda o desenho do painel, que é escuro. Aqui ele está
+   sobre papel claro (e, no topo da página, sobre a foto), então precisa da
+   moldura da landing — a mesma do botão de contorno, um ponto menor. */
+.fr-topo__acoes select {
+  min-height: 2.25rem;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: transparent;
+  color: inherit;
+  font-family: var(--fr-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-inline: 0.5rem;
+  cursor: pointer;
+}
+
+/* No celular a barra tem logotipo, seletor e botão. Some com a bandeira e o
+   nome da língua fica; três elementos numa barra de 3,25 rem já é o limite. */
+@media (max-width: 26rem) {
+  .fr-topo__acoes select {
+    max-width: 6.5rem;
+  }
+}
+
 .fr-topo__nav {
   display: none;
   gap: 1.5rem;

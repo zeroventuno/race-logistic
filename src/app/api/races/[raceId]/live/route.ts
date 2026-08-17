@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import { NextResponse } from "next/server";
 
 import { isUuid } from "@/app/(director)/_lib/session";
@@ -31,9 +32,10 @@ export async function GET(
   context: { params: Promise<{ raceId: string }> },
 ): Promise<NextResponse> {
   const { raceId } = await context.params;
+  const { t } = await getTranslator();
 
   if (!isUuid(raceId)) {
-    return NextResponse.json({ error: "Prova inválida." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidRace") }, { status: 400 });
   }
 
   const supabase = await supabaseServer();
@@ -41,7 +43,7 @@ export async function GET(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
     return NextResponse.json(
-      { error: "Sua sessão expirou. Entre novamente." },
+      { error: t("errors.sessionExpired") },
       { status: 401 },
     );
   }
@@ -61,7 +63,7 @@ export async function GET(
 
     console.error("[races/live] falha ao montar o estado:", error);
     return NextResponse.json(
-      { error: "Não foi possível montar o estado ao vivo da prova." },
+      { error: t("live.snapshotErrorTitle") },
       { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }

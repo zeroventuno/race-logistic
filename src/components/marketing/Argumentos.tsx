@@ -13,74 +13,67 @@
  */
 
 import { DesvioDiagrama } from "@/components/marketing/DesvioDiagrama";
+import { Enfase } from "@/components/marketing/Enfase";
 import { Secao } from "@/components/marketing/Secao";
+import type { TranslationKey, Translator } from "@/lib/i18n/translate";
 
-const CARTOES = [
+const CARTOES: Array<{
+  indice: string;
+  titulo: TranslationKey;
+  numero: TranslationKey;
+  corpo: TranslationKey;
+}> = [
   {
     indice: "02",
-    titulo: "A janela abertura↔fechamento é medida, não estimada.",
-    numero: "medido",
-    corpo:
-      "O sistema guarda a que horas o carro de abertura passou por cada ponto do percurso. Quando o carro de fechamento chega ao km 42, a janela é a diferença entre dois horários observados — a mesma conta de um tempo intermediário de cronometragem. É esse número que a organização combinou com a autoridade de trânsito: é a passagem do fechamento que devolve a via ao tráfego. Quando ainda não há histórico suficiente, a tela escreve “projetado” e diz o motivo. O diretor nunca precisa adivinhar qual dos dois está lendo.",
+    titulo: "landing.measures.c2Title",
+    numero: "landing.measures.c2Tag",
+    corpo: "landing.measures.c2Body",
   },
   {
     indice: "03",
-    titulo: "Funciona sem sinal.",
-    numero: "40 pontos",
-    corpo:
-      "Nada é enviado antes de ser gravado no aparelho, e nada sai da fila antes do servidor confirmar o recebimento. Num teste de dois minutos sem cobertura, os 40 pontos acumulados chegaram completos, em ordem e sem duplicar assim que o sinal voltou.",
+    titulo: "landing.measures.c3Title",
+    numero: "landing.measures.c3Tag",
+    corpo: "landing.measures.c3Body",
   },
   {
     indice: "04",
-    titulo: "O alerta não falha em silêncio.",
-    numero: "fila local",
-    corpo:
-      "O alerta fura a fila na frente de qualquer ping de GPS e é retentado até haver confirmação do servidor — um pedido de socorro nunca é descartado, mesmo que isso signifique uma fila que não esvazia. E o socorro certo é acionado pela categoria, sem ninguém ter que escolher no meio da urgência: acidente aciona ambulância, problema mecânico aciona o mecânico.",
+    titulo: "landing.measures.c4Title",
+    numero: "landing.measures.c4Tag",
+    corpo: "landing.measures.c4Body",
   },
   {
     indice: "05",
-    titulo: "Qualquer celular vira o GPS do veículo.",
-    numero: "6 caracteres",
-    corpo:
-      "O motorista abre o link, digita o código de 6 caracteres impresso na folha do briefing e o aparelho dele passa a ser o rastreador daquele veículo. Nenhum aplicativo para instalar, nenhum equipamento para comprar, carregar, distribuir e recolher no fim do dia.",
+    titulo: "landing.measures.c5Title",
+    numero: "landing.measures.c5Tag",
+    corpo: "landing.measures.c5Body",
   },
   {
     indice: "06",
-    titulo: "Seis idiomas, um único link.",
-    numero: "6 idiomas",
-    corpo:
-      "O idioma não vai na URL — o aparelho negocia. O mesmo link e o mesmo QR impresso entregam português ao motorista brasileiro, italiano ao italiano e alemão ao austríaco, sem a direção gerenciar nada. Um celular configurado em pt-PT recebe português, não inglês.",
+    titulo: "landing.measures.c6Title",
+    numero: "landing.measures.c6Tag",
+    corpo: "landing.measures.c6Body",
   },
 ];
 
-export function Argumentos() {
+export function Argumentos({ t }: { t: Translator }) {
   return (
-    <Secao id="diferenciais" km="34" rotulo="O que a estrada mede">
+    <Secao id="diferenciais" km="34" rotulo={t("landing.measures.marker")}>
       <h2 className="fr-h2" id="diferenciais-titulo">
-        Seis decisões de engenharia
+        {t("landing.measures.title")}
         <br />
-        <span className="fr-forte">que mudam o que aparece na tela.</span>
+        <span className="fr-forte">{t("landing.measures.titleStrong")}</span>
       </h2>
 
       <div className="fr-destaque" style={{ marginTop: "2.5rem" }} data-reveal>
         <div className="fr-pilha">
           <span className="fr-card__indice">01</span>
           <h3 className="fr-h2" style={{ fontSize: "clamp(1.5rem,3.4vw,2rem)" }}>
-            Distância pela estrada, não em linha reta.
+            {t("landing.measures.leadTitle")}
           </h3>
           <p className="fr-body">
-            Num teste real, uma moto estava a <b>0,05 km</b> em linha reta do
-            ponto de um acidente e a <b>37,3 km</b> pela estrada — na perna de
-            volta do percurso, com a única ligação entre as duas trinta e sete
-            quilômetros adiante. O sistema acionou a ambulância que estava{" "}
-            <b>1,5 km atrás</b>, no mesmo sentido do fluxo da prova.
+            <Enfase texto={t("landing.measures.leadBody1")} />
           </p>
-          <p className="fr-body">
-            Um sistema que compara coordenadas teria mandado a moto, e a moto
-            teria levado o tempo da prova inteira para chegar. Quem já passou do
-            ponto também paga o preço de achar onde retornar e voltar contra o
-            fluxo — e essa assimetria entra na conta.
-          </p>
+          <p className="fr-body">{t("landing.measures.leadBody2")}</p>
         </div>
         <DesvioDiagrama />
       </div>
@@ -94,9 +87,9 @@ export function Argumentos() {
             data-delay={(i % 2) * 60}
           >
             <span className="fr-card__indice">{c.indice}</span>
-            <h3 className="fr-h3">{c.titulo}</h3>
-            <p className="fr-chave fr-num">{c.numero}</p>
-            <p className="fr-body">{c.corpo}</p>
+            <h3 className="fr-h3">{t(c.titulo)}</h3>
+            <p className="fr-chave fr-num">{t(c.numero)}</p>
+            <p className="fr-body">{t(c.corpo)}</p>
           </article>
         ))}
 
@@ -106,11 +99,10 @@ export function Argumentos() {
             os dois: fecha a seção com a frase que o leitor levaria daqui de
             qualquer jeito, e ocupa o vão. */}
         <aside className="fr-card fr-card--resumo" data-reveal data-delay="120">
-          <span className="fr-eyebrow">Resumo</span>
-          <p className="fr-resumo__frase">
-            Seis decisões, um efeito: a direção deixa de perguntar onde está
-            cada carro.
-          </p>
+          <span className="fr-eyebrow">
+            {t("landing.measures.summaryLabel")}
+          </span>
+          <p className="fr-resumo__frase">{t("landing.measures.summary")}</p>
         </aside>
       </div>
     </Secao>

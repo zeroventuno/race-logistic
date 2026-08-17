@@ -11,6 +11,7 @@ import {
   validateWirePoints,
   type TrackUploadResult,
 } from "@/app/(director)/_lib/track-payload";
+import { getTranslator } from "@/lib/i18n/server";
 import { simplifyToBudget } from "@/lib/geo/simplify";
 import { invalidateRouteCache } from "@/lib/route/store";
 import { RouteTrackError, buildRouteTrack } from "@/lib/route/track";
@@ -39,16 +40,17 @@ export async function POST(
   context: { params: Promise<{ raceId: string }> },
 ) {
   const { raceId } = await context.params;
+  const { t } = await getTranslator();
 
   if (!isUuid(raceId)) {
-    return erro(400, "Prova inválida.");
+    return erro(400, t("errors.invalidRace"));
   }
 
   const declarado = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(declarado) && declarado > MAX_BODY_BYTES) {
     return erro(
       413,
-      "O percurso enviado é grande demais. Recorte o arquivo para o trecho da prova.",
+      t("route.uploadTooLarge"),
     );
   }
 
@@ -56,7 +58,7 @@ export async function POST(
 
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
-    return erro(401, "Sua sessão expirou. Entre novamente.");
+    return erro(401, t("errors.sessionExpired"));
   }
 
   const { data: podeEditar, error: permErro } = await supabase.rpc(
@@ -64,14 +66,14 @@ export async function POST(
     { p_race_id: raceId },
   );
   if (permErro || podeEditar !== true) {
-    return erro(403, "Você não tem permissão para alterar esta prova.");
+    return erro(403, t("errors.forbidden"));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return erro(400, "Corpo da requisição ilegível.");
+    return erro(400, t("route.uploadBadBody"));
   }
 
   const payload = body as Record<string, unknown> | null;
@@ -82,13 +84,13 @@ export async function POST(
 
   const validacao = validateWirePoints(payload?.points);
   if (!validacao.ok || !validacao.points) {
-    return erro(400, validacao.error ?? "Pontos do percurso inválidos.");
+    return erro(400, validacao.error ?? t("route.uploadBadPoints"));
   }
 
   if (source === "drawn" && validacao.points.length > MAX_DRAWN_POINTS) {
     return erro(
       400,
-      `Um percurso desenhado à mão não deveria ter mais de ${MAX_DRAWN_POINTS.toLocaleString("pt-BR")} vértices.`,
+      t("route.uploadTooManyVertices", { limit: MAX_DRAWN_POINTS }),
     );
   }
 
@@ -99,7 +101,7 @@ export async function POST(
     construido = buildRouteTrack(fromWirePoints(validacao.points));
   } catch (e) {
     if (e instanceof RouteTrackError) return erro(400, e.message);
-    return erro(400, "Não foi possível montar o percurso com esses pontos.");
+    return erro(400, t("route.uploadBuildFailed"));
   }
 
   const { track, warnings } = construido;
@@ -132,10 +134,7 @@ export async function POST(
     if (error) {
       return erro(
         409,
-        mensagemDeErroDoBanco(
-          error,
-          "Não foi possível liberar o percurso anterior. Recarregue a página e tente de novo.",
-        ),
+        mensagemDeErroDoBanco(error, t, "route.uploadReleaseFailed"),
       );
     }
   }
@@ -169,10 +168,7 @@ export async function POST(
     }
     return erro(
       500,
-      mensagemDeErroDoBanco(
-        insertErro,
-        "Não foi possível gravar o percurso. O percurso anterior continua valendo.",
-      ),
+      mensagemDeErroDoBanco(insertErro, t, "route.uploadInsertFailed"),
     );
   }
 

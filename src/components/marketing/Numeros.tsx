@@ -15,61 +15,68 @@
  * certo, parado.
  */
 
+import { LOCALE_META, type Locale } from "@/lib/i18n/config";
+import type { TranslationKey, Translator } from "@/lib/i18n/translate";
+
 interface Numero {
-  /** Valor final, como aparece no HTML e no `data-conta`. */
-  valor: string;
   bruto: number;
   casas: number;
-  unidade: string;
-  rotulo: string;
-  corpo: string;
+  unidade: TranslationKey;
+  rotulo: TranslationKey;
+  corpo: TranslationKey;
   /** O primeiro é o número da tese — só ele vai em rouge. */
   destaque?: boolean;
 }
 
 const NUMEROS: Numero[] = [
   {
-    valor: "37,3",
     bruto: 37.3,
     casas: 1,
-    unidade: "km",
-    rotulo: "Pela estrada",
-    corpo:
-      "Separavam a moto do acidente que ela parecia estar vendo. Em linha reta eram 50 metros. O sistema mandou a ambulância que estava 1,5 km atrás.",
+    unidade: "landing.numbers.unitKm",
+    rotulo: "landing.numbers.roadLabel",
+    corpo: "landing.numbers.roadBody",
     destaque: true,
   },
   {
-    valor: "40",
     bruto: 40,
     casas: 0,
-    unidade: "pontos",
-    rotulo: "Sem sinal",
-    corpo:
-      "Acumulados em dois minutos sem cobertura chegaram completos, em ordem e sem duplicar quando o sinal voltou.",
+    unidade: "landing.numbers.unitPoints",
+    rotulo: "landing.numbers.offlineLabel",
+    corpo: "landing.numbers.offlineBody",
   },
   {
-    valor: "6",
     bruto: 6,
     casas: 0,
-    unidade: "caracteres",
-    rotulo: "Para entrar",
-    corpo:
-      "É tudo que o motorista digita. Sem conta, sem aplicativo, sem equipamento para comprar e recolher.",
+    unidade: "landing.numbers.unitChars",
+    rotulo: "landing.numbers.codeLabel",
+    corpo: "landing.numbers.codeBody",
   },
 ];
 
-export function Numeros() {
+export function Numeros({ t, locale }: { t: Translator; locale: Locale }) {
+  // O separador decimal é do idioma, não do português: "37.3" em inglês e
+  // alemão, "37,3" em francês. O `data-conta` continua sendo o número cru — a
+  // contagem animada refaz a formatação a cada quadro.
+  const formatar = (n: Numero) =>
+    new Intl.NumberFormat(LOCALE_META[locale]?.intlTag ?? "pt-BR", {
+      minimumFractionDigits: n.casas,
+      maximumFractionDigits: n.casas,
+    }).format(n.bruto);
+
   return (
-    <section className="fr-numeros" aria-label="Números medidos em teste">
+    <section className="fr-numeros" aria-label={t("landing.numbers.aria")}>
       <div className="fr-shell fr-numeros__grade">
         {NUMEROS.map((n, i) => (
           <div
             className="fr-numeros__item"
             key={n.rotulo}
+            data-idioma={locale}
             data-reveal
             style={{ transitionDelay: `${i * 120}ms` }}
           >
-            <span className="fr-eyebrow fr-numeros__rotulo">{n.rotulo}</span>
+            <span className="fr-eyebrow fr-numeros__rotulo">
+              {t(n.rotulo)}
+            </span>
 
             <p className="fr-numeros__valor">
               <span
@@ -77,12 +84,12 @@ export function Numeros() {
                 data-conta={n.bruto}
                 data-casas={n.casas}
               >
-                {n.valor}
+                {formatar(n)}
               </span>
-              <span className="fr-unit">{n.unidade}</span>
+              <span className="fr-unit">{t(n.unidade)}</span>
             </p>
 
-            <p className="fr-numeros__corpo">{n.corpo}</p>
+            <p className="fr-numeros__corpo">{t(n.corpo)}</p>
           </div>
         ))}
       </div>

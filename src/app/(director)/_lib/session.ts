@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
+import { getTranslator } from "@/lib/i18n/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import { supabaseServer } from "@/lib/supabase/server";
@@ -174,8 +175,10 @@ export async function requireEditableRace(raceId: string): Promise<{
 }> {
   const { supabase, user } = await requireUser();
 
+  const { t } = await getTranslator();
+
   if (!isUuid(raceId)) {
-    throw new PermissaoNegadaError("Prova não encontrada.");
+    throw new PermissaoNegadaError(t("errors.raceNotFound"));
   }
 
   const { data, error } = await supabase.rpc("can_edit_race", {
@@ -183,9 +186,7 @@ export async function requireEditableRace(raceId: string): Promise<{
   });
 
   if (error || data !== true) {
-    throw new PermissaoNegadaError(
-      "Você não tem permissão para alterar esta prova.",
-    );
+    throw new PermissaoNegadaError(t("errors.forbidden"));
   }
 
   return { supabase, user };

@@ -366,7 +366,9 @@ function CartaoAlerta({
               <button
                 type="button"
                 disabled={pendente}
-                onClick={() => executar(() => reconhecerAlerta(alerta, usuarioId))}
+                onClick={() =>
+                  executar(() => reconhecerAlerta(alerta, usuarioId, t))
+                }
                 className="min-h-11 flex-1 bg-ink px-4 text-sm font-bold text-surface-0 transition hover:bg-white disabled:opacity-50"
               >
                 {t("alerts.actions.acknowledge")}
@@ -376,7 +378,9 @@ function CartaoAlerta({
             <button
               type="button"
               disabled={pendente}
-              onClick={() => executar(() => resolverAlerta(alerta, usuarioId, nota))}
+              onClick={() =>
+                executar(() => resolverAlerta(alerta, usuarioId, t, nota))
+              }
               className="min-h-11 flex-1 border border-ok/50 bg-ok/10 px-4 text-sm font-semibold text-ok transition hover:bg-ok/20 disabled:opacity-50"
             >
               ✓ {t("alerts.actions.resolve")}
@@ -409,6 +413,7 @@ function CartaoAlerta({
                               motivo: s.reason,
                             },
                             usuarioId,
+                            t,
                           ),
                         )
                       }
@@ -484,7 +489,7 @@ function CartaoAlerta({
                   setConfirmandoCancelar(true);
                   return;
                 }
-                executar(() => cancelarAlerta(alerta, usuarioId, nota));
+                executar(() => cancelarAlerta(alerta, usuarioId, t, nota));
               }}
               onBlur={() => setConfirmandoCancelar(false)}
               className={`min-h-9 border px-2.5 text-xs transition ${

@@ -157,7 +157,7 @@ export default async function CodigosPage({
                 </p>
 
                 <p className="mt-3 text-xs text-ink-muted">
-                  {enderecoMotorista || "(endereço do app)"}
+                  {enderecoMotorista || t("positions.printUrlMissing")}
                 </p>
 
                 <p className="mt-1 text-xs text-ink-faint">

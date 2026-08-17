@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   isColisaoDeCodigo,
   isColisaoDeOrdinal,
-  mensagemDeErroDoBanco,
+  chaveDeErroDoBanco,
 } from "@/app/(director)/_lib/db-errors";
 import {
   formatElevationGain,
@@ -139,30 +139,29 @@ describe("zonedToUtc", () => {
 // Erros do banco
 // ---------------------------------------------------------------------------
 
-describe("mensagemDeErroDoBanco", () => {
+describe("chaveDeErroDoBanco", () => {
   it("explica a colisão de percurso ativo sem falar em índice", () => {
-    const m = mensagemDeErroDoBanco({
+    const r = chaveDeErroDoBanco({
       code: "23505",
       message:
         'duplicate key value violates unique constraint "route_tracks_one_active_per_race"',
     });
-    expect(m).toContain("Recarregue");
-    expect(m).not.toContain("constraint");
+    expect(r).toEqual({ chave: "errors.db.routeRaceConflict" });
   });
 
   it("reconhece os índices de referência única", () => {
     expect(
-      mensagemDeErroDoBanco({
+      chaveDeErroDoBanco({
         code: "23505",
         message: 'violates unique constraint "race_positions_one_lead"',
       }),
-    ).toContain("abertura");
+    ).toEqual({ chave: "errors.db.oneLead" });
     expect(
-      mensagemDeErroDoBanco({
+      chaveDeErroDoBanco({
         code: "23505",
         message: 'violates unique constraint "race_positions_one_sweep"',
       }),
-    ).toContain("fechamento");
+    ).toEqual({ chave: "errors.db.oneSweep" });
   });
 
   it("classifica colisão de código e de ordem para permitir nova tentativa", () => {
@@ -181,16 +180,28 @@ describe("mensagemDeErroDoBanco", () => {
   });
 
   it("traduz violação de RLS em permissão, não em erro técnico", () => {
-    expect(mensagemDeErroDoBanco({ code: "42501", message: "denied" })).toContain(
-      "permissão",
-    );
+    expect(chaveDeErroDoBanco({ code: "42501", message: "denied" })).toEqual({
+      chave: "errors.forbidden",
+    });
   });
 
-  it("cai no texto padrão quando não reconhece o erro", () => {
-    expect(mensagemDeErroDoBanco({ code: "XX000", message: "boom" })).toContain(
-      "Tente de novo",
-    );
-    expect(mensagemDeErroDoBanco(null)).toContain("Tente de novo");
+  it("cai na chave padrão quando não reconhece o erro", () => {
+    expect(chaveDeErroDoBanco({ code: "XX000", message: "boom" })).toEqual({
+      chave: "errors.db.saveFailed",
+    });
+    expect(chaveDeErroDoBanco(null)).toEqual({ chave: "errors.db.saveFailed" });
+  });
+
+  // A frase de gatilho é a exceção declarada: ela vem escrita do SQL e passa
+  // inteira, sem chave. Se alguém trocar isso por uma chave genérica, o
+  // diretor perde a única explicação boa que o banco sabe dar.
+  it("deixa passar a frase escrita por um gatilho do schema", () => {
+    expect(
+      chaveDeErroDoBanco({
+        code: "P0001",
+        message: "Esta posição já transmitiu e não pode ser removida.",
+      }),
+    ).toEqual({ texto: "Esta posição já transmitiu e não pode ser removida." });
   });
 });
 

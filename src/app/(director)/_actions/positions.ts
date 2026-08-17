@@ -5,6 +5,8 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { generateUniqueBindCode } from "@/lib/codes/bind-code";
+import { getTranslator } from "@/lib/i18n/server";
+import type { Translator } from "@/lib/i18n/translate";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ROLE_META, type PositionRole } from "@/lib/types";
 
@@ -46,15 +48,16 @@ const TENTATIVAS = 4;
 // Criação em lote
 // ---------------------------------------------------------------------------
 
-const loteSchema = z.object({
+const loteSchema = (t: Translator) =>
+  z.object({
   role: z.enum(PAPEIS as [PositionRole, ...PositionRole[]], {
-    errorMap: () => ({ message: "Escolha um papel válido." }),
+    errorMap: () => ({ message: t("positions.form.roleInvalid") }),
   }),
   quantidade: z
     .number()
-    .int("A quantidade precisa ser um número inteiro.")
-    .min(1, "Adicione pelo menos 1 posição.")
-    .max(40, "Adicione no máximo 40 posições de uma vez."),
+    .int(t("positions.form.quantityInteger"))
+    .min(1, t("positions.form.quantityMin"))
+    .max(40, t("positions.form.quantityMax")),
 });
 
 export async function adicionarPosicoes(
@@ -62,12 +65,14 @@ export async function adicionarPosicoes(
   role: string,
   quantidade: number,
 ): Promise<ResultadoAcao> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
-    const parsed = loteSchema.safeParse({ role, quantidade });
+    const parsed = loteSchema(t).safeParse({ role, quantidade });
     if (!parsed.success) {
-      return { erro: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+      return { erro: parsed.error.issues[0]?.message ?? t("positions.form.invalidData") };
     }
 
     const { data: existentes, error: erroLeitura } = await supabase
@@ -75,7 +80,7 @@ export async function adicionarPosicoes(
       .select("ordinal, role")
       .eq("race_id", raceId);
 
-    if (erroLeitura) return { erro: mensagemDeErroDoBanco(erroLeitura) };
+    if (erroLeitura) return { erro: mensagemDeErroDoBanco(erroLeitura, t) };
 
     const linhas = (existentes ?? []) as { ordinal: number; role: string }[];
     let proximoOrdinal =
@@ -123,12 +128,10 @@ export async function adicionarPosicoes(
         continue;
       }
 
-      return { erro: mensagemDeErroDoBanco(error) };
+      return { erro: mensagemDeErroDoBanco(error, t) };
     }
 
-    return {
-      erro: "Não foi possível gerar códigos únicos agora. Tente de novo em alguns segundos.",
-    };
+    return { erro: t("positions.form.codeGenerationFailed") };
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };
     throw e;
@@ -190,26 +193,27 @@ async function marcarReferenciaAutomatica(
 // Edição
 // ---------------------------------------------------------------------------
 
-const edicaoSchema = z.object({
+const edicaoSchema = (t: Translator) =>
+  z.object({
   label: z
     .string()
     .trim()
-    .min(1, "A posição precisa de um nome — é o que a direção vai chamar no rádio.")
-    .max(60, "Nome muito longo (máximo 60 caracteres)."),
+    .min(1, t("positions.form.labelRequired"))
+    .max(60, t("positions.form.labelTooLong")),
   role: z.enum(PAPEIS as [PositionRole, ...PositionRole[]], {
-    errorMap: () => ({ message: "Escolha um papel válido." }),
+    errorMap: () => ({ message: t("positions.form.roleInvalid") }),
   }),
   driverName: z
     .string()
     .trim()
-    .max(120, "Nome do motorista muito longo (máximo 120 caracteres)."),
+    .max(120, t("positions.form.driverNameTooLong")),
   driverPhone: z
     .string()
     .trim()
     .max(30, "Telefone muito longo.")
     .refine(
       (v) => v === "" || /^\+?\d{6,20}$/.test(normalizePhone(v)),
-      "Telefone inválido. Use só números, com o código do país se for de fora.",
+      t("positions.form.phoneInvalid"),
     ),
   vehiclePlate: z.string().trim().max(15, "Placa muito longa."),
   isDispatchable: z.boolean(),
@@ -227,12 +231,14 @@ export async function atualizarPosicao(
     isDispatchable: boolean;
   },
 ): Promise<ResultadoAcao> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
-    const parsed = edicaoSchema.safeParse(dados);
+    const parsed = edicaoSchema(t).safeParse(dados);
     if (!parsed.success) {
-      return { erro: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+      return { erro: parsed.error.issues[0]?.message ?? t("positions.form.invalidData") };
     }
 
     const v = parsed.data;
@@ -252,7 +258,7 @@ export async function atualizarPosicao(
       // RLS já barraria, mas errar em silêncio é melhor que confiar.
       .eq("race_id", raceId);
 
-    if (error) return { erro: mensagemDeErroDoBanco(error) };
+    if (error) return { erro: mensagemDeErroDoBanco(error, t) };
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };
     throw e;
@@ -267,6 +273,8 @@ export async function removerPosicao(
   raceId: string,
   positionId: string,
 ): Promise<ResultadoAcao> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
@@ -279,7 +287,7 @@ export async function removerPosicao(
     // O banco recusa apagar posição que já transmitiu ou disparou alerta — o
     // histórico é registro da prova. A mensagem do gatilho já explica isso e
     // atravessa `mensagemDeErroDoBanco` intacta.
-    if (error) return { erro: mensagemDeErroDoBanco(error) };
+    if (error) return { erro: mensagemDeErroDoBanco(error, t) };
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };
     throw e;
@@ -318,7 +326,10 @@ export async function definirReferencia(
 ): Promise<ResultadoAcao> {
   const coluna = tipo === "lead" ? "is_reference_lead" : "is_reference_sweep";
   const oposta = tipo === "lead" ? "is_reference_sweep" : "is_reference_lead";
-  const nome = tipo === "lead" ? "abertura" : "fechamento";
+  const { t } = await getTranslator();
+  const nome = t(
+    tipo === "lead" ? "roles.lead_car.short" : "roles.sweep_car.short",
+  ).toLowerCase();
 
   try {
     const { supabase } = await requireEditableRace(raceId);
@@ -329,7 +340,7 @@ export async function definirReferencia(
       .eq("race_id", raceId)
       .eq(coluna, true);
 
-    if (erroLimpeza) return { erro: mensagemDeErroDoBanco(erroLimpeza) };
+    if (erroLimpeza) return { erro: mensagemDeErroDoBanco(erroLimpeza, t) };
 
     if (positionId) {
       const { error } = await supabase
@@ -340,7 +351,7 @@ export async function definirReferencia(
 
       if (error) {
         return {
-          erro: `${mensagemDeErroDoBanco(error)} Atenção: a prova está sem referência de ${nome} agora — marque uma antes da largada.`,
+          erro: `${mensagemDeErroDoBanco(error, t)} ${t("positions.form.referenceCleared", { reference: nome })}`,
         };
       }
     }
@@ -374,6 +385,8 @@ export async function regerarCodigo(
   raceId: string,
   positionId: string,
 ): Promise<ResultadoAcao> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
@@ -384,17 +397,17 @@ export async function regerarCodigo(
       .eq("race_id", raceId)
       .is("bind_code_revoked_at", null);
 
-    if (erroRevogacao) return { erro: mensagemDeErroDoBanco(erroRevogacao) };
+    if (erroRevogacao) return { erro: mensagemDeErroDoBanco(erroRevogacao, t) };
 
     const { error } = await supabase.rpc("issue_bind_code", {
       p_position_id: positionId,
     });
 
     if (error) {
-      const doServidor = await emitirCodigoNoServidor(raceId, positionId);
+      const doServidor = await emitirCodigoNoServidor(raceId, positionId, t);
       if (doServidor) {
         return {
-          erro: `${doServidor} O código anterior já foi revogado — esta posição está sem código até você tentar de novo.`,
+          erro: `${doServidor} ${t("positions.form.codeRevokedMeanwhile")}`,
         };
       }
     }
@@ -429,12 +442,13 @@ export async function regerarCodigo(
 async function emitirCodigoNoServidor(
   raceId: string,
   positionId: string,
+  t: Translator,
 ): Promise<string | null> {
   let admin;
   try {
     admin = supabaseAdmin();
   } catch {
-    return "Não foi possível emitir um código novo neste servidor.";
+    return t("positions.form.codeIssueUnavailable");
   }
 
   const { data: usados } = await admin
@@ -470,10 +484,10 @@ async function emitirCodigoNoServidor(
       continue;
     }
 
-    return mensagemDeErroDoBanco(error);
+    return mensagemDeErroDoBanco(error, t);
   }
 
-  return "Não foi possível sortear um código livre. Tente de novo em alguns segundos.";
+  return t("positions.form.codeNoneFree");
 }
 
 // ---------------------------------------------------------------------------
@@ -494,6 +508,8 @@ export async function moverPosicao(
   positionId: string,
   direcao: "cima" | "baixo",
 ): Promise<ResultadoAcao> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
@@ -503,12 +519,12 @@ export async function moverPosicao(
       .eq("race_id", raceId)
       .order("ordinal", { ascending: true });
 
-    if (erroLeitura) return { erro: mensagemDeErroDoBanco(erroLeitura) };
+    if (erroLeitura) return { erro: mensagemDeErroDoBanco(erroLeitura, t) };
 
     const lista = (data ?? []) as { id: string; ordinal: number }[];
     const indice = lista.findIndex((p) => p.id === positionId);
     if (indice < 0) {
-      return { erro: "Posição não encontrada. Recarregue a página." };
+      return { erro: t("positions.form.notFound") };
     }
 
     const vizinhoIndice = direcao === "cima" ? indice - 1 : indice + 1;
@@ -523,12 +539,12 @@ export async function moverPosicao(
       supabase.from("race_positions").update({ ordinal }).eq("id", id);
 
     const passo1 = await mover(atual.id, ORDINAL_TEMPORARIO);
-    if (passo1.error) return { erro: mensagemDeErroDoBanco(passo1.error) };
+    if (passo1.error) return { erro: mensagemDeErroDoBanco(passo1.error, t) };
 
     const passo2 = await mover(vizinho.id, ordinalAtual);
     if (passo2.error) {
       await mover(atual.id, ordinalAtual);
-      return { erro: mensagemDeErroDoBanco(passo2.error) };
+      return { erro: mensagemDeErroDoBanco(passo2.error, t) };
     }
 
     const passo3 = await mover(atual.id, ordinalVizinho);
@@ -536,7 +552,7 @@ export async function moverPosicao(
       // Volta os dois para onde estavam, na ordem inversa.
       await mover(vizinho.id, ordinalVizinho);
       await mover(atual.id, ordinalAtual);
-      return { erro: mensagemDeErroDoBanco(passo3.error) };
+      return { erro: mensagemDeErroDoBanco(passo3.error, t) };
     }
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };

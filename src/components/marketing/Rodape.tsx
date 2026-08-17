@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import { BRAND } from "@/brand/mark";
 import { LOCALES, LOCALE_META } from "@/lib/i18n/config";
 import { Assinatura, ChipTrakr } from "@/components/marketing/marca";
+import type { Translator } from "@/lib/i18n/translate";
 
-export function Rodape() {
+export function Rodape({ t }: { t: Translator }) {
   return (
     <footer className="fr-rodape">
       <div className="fr-shell fr-rodape__grade">
@@ -14,12 +14,12 @@ export function Rodape() {
           <Assinatura size={34} color="#f6f5f2" />
           <ChipTrakr />
           <p className="fr-body" style={{ maxWidth: "34ch" }}>
-            {BRAND.tagline["pt-BR"]} para ciclismo de estrada.
+            {t("landing.footer.tagline")}
           </p>
         </div>
 
         <div className="fr-pilha">
-          <span className="fr-eyebrow">O app do motorista fala</span>
+          <span className="fr-eyebrow">{t("landing.footer.languages")}</span>
           <ul
             className="fr-idiomas"
             style={{ listStyle: "none", padding: 0, margin: 0 }}
@@ -33,15 +33,15 @@ export function Rodape() {
         </div>
 
         <div className="fr-pilha">
-          <span className="fr-eyebrow">Entrar</span>
+          <span className="fr-eyebrow">{t("landing.footer.enter")}</span>
           <Link className="fr-topo__link" href="/login">
-            Direção de prova
+            {t("landing.footer.director")}
           </Link>
           <Link className="fr-topo__link" href="/cadastro">
-            Criar conta
+            {t("landing.footer.signup")}
           </Link>
           <Link className="fr-topo__link" href="/motorista">
-            Motorista com código
+            {t("landing.footer.driver")}
           </Link>
         </div>
       </div>
@@ -50,7 +50,7 @@ export function Rodape() {
           quarta coluna de navegação. Ele fecha a página. */}
       <div className="fr-shell fr-rodape__creditos">
         <p>
-          Flamme Rouge · uma ferramenta{" "}
+          {t("meta.appName")} · {t("landing.footer.credits")}{" "}
           <a href="https://zeroventuno.com" target="_blank" rel="noopener noreferrer">
             Ventuno
           </a>{" "}

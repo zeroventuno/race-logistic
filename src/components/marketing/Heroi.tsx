@@ -38,10 +38,11 @@ import Link from "next/link";
 import { CenaPave } from "@/components/marketing/CenaPave";
 import { Assinatura } from "@/components/marketing/marca";
 import { SLOTS, type SlotVideo } from "@/components/marketing/midia";
+import type { Translator } from "@/lib/i18n/translate";
 
 const HEROI: SlotVideo = SLOTS.heroi;
 
-export function Heroi() {
+export function Heroi({ t }: { t: Translator }) {
   const temVideo = HEROI.fontes !== null && HEROI.fontes.length > 0;
   const temFoto = !temVideo && HEROI.posterSet !== null;
 
@@ -120,30 +121,27 @@ export function Heroi() {
           ) : (
             <p className="fr-hero__olho" data-reveal>
               <span className="fr-hero__risco" aria-hidden="true" />
-              Direção de prova ao vivo
+              {t("meta.tagline")}
             </p>
           )}
 
           <h1 className="fr-h1 fr-hero__titulo" data-reveal data-delay="80">
-            Direção de prova ao vivo,
+            {t("landing.hero.title")}
             <br />
-            <span className="fr-forte">medida pela estrada.</span>
+            <span className="fr-forte">{t("landing.hero.titleStrong")}</span>
           </h1>
 
           <p className="fr-lead fr-hero__lead" data-reveal data-delay="180">
-            Cada veículo de apoio no percurso em tempo real. A janela entre
-            abertura e fechamento medida como um tempo intermediário de
-            cronometragem, não estimada. E o socorro escolhido pela distância
-            que o carro vai realmente percorrer.
+            {t("landing.hero.lead")}
           </p>
 
           <div className="fr-hero__acoes" data-reveal data-delay="280">
             <Link href="/dashboard" className="fr-btn fr-btn--rouge">
-              Abrir o painel da direção
+              {t("landing.hero.ctaPanel")}
               <span aria-hidden="true">→</span>
             </Link>
             <Link href="/motorista" className="fr-btn fr-btn--linha">
-              Sou motorista, tenho um código
+              {t("landing.hero.ctaDriver")}
             </Link>
           </div>
         </div>
@@ -151,11 +149,10 @@ export function Heroi() {
         {/* Rodapé do quadro: o porquê do nome, e o convite para rolar. */}
         <div className="fr-hero__base">
           <p className="fr-hero__nota">
-            A flamme rouge marca o último quilômetro. Aqui ela marca o número
-            que a direção precisa: quanto falta, medido, não estimado.
+            {t("landing.hero.note")}
           </p>
           <span className="fr-hero__percorra" aria-hidden="true">
-            Percorra
+            {t("landing.hero.scroll")}
             <span className="fr-hero__seta">↓</span>
           </span>
         </div>

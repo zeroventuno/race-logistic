@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
 import { Movimento } from "@/components/marketing/Movimento";
+import { DEFAULT_TIMEZONE } from "@/app/(director)/_lib/timezone";
+import { I18nProvider } from "@/lib/i18n/client";
+import { getLocale, getTranslator } from "@/lib/i18n/server";
 
 import "./marketing.css";
 
@@ -12,27 +15,40 @@ import "./marketing.css";
  * `marketing.css` trocam isso apenas onde esta casca estiver montada. Nenhum
  * arquivo compartilhado precisou ser editado — o painel e o app do motorista
  * continuam exatamente como estavam.
+ *
+ * O `I18nProvider` daqui não serve às seções — elas são componentes de
+ * servidor e recebem o tradutor por propriedade. Ele existe para o seletor de
+ * idioma do cabeçalho, que é a única peça de cliente da página. O fuso é o
+ * padrão porque nada aqui mostra hora.
  */
-export const metadata: Metadata = {
-  title: "Flamme Rouge — direção de prova ao vivo para ciclismo de estrada",
-  description:
-    "Posição de cada veículo de apoio medida pela estrada, janela entre carro de abertura e carro de fechamento medida como tempo intermediário, e alerta que aciona o socorro certo por categoria. O GPS é o celular do motorista.",
-  openGraph: {
-    title: "Flamme Rouge — direção de prova ao vivo",
-    description:
-      "Num teste real, uma moto estava a 0,05 km em linha reta e 37,3 km pela estrada de um acidente. O sistema acionou a ambulância que estava 1,5 km atrás.",
-    type: "website",
-    locale: "pt_BR",
-  },
-};
 
-export default function MarketingLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, t } = await getTranslator();
+
+  return {
+    title: t("landing.meta.title"),
+    description: t("landing.meta.description"),
+    openGraph: {
+      title: t("landing.meta.ogTitle"),
+      description: t("landing.meta.ogDescription"),
+      type: "website",
+      // O Open Graph quer `pt_BR`, não `pt-BR`.
+      locale: locale.replace("-", "_"),
+    },
+  };
+}
+
+export default async function MarketingLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+
   return (
-    <div className="fr-landing">
-      {children}
-      <Movimento />
-    </div>
+    <I18nProvider locale={locale} timeZone={DEFAULT_TIMEZONE}>
+      <div className="fr-landing">
+        {children}
+        <Movimento />
+      </div>
+    </I18nProvider>
   );
 }

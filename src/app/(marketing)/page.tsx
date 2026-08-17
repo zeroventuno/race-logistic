@@ -21,24 +21,37 @@ import { Heroi } from "@/components/marketing/Heroi";
 import { Numeros } from "@/components/marketing/Numeros";
 import { Problema } from "@/components/marketing/Problema";
 import { Rodape } from "@/components/marketing/Rodape";
+import { getTranslator } from "@/lib/i18n/server";
 
-export default function Home() {
+/**
+ * O TRADUTOR DESCE POR PROPRIEDADE, e não por contexto.
+ *
+ * Todas as seções abaixo são componentes de servidor: o texto delas é HTML
+ * antes de o navegador existir, e nenhuma precisa de JavaScript para aparecer.
+ * Transformá-las em componentes de cliente só para poder chamar `useT()`
+ * mandaria a landing inteira — a página que mais precisa carregar rápido — para
+ * dentro do pacote do navegador. Pegar o tradutor uma vez aqui e passá-lo
+ * adiante custa uma propriedade por seção e mantém tudo no servidor.
+ */
+export default async function Home() {
+  const { locale, t } = await getTranslator();
+
   return (
     <>
       <a href="#conteudo" className="fr-sr">
-        Pular para o conteúdo
+        {t("landing.skip")}
       </a>
-      <Cabecalho />
+      <Cabecalho t={t} />
       <main id="conteudo">
-        <Heroi />
-        <Numeros />
-        <Problema />
-        <Argumentos />
-        <ComoFunciona />
-        <DuasTelas />
-        <Fecho />
+        <Heroi t={t} />
+        <Numeros t={t} locale={locale} />
+        <Problema t={t} />
+        <Argumentos t={t} />
+        <ComoFunciona t={t} />
+        <DuasTelas t={t} />
+        <Fecho t={t} />
       </main>
-      <Rodape />
+      <Rodape t={t} />
     </>
   );
 }

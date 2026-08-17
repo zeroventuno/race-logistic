@@ -161,6 +161,7 @@ export function BarraAlertaCritico({
                         motivo: primeiraSugestao.reason,
                       },
                       usuarioId,
+                      t,
                     );
                     if (r.erro) setErro(r.erro);
                     aoAgir();
@@ -180,7 +181,7 @@ export function BarraAlertaCritico({
               onClick={() => {
                 setErro(null);
                 iniciar(async () => {
-                  const r = await reconhecerAlerta(alerta, usuarioId);
+                  const r = await reconhecerAlerta(alerta, usuarioId, t);
                   if (r.erro) setErro(r.erro);
                   aoAgir();
                 });

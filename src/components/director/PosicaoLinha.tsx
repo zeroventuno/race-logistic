@@ -176,7 +176,7 @@ export function PosicaoLinha({
             <button
               type="button"
               onClick={copiarCodigo}
-              title="Copiar código"
+              title={t("positions.copyCode")}
               className="tnum font-mono text-xl font-semibold tracking-wider text-ink transition hover:text-info"
             >
               {formatBindCode(posicao.bind_code)}

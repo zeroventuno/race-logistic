@@ -47,7 +47,7 @@ export default async function AoVivoPage({
   if (!snapshot) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <Aviso tone="warn" titulo="Não foi possível montar o painel ao vivo">
+        <Aviso tone="warn" titulo={t("live.snapshotErrorTitle")}>
           {t("live.snapshotErrorBody")}
         </Aviso>
       </main>

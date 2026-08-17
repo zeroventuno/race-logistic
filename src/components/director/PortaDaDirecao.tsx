@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Creditos } from "@/components/Creditos";
 import { I18nProvider } from "@/lib/i18n/client";
+import { createTranslator } from "@/lib/i18n/translate";
 import { DEFAULT_TIMEZONE } from "@/app/(director)/_lib/timezone";
 import type { Locale } from "@/lib/i18n/config";
 import { Letreiro } from "@/components/Letreiro";
@@ -30,10 +31,8 @@ import type { Tema } from "@/lib/tema";
  */
 
 export interface PortaDaDirecaoProps {
-  /** Título da tela: "Painel da direção" ou "Criar conta de direção". */
-  titulo: string;
-  /** Uma frase explicando o que acontece depois de entrar. */
-  descricao: string;
+  /** Entrar ou criar conta. Decide o título e a frase de apoio. */
+  modo: "login" | "cadastro";
   tema: Tema;
   /**
    * Idioma negociado no servidor.
@@ -50,12 +49,17 @@ export interface PortaDaDirecaoProps {
 }
 
 export function PortaDaDirecao({
-  titulo,
-  descricao,
+  modo,
   tema,
   locale,
   children,
 }: PortaDaDirecaoProps) {
+  // A casca é componente de servidor mas não recebe o tradutor de fora: ela é
+  // montada por duas páginas diferentes e já precisa do idioma para o provedor.
+  // Construir o tradutor a partir dele evita passar a mesma coisa duas vezes.
+  const t = createTranslator(locale);
+  const ehCadastro = modo === "cadastro";
+
   return (
     <I18nProvider locale={locale} timeZone={DEFAULT_TIMEZONE}>
     <main className="grid min-h-dvh lg:grid-cols-[1.05fr_0.95fr]">
@@ -95,19 +99,19 @@ export function PortaDaDirecao({
 
         <div className="relative max-w-[29rem]">
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.26em] text-[rgb(246_245_242/0.5)]">
-            Área da direção de prova
+            {t("director.areaOverline")}
           </p>
           <p className="mt-4 font-[family-name:var(--font-wordmark)] text-[2.75rem] font-light leading-[1.04] text-[#f6f5f2]">
-            Prepare a prova antes.
+            {t("auth.gateTitle")}
             <br />
-            <span className="font-bold">No dia, só acompanhe.</span>
+            <span className="font-bold">{t("auth.gateTitleStrong")}</span>
           </p>
         </div>
 
         <p className="relative flex flex-wrap gap-x-7 gap-y-2 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-[rgb(246_245_242/0.44)]">
-          <span>Percurso</span>
-          <span>Posições de apoio</span>
-          <span>Códigos de vínculo</span>
+          <span>{t("race.route")}</span>
+          <span>{t("race.positions")}</span>
+          <span>{t("auth.gateCodes")}</span>
         </p>
       </div>
 
@@ -117,7 +121,7 @@ export function PortaDaDirecao({
             <Link
               href="/"
               className="text-ink-faint transition hover:text-ink"
-              aria-label="Flamme Rouge, início"
+              aria-label={t("landing.nav.home")}
             >
               <Letreiro tom="rouge" size={13} />
             </Link>
@@ -128,10 +132,10 @@ export function PortaDaDirecao({
           </div>
 
           <h1 className="titulo mt-7 text-[2.75rem] font-bold leading-[1.02] text-ink">
-            {titulo}
+            {ehCadastro ? t("auth.signUpLink") : t("auth.loginTitle")}
           </h1>
           <p className="mt-3 max-w-[21rem] text-[0.96875rem] leading-relaxed text-ink-muted">
-            {descricao}
+            {ehCadastro ? t("auth.signupSubtitle") : t("auth.loginSubtitle")}
           </p>
 
           <div className="mt-8">{children}</div>

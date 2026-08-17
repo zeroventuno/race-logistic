@@ -29,7 +29,7 @@ export function HistoricoAlerta({ alertId }: { alertId: string }) {
   useEffect(() => {
     let ativo = true;
 
-    void carregarHistorico(alertId).then((r) => {
+    void carregarHistorico(alertId, t).then((r) => {
       if (!ativo) return;
       setEventos(r.eventos);
       setErro(r.erro ?? null);

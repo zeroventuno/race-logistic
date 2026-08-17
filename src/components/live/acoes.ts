@@ -1,6 +1,7 @@
 "use client";
 
 import { mensagemDeErroDoBanco } from "@/app/(director)/_lib/db-errors";
+import type { Translator } from "@/lib/i18n/translate";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 import type { LiveAlertView } from "./protocol";
@@ -43,13 +44,14 @@ const OK: ResultadoAcao = {};
 export async function reconhecerAlerta(
   alerta: LiveAlertView,
   usuarioId: string,
+  t: Translator,
 ): Promise<ResultadoAcao> {
   const patch: Record<string, unknown> = { acknowledged_by: usuarioId };
 
   // Só o alerta ainda `open` avança de status. Ver armadilha 2.
   if (alerta.status === "open") patch.status = "acknowledged";
 
-  const resultado = await atualizar(alerta.alertId, patch);
+  const resultado = await atualizar(alerta.alertId, t, patch);
   if (resultado.erro) return resultado;
 
   await registrarEvento(alerta.alertId, "acknowledged_by_director", {
@@ -70,10 +72,11 @@ export async function acionarApoio(
   alerta: LiveAlertView,
   destino: { positionId: string; label: string; motivo: string | null },
   usuarioId: string,
+  t: Translator,
 ): Promise<ResultadoAcao> {
   const anterior = alerta.dispatch?.positionId ?? null;
 
-  const resultado = await atualizar(alerta.alertId, {
+  const resultado = await atualizar(alerta.alertId, t, {
     dispatched_position_id: destino.positionId,
     dispatched_at: new Date().toISOString(),
     dispatch_mode: "manual",
@@ -107,9 +110,10 @@ export async function acionarApoio(
 export async function resolverAlerta(
   alerta: LiveAlertView,
   usuarioId: string,
+  t: Translator,
   nota?: string | null,
 ): Promise<ResultadoAcao> {
-  const resultado = await atualizar(alerta.alertId, {
+  const resultado = await atualizar(alerta.alertId, t, {
     status: "resolved",
     resolved_by: usuarioId,
     acknowledged_by: alerta.acknowledgedBy ?? usuarioId,
@@ -135,9 +139,10 @@ export async function resolverAlerta(
 export async function cancelarAlerta(
   alerta: LiveAlertView,
   usuarioId: string,
+  t: Translator,
   nota?: string | null,
 ): Promise<ResultadoAcao> {
-  const resultado = await atualizar(alerta.alertId, {
+  const resultado = await atualizar(alerta.alertId, t, {
     status: "cancelled",
     acknowledged_by: alerta.acknowledgedBy ?? usuarioId,
     resolution_note: nota?.trim() ? nota.trim() : null,
@@ -154,6 +159,7 @@ export async function cancelarAlerta(
 
 async function atualizar(
   alertId: string,
+  t: Translator,
   patch: Record<string, unknown>,
 ): Promise<ResultadoAcao> {
   try {
@@ -163,16 +169,13 @@ async function atualizar(
       .eq("id", alertId)
       .select("id");
 
-    if (error) return { erro: mensagemDeErroDoBanco(error) };
+    if (error) return { erro: mensagemDeErroDoBanco(error, t) };
 
     // Zero linhas com RLS ligado significa uma de duas coisas, e as duas pedem
     // a mesma ação: o alerta já está num estado final, ou esta pessoa perdeu a
     // permissão de editar a prova.
     if (!data || data.length === 0) {
-      return {
-        erro:
-          "Nada mudou: o alerta pode já ter sido encerrado por outra pessoa, ou você não tem mais permissão nesta prova. Recarregue a página.",
-      };
+      return { erro: t("errors.noChange") };
     }
 
     return OK;
@@ -217,6 +220,7 @@ export interface EventoDeAlerta {
 /** Histórico completo de um alerta. Fora do caminho quente: só sob demanda. */
 export async function carregarHistorico(
   alertId: string,
+  t: Translator,
 ): Promise<{ eventos: EventoDeAlerta[]; erro?: string }> {
   try {
     const { data, error } = await supabaseBrowser()
@@ -226,7 +230,7 @@ export async function carregarHistorico(
       .order("created_at", { ascending: true })
       .limit(200);
 
-    if (error) return { eventos: [], erro: mensagemDeErroDoBanco(error) };
+    if (error) return { eventos: [], erro: mensagemDeErroDoBanco(error, t) };
 
     return {
       eventos: (data ?? []).map((row) => ({

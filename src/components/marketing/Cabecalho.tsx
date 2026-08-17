@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+import { SeletorIdioma } from "@/components/SeletorIdioma";
 import { Assinatura } from "@/components/marketing/marca";
+import type { Translator } from "@/lib/i18n/translate";
 
 /**
  * O cabeçalho, a barra de progresso e a placa de quilometragem.
@@ -15,7 +17,7 @@ import { Assinatura } from "@/components/marketing/marca";
  * placa em `opacity: 0`, ambas `pointer-events: none`. Nenhuma das duas
  * carrega informação que não esteja também no corpo da página.
  */
-export function Cabecalho() {
+export function Cabecalho({ t }: { t: Translator }) {
   return (
     <>
       <div className="fr-progresso" data-progresso aria-hidden="true" />
@@ -25,26 +27,31 @@ export function Cabecalho() {
           <Link
             href="/"
             className="fr-assinatura"
-            aria-label="Flamme Rouge, início"
+            aria-label={t("landing.nav.home")}
           >
             <Assinatura size={22} linha />
           </Link>
 
-          <nav className="fr-topo__nav" aria-label="Seções da página">
+          <nav className="fr-topo__nav" aria-label={t("landing.nav.aria")}>
             <a className="fr-topo__link" href="#problema">
-              O problema
+              {t("landing.nav.problem")}
             </a>
             <a className="fr-topo__link" href="#diferenciais">
-              O que a estrada mede
+              {t("landing.nav.measures")}
             </a>
             <a className="fr-topo__link" href="#telas">
-              As duas telas
+              {t("landing.nav.screens")}
             </a>
           </nav>
 
-          <Link href="/login" className="fr-btn fr-btn--rouge fr-btn--sm">
-            Entrar
-          </Link>
+          <div className="fr-topo__acoes">
+            {/* A landing é a primeira porta: quem chega de fora e não lê
+                português precisa poder trocar antes de decidir se entra. */}
+            <SeletorIdioma rotulo={t("common.language")} />
+            <Link href="/login" className="fr-btn fr-btn--rouge fr-btn--sm">
+              {t("landing.footer.enter")}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -53,7 +60,7 @@ export function Cabecalho() {
       <div className="fr-placa" data-placa data-visivel="nao" aria-hidden="true">
         <span className="fr-placa__ponto" />
         <span className="fr-placa__texto" data-placa-texto>
-          KM 000 — LARGADA
+          {t("landing.nav.markerStart")}
         </span>
       </div>
     </>

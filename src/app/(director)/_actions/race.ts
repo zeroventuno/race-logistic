@@ -5,6 +5,9 @@ import { BASEMAP_PADRAO, basemapsDisponiveis } from "@/lib/map/basemaps";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { getTranslator } from "@/lib/i18n/server";
+import type { Translator } from "@/lib/i18n/translate";
+
 import { mensagemDeErroDoBanco } from "../_lib/db-errors";
 import {
   PermissaoNegadaError,
@@ -20,53 +23,54 @@ export interface ProvaFormState {
   ok?: boolean;
 }
 
-const provaSchema = z
+const provaSchema = (t: Translator) =>
+  z
   .object({
     nome: z
       .string()
       .trim()
-      .min(1, "Dê um nome à prova — é como você vai reconhecê-la na lista.")
-      .max(200, "Nome muito longo (máximo 200 caracteres)."),
+      .min(1, t("race.form.nameRequired"))
+      .max(200, t("race.form.nameTooLong")),
     local: z
       .string()
       .trim()
-      .max(200, "Local muito longo (máximo 200 caracteres).")
+      .max(200, t("race.form.locationTooLong"))
       .optional(),
     data: z.string().trim(),
     hora: z.string().trim(),
     fuso: z
       .string()
       .trim()
-      .min(1, "Escolha o fuso horário do local da prova.")
-      .refine(isValidTimeZone, "Fuso horário desconhecido."),
+      .min(1, t("race.form.timezoneRequired"))
+      .refine(isValidTimeZone, t("race.form.timezoneUnknown")),
     // Um circuito percorrido 3 vezes é uma prova de 3 × o traçado. Sem isto o
     // sistema acha que a prova acaba no fim da primeira volta.
     voltas: z
-      .number({ invalid_type_error: "Informe o número de voltas." })
-      .int("O número de voltas precisa ser inteiro.")
+      .number({ invalid_type_error: t("race.form.lapsRequired") })
+      .int(t("race.form.lapsInteger"))
       .min(1, "A prova tem pelo menos 1 volta.")
-      .max(50, "No máximo 50 voltas."),
+      .max(50, t("race.form.lapsMax")),
     janelaAlvo: z
       .number({ invalid_type_error: "Informe a janela alvo em minutos." })
-      .int("A janela alvo precisa ser um número inteiro de minutos.")
+      .int(t("race.form.targetInteger"))
       .min(1, "A janela alvo precisa ser de pelo menos 1 minuto.")
-      .max(600, "A janela alvo não pode passar de 600 minutos (10 horas)."),
+      .max(600, t("race.form.targetMax")),
     janelaMin: z
       .number()
-      .int("O limite mínimo precisa ser um número inteiro de minutos.")
-      .min(0, "O limite mínimo não pode ser negativo.")
-      .max(600, "O limite mínimo não pode passar de 600 minutos.")
+      .int(t("race.form.minInteger"))
+      .min(0, t("race.form.minNegative"))
+      .max(600, t("race.form.minMax"))
       .nullable(),
     mapa: z
       .string()
       .refine((v) => basemapsDisponiveis().some((b) => b.id === v), {
-        message: "Escolha um dos mapas disponíveis.",
+        message: t("race.form.basemapInvalid"),
       }),
     janelaMax: z
       .number()
-      .int("O limite máximo precisa ser um número inteiro de minutos.")
-      .min(1, "O limite máximo precisa ser de pelo menos 1 minuto.")
-      .max(600, "O limite máximo não pode passar de 600 minutos.")
+      .int(t("race.form.maxInteger"))
+      .min(1, t("race.form.maxMin"))
+      .max(600, t("race.form.maxMax"))
       .nullable(),
   })
   // A data e a hora andam juntas: só uma das duas produz uma largada que o
@@ -76,35 +80,35 @@ const provaSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["hora"],
-        message: "Informe também o horário da largada.",
+        message: t("race.form.timeRequired"),
       });
     }
     if (v.hora && !v.data) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["data"],
-        message: "Informe também a data da largada.",
+        message: t("race.form.dateRequired"),
       });
     }
     if (v.janelaMin !== null && v.janelaMax !== null && v.janelaMin >= v.janelaMax) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["janelaMax"],
-        message: `O limite máximo precisa ser maior que o mínimo (${v.janelaMin} min).`,
+        message: t("race.form.maxBelowMin", { min: v.janelaMin ?? 0 }),
       });
     }
     if (v.janelaMin !== null && v.janelaMin > v.janelaAlvo) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["janelaMin"],
-        message: `O mínimo não pode ser maior que a janela alvo (${v.janelaAlvo} min).`,
+        message: t("race.form.minAboveTarget", { target: v.janelaAlvo }),
       });
     }
     if (v.janelaMax !== null && v.janelaMax < v.janelaAlvo) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["janelaMax"],
-        message: `O máximo não pode ser menor que a janela alvo (${v.janelaAlvo} min).`,
+        message: t("race.form.maxBelowTarget", { target: v.janelaAlvo }),
       });
     }
   });
@@ -153,8 +157,9 @@ export async function criarProva(
   formData: FormData,
 ): Promise<ProvaFormState> {
   const { supabase, user } = await requireUser();
+  const { t } = await getTranslator();
 
-  const parsed = provaSchema.safeParse(lerFormulario(formData));
+  const parsed = provaSchema(t).safeParse(lerFormulario(formData));
   if (!parsed.success) return { campos: camposDeZod(parsed.error) };
 
   const v = parsed.data;
@@ -162,7 +167,7 @@ export async function criarProva(
 
   if (v.data && v.hora && !largada) {
     return {
-      campos: { data: "Data ou horário inválidos. Confira os dois campos." },
+      campos: { data: t("race.form.dateTimeInvalid") },
     };
   }
 
@@ -184,7 +189,7 @@ export async function criarProva(
     .single();
 
   if (error || !data) {
-    return { erro: mensagemDeErroDoBanco(error) };
+    return { erro: mensagemDeErroDoBanco(error, t) };
   }
 
   revalidatePath("/dashboard");
@@ -198,11 +203,12 @@ export async function atualizarProva(
   formData: FormData,
 ): Promise<ProvaFormState> {
   const raceId = String(formData.get("raceId") ?? "");
+  const { t } = await getTranslator();
 
   try {
     const { supabase } = await requireEditableRace(raceId);
 
-    const parsed = provaSchema.safeParse(lerFormulario(formData));
+    const parsed = provaSchema(t).safeParse(lerFormulario(formData));
     if (!parsed.success) return { campos: camposDeZod(parsed.error) };
 
     const v = parsed.data;
@@ -210,7 +216,7 @@ export async function atualizarProva(
 
     if (v.data && v.hora && !largada) {
       return {
-        campos: { data: "Data ou horário inválidos. Confira os dois campos." },
+        campos: { data: t("race.form.dateTimeInvalid") },
       };
     }
 
@@ -229,7 +235,7 @@ export async function atualizarProva(
       })
       .eq("id", raceId);
 
-    if (error) return { erro: mensagemDeErroDoBanco(error) };
+    if (error) return { erro: mensagemDeErroDoBanco(error, t) };
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };
     throw e;
@@ -252,6 +258,8 @@ export async function definirStatusDaProva(
   raceId: string,
   status: "draft" | "armed",
 ): Promise<{ erro?: string }> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
@@ -261,7 +269,7 @@ export async function definirStatusDaProva(
       .eq("id", raceId)
       .in("status", ["draft", "armed"]);
 
-    if (error) return { erro: mensagemDeErroDoBanco(error) };
+    if (error) return { erro: mensagemDeErroDoBanco(error, t) };
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };
     throw e;

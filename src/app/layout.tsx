@@ -1,14 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 
+import { getLocale, getTranslator } from "@/lib/i18n/server";
 import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Flamme Rouge — direção de prova",
-  description:
-    "Gestão logística ao vivo para provas de ciclismo: posições de apoio, janela abertura↔fechamento e alertas.",
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { ...METADATA_BASE, title: t("landing.meta.title"), description: t("landing.meta.description") };
+}
+
+const METADATA_BASE: Metadata = {
   manifest: "/manifest.webmanifest",
   // SVG primeiro: a bandeirola é geometria sólida e fica nítida em qualquer
   // densidade de tela. O PNG de 32 px é a rede para navegadores que ainda não
@@ -46,8 +49,14 @@ export default async function RootLayout({
   // de direção às escuras, e um sintoma clássico de app mal terminado.
   const tema = temaDoCookie((await cookies()).get(TEMA_COOKIE)?.value);
 
+  // O `lang` acompanha o idioma negociado, e não é detalhe de conformidade: é
+  // ele que faz o leitor de tela pronunciar o texto italiano com voz italiana
+  // em vez de soletrar italiano com fonemas portugueses. Também é o que separa
+  // as seis versões da landing para um buscador.
+  const locale = await getLocale();
+
   return (
-    <html lang="pt-BR" data-theme={tema === "system" ? undefined : tema}>
+    <html lang={locale} data-theme={tema === "system" ? undefined : tema}>
       <body className="min-h-full antialiased">{children}</body>
     </html>
   );

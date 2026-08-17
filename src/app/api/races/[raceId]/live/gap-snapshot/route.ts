@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import { NextResponse } from "next/server";
 
 import { isUuid } from "@/app/(director)/_lib/session";
@@ -51,16 +52,20 @@ export async function POST(
   context: { params: Promise<{ raceId: string }> },
 ): Promise<NextResponse> {
   const { raceId } = await context.params;
+  const { t } = await getTranslator();
 
   if (!isUuid(raceId)) {
-    return NextResponse.json({ error: "Prova inválida." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidRace") }, { status: 400 });
   }
 
   const supabase = await supabaseServer();
 
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
-    return NextResponse.json({ error: "Sua sessão expirou." }, { status: 401 });
+    return NextResponse.json(
+      { error: t("errors.sessionExpired") },
+      { status: 401 },
+    );
   }
 
   const { data: podeEditar, error: permErro } = await supabase.rpc("can_edit_race", {
@@ -69,7 +74,7 @@ export async function POST(
 
   if (permErro || podeEditar !== true) {
     return NextResponse.json(
-      { error: "Você não tem permissão para registrar o histórico desta prova." },
+      { error: t("errors.forbidden") },
       { status: 403 },
     );
   }
@@ -129,7 +134,7 @@ export async function POST(
     }
     console.error("[races/live/gap-snapshot] falha:", error);
     return NextResponse.json(
-      { error: "Não foi possível gravar o histórico da janela." },
+      { error: t("errors.db.saveFailed") },
       { status: 500 },
     );
   }

@@ -174,14 +174,10 @@ export function PosicoesPainel({
             {t("positions.emptyTitle")}
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-ink-muted">
-            Uma posição é um papel na prova (&ldquo;Moto 3&rdquo;,
-            &ldquo;Ambulância 1&rdquo;), não um aparelho. O celular é vinculado
-            depois, pelo código — e pode ser trocado no meio da prova se a
-            bateria morrer, sem perder o histórico.
+            {t("positions.emptyBody")}
           </p>
           <p className="mt-2 max-w-2xl text-sm text-ink-muted">
-            Comece pelo carro de abertura e pelo de fechamento: são eles que
-            definem a janela que a direção acompanha.
+            {t("positions.emptyStart")}
           </p>
         </Cartao>
       ) : (

@@ -167,15 +167,17 @@ export function PercursoEditor({
           analisado.segments,
           melhor,
           analisado.warnings,
+          t,
+          locale,
         ),
       );
     } catch (e) {
       setPreview(null);
-      setErroArquivo(mensagemDeErroDeArquivo(e));
+      setErroArquivo(mensagemDeErroDeArquivo(e, t));
     } finally {
       setLendo(false);
     }
-  }, []);
+  }, [t, locale]);
 
   const escolherSegmento = useCallback(
     (indice: number) => {
@@ -188,14 +190,16 @@ export function PercursoEditor({
             atual.segmentos,
             indice,
             atual.avisosDoParse,
+            t,
+            locale,
           );
         } catch (e) {
-          setErroArquivo(mensagemDeErroDeArquivo(e));
+          setErroArquivo(mensagemDeErroDeArquivo(e, t));
           return atual;
         }
       });
     },
-    [],
+    [t, locale],
   );
 
   // ------------------------------------------------------------------------
@@ -312,8 +316,7 @@ export function PercursoEditor({
 
         if (!resposta.ok || !dados || dados.error) {
           setErroSalvar(
-            dados?.error ??
-              "Não foi possível gravar o percurso. Verifique a conexão e tente de novo.",
+            dados?.error ?? t("route.saveFailed"),
           );
           return;
         }
@@ -326,9 +329,7 @@ export function PercursoEditor({
         setModo("resumo");
         router.refresh();
       } catch {
-        setErroSalvar(
-          "A conexão caiu no meio do envio. O percurso anterior continua valendo — tente de novo.",
-        );
+        setErroSalvar(t("route.saveConnectionLost"));
       } finally {
         setSalvando(false);
       }
@@ -1028,15 +1029,20 @@ function montarPreview(
   segmentos: GpxSegment[],
   indice: number,
   avisosDoParse: string[],
+  t: Translator,
+  locale: Locale,
 ): PreviewImportacao {
   const segmento = segmentos[indice];
   if (!segmento) {
-    throw new GpxParseError("Traçado escolhido não existe no arquivo.");
+    throw new GpxParseError(t("route.segmentMissing"));
   }
 
   if (segmento.points.length > MAX_UPLOAD_POINTS) {
     throw new GpxParseError(
-      `Este traçado tem ${segmento.points.length.toLocaleString("pt-BR")} pontos, acima do limite de ${MAX_UPLOAD_POINTS.toLocaleString("pt-BR")}. Recorte o arquivo para o trecho da prova.`,
+      t("route.segmentTooManyPoints", {
+        count: formatInteger(segmento.points.length, locale),
+        limit: formatInteger(MAX_UPLOAD_POINTS, locale),
+      }),
     );
   }
 
@@ -1062,12 +1068,12 @@ function montarPreview(
   };
 }
 
-function mensagemDeErroDeArquivo(e: unknown): string {
+function mensagemDeErroDeArquivo(e: unknown, t: Translator): string {
   if (e instanceof GpxParseError || e instanceof RouteTrackError) {
     return e.message;
   }
   if (e instanceof Error && e.name === "NotReadableError") {
-    return "Não foi possível ler o arquivo do disco. Copie-o para outra pasta e tente de novo.";
+    return t("route.fileUnreadable");
   }
-  return "Não foi possível interpretar este arquivo. Confirme que é um .gpx e que ele abre em outro programa.";
+  return t("route.fileNotGpx");
 }

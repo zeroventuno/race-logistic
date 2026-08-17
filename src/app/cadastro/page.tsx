@@ -8,9 +8,10 @@ import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
 import { getTranslator } from "@/lib/i18n/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export const metadata = {
-  title: "Criar conta — Flamme Rouge",
-};
+export async function generateMetadata() {
+  const { t } = await getTranslator();
+  return { title: t("auth.metaSignup") };
+}
 
 export default async function CadastroPage() {
   const supabase = await supabaseServer();
@@ -24,8 +25,7 @@ export default async function CadastroPage() {
     <PortaDaDirecao
       tema={tema}
       locale={locale}
-      titulo="Criar conta de direção"
-      descricao="A conta é sua, e as provas que você criar só aparecem para você. Os motoristas não precisam de conta — eles entram pelo código de 6 caracteres."
+      modo="cadastro"
     >
       <AuthForm modo="cadastro" acao={cadastrar} />
     </PortaDaDirecao>

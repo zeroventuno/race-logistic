@@ -9,9 +9,10 @@ import { supabaseServer } from "@/lib/supabase/server";
 
 import { entrar } from "./actions";
 
-export const metadata = {
-  title: "Entrar — Flamme Rouge",
-};
+export async function generateMetadata() {
+  const { t } = await getTranslator();
+  return { title: t("auth.metaLogin") };
+}
 
 export default async function LoginPage() {
   // Quem já está autenticado não tem por que ver esta tela — e no dia da prova
@@ -27,8 +28,7 @@ export default async function LoginPage() {
     <PortaDaDirecao
       tema={tema}
       locale={locale}
-      titulo="Painel da direção"
-      descricao="Entre para preparar a prova: percurso, posições de apoio e códigos de vínculo."
+      modo="login"
     >
       <AuthForm modo="login" acao={entrar} />
     </PortaDaDirecao>

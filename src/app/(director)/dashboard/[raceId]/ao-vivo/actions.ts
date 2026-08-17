@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { mensagemDeErroDoBanco } from "@/app/(director)/_lib/db-errors";
+import { getTranslator } from "@/lib/i18n/server";
 import {
   PermissaoNegadaError,
   requireEditableRace,
@@ -31,6 +32,8 @@ export interface StatusProvaResultado {
 }
 
 export async function iniciarProva(raceId: string): Promise<StatusProvaResultado> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
@@ -41,7 +44,7 @@ export async function iniciarProva(raceId: string): Promise<StatusProvaResultado
       .maybeSingle();
 
     if (leituraErro || !atual) {
-      return { erro: mensagemDeErroDoBanco(leituraErro, "Prova não encontrada.") };
+      return { erro: mensagemDeErroDoBanco(leituraErro, t, "errors.raceNotFound") };
     }
 
     const status = atual.status as RaceStatus;
@@ -50,7 +53,7 @@ export async function iniciarProva(raceId: string): Promise<StatusProvaResultado
 
     if (status !== "draft" && status !== "armed") {
       return {
-        erro: "Só uma prova em rascunho ou pronta pode ser iniciada.",
+        erro: t("errors.notStartable"),
       };
     }
 
@@ -65,7 +68,7 @@ export async function iniciarProva(raceId: string): Promise<StatusProvaResultado
       .eq("id", raceId)
       .in("status", ["draft", "armed"]);
 
-    if (error) return { erro: mensagemDeErroDoBanco(error) };
+    if (error) return { erro: mensagemDeErroDoBanco(error, t) };
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };
     throw e;
@@ -77,6 +80,8 @@ export async function iniciarProva(raceId: string): Promise<StatusProvaResultado
 }
 
 export async function encerrarProva(raceId: string): Promise<StatusProvaResultado> {
+  const { t } = await getTranslator();
+
   try {
     const { supabase } = await requireEditableRace(raceId);
 
@@ -86,7 +91,7 @@ export async function encerrarProva(raceId: string): Promise<StatusProvaResultad
       .eq("id", raceId)
       .eq("status", "live");
 
-    if (error) return { erro: mensagemDeErroDoBanco(error) };
+    if (error) return { erro: mensagemDeErroDoBanco(error, t) };
   } catch (e) {
     if (e instanceof PermissaoNegadaError) return { erro: e.message };
     throw e;
