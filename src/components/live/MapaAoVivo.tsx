@@ -61,6 +61,12 @@ export interface MapaAoVivoProps {
   onSelecionar: (positionId: string | null) => void;
   /** Muda o `token` para reenquadrar no mesmo ponto de novo. */
   focar: { lng: number; lat: number; token: number } | null;
+  /**
+   * Enquadrar o percurso inteiro. É um número que só cresce: a ação é
+   * "enquadre de novo", e um booleano não consegue pedir a mesma coisa duas
+   * vezes seguidas.
+   */
+  enquadrarToken?: number;
   className?: string;
 }
 
@@ -82,6 +88,7 @@ function corDaRota(basemap?: string | null): { linha: string; casing: string } {
 
 export function MapaAoVivo({
   basemap,
+  enquadrarToken,
   renderPoints,
   vehicles,
   alerts,
@@ -386,21 +393,6 @@ export function MapaAoVivo({
           </p>
         </div>
       ) : null}
-
-      <button
-        type="button"
-        onClick={() => {
-          if (mapRef.current && renderPoints.length >= 2) {
-            enquadrar(mapRef.current, renderPoints);
-          }
-        }}
-        // Acima da pilha do MapLibre: no canto de baixo à direita ele empilha
-        // a atribuição e o zoom, e a atribuição é obrigatória por licença —
-        // então quem sobe é o nosso botão, não o dele.
-        className="vidro absolute bottom-[7.25rem] right-3 px-3 py-2 text-xs font-medium text-ink hover:border-border-strong"
-      >
-        {t("map.fitRoute")}
-      </button>
 
       <LegendaSinal />
     </div>

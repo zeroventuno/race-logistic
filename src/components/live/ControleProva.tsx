@@ -33,6 +33,8 @@ export interface ControleProvaProps {
   /** O que ainda falta, para o botão desabilitado poder explicar por quê. */
   pendencias: string[];
   aoMudar: () => void;
+  /** Enquadrar o percurso inteiro no mapa. */
+  onEnquadrar?: () => void;
 }
 
 export function ControleProva({
@@ -44,6 +46,7 @@ export function ControleProva({
   pronta,
   pendencias,
   aoMudar,
+  onEnquadrar,
 }: ControleProvaProps) {
   const t = useT();
   const fmt = useFormat();
@@ -164,6 +167,21 @@ export function ControleProva({
             ■ {t("director.finish")}
           </button>
         )
+      ) : null}
+
+      {/* Enquadrar o percurso: ação de MAPA, mas mora aqui.
+          Flutuando no canto do mapa ela brigava com a lista de veículos, que
+          cresce — e uma prova de verdade tem uma dúzia deles. Aqui ela fica ao
+          lado da outra ação da prova, num lugar de altura fixa, e o canto do
+          mapa volta a ser do mapa. */}
+      {onEnquadrar ? (
+        <button
+          type="button"
+          onClick={onEnquadrar}
+          className="min-h-9 border border-border-strong bg-surface-2 px-3 text-xs font-medium text-ink transition hover:border-ink"
+        >
+          {t("map.fitRoute")}
+        </button>
       ) : null}
 
       {!pronta && (status === "draft" || status === "armed") ? (

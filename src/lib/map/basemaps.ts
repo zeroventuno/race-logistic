@@ -147,6 +147,46 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
           ),
   },
 
+  topografico: {
+    id: "topografico",
+    nome: "Topográfico",
+    descricao:
+      "Curva de nível, inclinação e estrada vicinal. É o único fundo que mostra a subida antes de ela acontecer — para prova de montanha, é o que muda a conversa no rádio.",
+    disponivel: true,
+    licenca:
+      "MapTiler, estilos `topo-v2` e `topo-v2-dark`. Mesma ressalva do satélite: grátis só para teste e uso não comercial, Flex a partir do primeiro cliente pagante. O Thunderforest (OpenCycleMap) desenha melhor o gradiente de subida e custa cerca de quatro vezes mais — fica para quando um cliente pedir.",
+    exigeChave: true,
+    rota: {
+      // MAGENTA, e não o rouge que eu tinha posto antes.
+      //
+      // O rouge seria bonito sobre bege e é exatamente o erro que a regra da
+      // casa existe para impedir: dentro da operação vermelho é uma pessoa no
+      // chão. Uma linha vermelha atravessando o mapa inteiro, o dia inteiro,
+      // ensina o olho a ignorar vermelho — e o alerta que importa chega numa
+      // tela onde vermelho já é paisagem.
+      //
+      // Magenta resolve os dois lados: é a convenção de traçado sobre mapa de
+      // relevo (é o que Komoot e Strava usam, então o ciclista já lê assim) e
+      // é a única faixa do espectro que um mapa topográfico não usa — ele é
+      // todo bege, verde e marrom.
+      light: { linha: "#c026d3", casing: "rgb(255 255 255 / 0.9)" },
+      dark: { linha: "#f0abfc", casing: "rgb(10 13 16 / 0.7)" },
+    },
+    // TOPO, NÃO OUTDOOR — e a diferença é de ruído, não de estilo.
+    //
+    // O `outdoor-v2` parecia a escolha óbvia (é o mapa "de esporte ao ar
+    // livre" deles) e traz uma fonte inteira de TRILHAS: vinte camadas de
+    // rota de caminhada e cicloturismo, cada uma na sua cor, riscando o
+    // terreno de vermelho e laranja. Num mapa de passeio isso é o conteúdo;
+    // aqui é ruído que disputa com a única linha que importa, que é o
+    // percurso da prova.
+    //
+    // O `topo-v2` tem o mesmo relevo — curva de nível, sombreamento, cota de
+    // pico — e nenhuma dessas camadas. Sobram só os caminhos de verdade,
+    // vindos da malha viária.
+    estilo: (tema) =>
+      estiloMapTiler(tema === "light" ? "topo-v2" : "topo-v2-dark"),
+  },
   satelite: {
     id: "satelite",
     nome: "Satélite",
@@ -171,35 +211,6 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
     // Sem variante escura: foto aérea é o que é. Trocar o tema muda os
     // cartões e a cor da rota, não a imagem do chão.
     estilo: () => estiloMapTiler("satellite"),
-  },
-
-  topografico: {
-    id: "topografico",
-    nome: "Topográfico",
-    descricao:
-      "Curva de nível, inclinação e estrada vicinal. É o único fundo que mostra a subida antes de ela acontecer — para prova de montanha, é o que muda a conversa no rádio.",
-    disponivel: true,
-    licenca:
-      "MapTiler, estilos `outdoor-v2` e `outdoor-v2-dark`. Mesma ressalva do satélite: grátis só para teste e uso não comercial, Flex a partir do primeiro cliente pagante. O Thunderforest (OpenCycleMap) desenha melhor o gradiente de subida e custa cerca de quatro vezes mais — fica para quando um cliente pedir.",
-    exigeChave: true,
-    rota: {
-      // MAGENTA, e não o rouge que eu tinha posto antes.
-      //
-      // O rouge seria bonito sobre bege e é exatamente o erro que a regra da
-      // casa existe para impedir: dentro da operação vermelho é uma pessoa no
-      // chão. Uma linha vermelha atravessando o mapa inteiro, o dia inteiro,
-      // ensina o olho a ignorar vermelho — e o alerta que importa chega numa
-      // tela onde vermelho já é paisagem.
-      //
-      // Magenta resolve os dois lados: é a convenção de traçado sobre mapa de
-      // relevo (é o que Komoot e Strava usam, então o ciclista já lê assim) e
-      // é a única faixa do espectro que um mapa topográfico não usa — ele é
-      // todo bege, verde e marrom.
-      light: { linha: "#c026d3", casing: "rgb(255 255 255 / 0.9)" },
-      dark: { linha: "#f0abfc", casing: "rgb(10 13 16 / 0.7)" },
-    },
-    estilo: (tema) =>
-      estiloMapTiler(tema === "light" ? "outdoor-v2" : "outdoor-v2-dark"),
   },
 };
 

@@ -79,6 +79,7 @@ export function PainelAoVivo({
   const [focar, setFocar] = useState<{ lng: number; lat: number; token: number } | null>(
     null,
   );
+  const [enquadrarToken, setEnquadrarToken] = useState(0);
   const [alturaBarra, setAlturaBarra] = useState(0);
   const [semSom, setSemSom] = useState(false);
 
@@ -181,6 +182,7 @@ export function PainelAoVivo({
           {renderPoints.length >= 2 ? (
             <MapaAoVivo
               basemap={snapshot.race.basemap}
+              enquadrarToken={enquadrarToken}
               renderPoints={renderPoints}
               vehicles={snapshot.vehicles}
               alerts={snapshot.alerts}
@@ -218,7 +220,7 @@ export function PainelAoVivo({
             tela inteira existe para tirar. O gradiente escurece o suficiente
             para o texto se sustentar e deixa a estrada aparecer por baixo. */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end px-3 py-3 sm:px-5"
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-start px-3 py-3 sm:px-5"
           style={{
             background:
               "linear-gradient(180deg, var(--color-vignette), transparent)",
@@ -251,6 +253,7 @@ export function PainelAoVivo({
               pronta={pronta}
               pendencias={pendencias}
               aoMudar={recarregar}
+              onEnquadrar={() => setEnquadrarToken((n) => n + 1)}
             />
           </div>
 
@@ -258,7 +261,7 @@ export function PainelAoVivo({
         </div>
 
         {/* --- Coluna direita: o que exige ação, e o detalhe --------------- */}
-        <div className="coluna-flutuante right-3 w-[21rem] sm:right-5">
+        <div className="coluna-flutuante coluna-flutuante--alta right-3 w-[21rem] sm:right-5">
           <PainelAlertas
             alerts={snapshot.alerts}
             vehicles={snapshot.vehicles}

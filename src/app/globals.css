@@ -502,3 +502,13 @@ body {
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
   margin-bottom: 10px !important;
 }
+
+/* A coluna da direita começa mais alto que a da esquerda.
+   Ela carrega alertas e veículos, e a lista de veículos cresce com a prova —
+   uma dúzia de posições é o normal, não o extremo. A da esquerda tem
+   identidade e janela, altura praticamente fixa, então é ela que cede o topo
+   para a faixa de estado. */
+.coluna-flutuante--alta {
+  top: 0.75rem;
+  max-height: calc(100% - 8.5rem);
+}

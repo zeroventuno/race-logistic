@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { criarProva } from "@/app/(director)/_actions/race";
 import { DEFAULT_TIMEZONE } from "@/app/(director)/_lib/timezone";
+import { PassosDaProva } from "@/components/director/PassosDaProva";
 import { ProvaForm } from "@/components/director/ProvaForm";
 import { Cartao } from "@/components/director/ui";
 import { getTranslator } from "@/lib/i18n/server";
@@ -13,20 +12,14 @@ export default async function NovaProvaPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-      <Link
-        href="/dashboard"
-        className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
-      >
-        ← {t("director.myRaces")}
-      </Link>
+      <PassosDaProva atual={1} />
 
-      <h1 className="mt-4 titulo text-3xl font-semibold text-ink">
+      <h1 className="titulo mt-7 text-3xl font-semibold text-ink">
         {t("director.newRace")}
       </h1>
       <p className="mt-1 text-sm text-ink-muted">
         {/* i18n: precisa de chave — "Só o essencial agora…" */}
-        Só o essencial agora. Percurso e posições vêm nos próximos passos e
-        podem ser mexidos até a hora da largada.
+        Só o essencial agora. Tudo aqui pode ser mexido até a hora da largada.
       </p>
 
       <Cartao className="mt-6 p-5 sm:p-6">
