@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { alertGlyphSvg } from "@/components/icons/alerta";
 import { resolverBasemap } from "@/lib/map/basemaps";
+import { prioridadeDoRotulo, rotulosVisiveis, type CaixaRotulo } from "./rotulos";
 import { resolverTema } from "@/lib/tema-atual";
 import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
@@ -104,6 +105,12 @@ export function MapaAoVivo({
   const veiculoMarkers = useRef(new Map<string, maplibregl.Marker>());
   const alertaMarkers = useRef(new Map<string, maplibregl.Marker>());
   const enquadradoRef = useRef(false);
+  // Quem está no mapa agora, para recalcular a colisão de rótulos quando a
+  // câmera mexe. Guardado em ref e não em estado: isto muda a cada quadro de
+  // arrasto, e um `setState` por quadro rerenderizaria o painel inteiro.
+  const rotulaveisRef = useRef<
+    Array<{ id: string; lng: number; lat: number; prioridade: number }>
+  >([]);
   const focoRef = useRef<number>(-1);
   const [pronto, setPronto] = useState(false);
   const [demorou, setDemorou] = useState(false);
@@ -250,6 +257,7 @@ export function MapaAoVivo({
       agoraMs: number,
       selecionadoId: string | null,
       tr: Translate,
+      comAlerta: Set<string>,
     ) => {
       const vistos = new Set<string>();
 
@@ -289,10 +297,75 @@ export function MapaAoVivo({
           veiculoMarkers.current.delete(id);
         }
       }
+
+      rotulaveisRef.current = lista
+        .filter((v) => v.lat !== null && v.lng !== null)
+        .map((v) => ({
+          id: v.positionId,
+          lng: v.lng as number,
+          lat: v.lat as number,
+          prioridade: prioridadeDoRotulo({
+            temAlerta: comAlerta.has(v.positionId),
+            selecionado: v.positionId === selecionadoId,
+            referencia: v.isReferenceLead || v.isReferenceSweep,
+            ordemComboio: ROLE_META[v.role].convoyOrder,
+          }),
+        }));
     },
     [],
   );
 
+
+  /**
+   * Esconde os rótulos que se atropelariam.
+   *
+   * Roda depois de cada sincronização e a cada movimento da câmera, porque a
+   * sobreposição é uma propriedade do ZOOM, não dos dados: os mesmos três
+   * veículos que cabem lado a lado num zoom de rua viram uma mancha só no
+   * zoom da prova inteira.
+   *
+   * A medida sai do DOM (`offsetWidth`) em vez de ser estimada pelo tamanho do
+   * texto: o nome do veículo é escolhido pelo diretor e pode ser qualquer
+   * coisa, de "M1" a "Ambulância do Corpo de Bombeiros".
+   */
+  const recalcularRotulos = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const caixas: CaixaRotulo[] = [];
+    const elementos = new Map<string, HTMLElement>();
+
+    for (const item of rotulaveisRef.current) {
+      const marker = veiculoMarkers.current.get(item.id);
+      const rotulo = marker
+        ?.getElement()
+        .querySelector<HTMLElement>("[data-rotulo]");
+      if (!rotulo) continue;
+
+      // Mede com o rótulo visível: um elemento em `display:none` mede zero, e
+      // aí ele nunca mais voltaria a caber em lugar nenhum.
+      rotulo.style.display = "";
+      const largura = rotulo.offsetWidth;
+      const altura = rotulo.offsetHeight;
+      if (!largura || !altura) continue;
+
+      const ponto = map.project([item.lng, item.lat]);
+      elementos.set(item.id, rotulo);
+      caixas.push({
+        id: item.id,
+        prioridade: item.prioridade,
+        x: ponto.x,
+        y: ponto.y,
+        largura,
+        altura,
+      });
+    }
+
+    const visiveis = rotulosVisiveis(caixas);
+    for (const [id, el] of elementos) {
+      el.style.display = visiveis.has(id) ? "" : "none";
+    }
+  }, []);
   const sincronizarAlertas = useCallback(
     (map: MapLibreMap, lista: LiveAlertView[]) => {
       const vistos = new Set<string>();
@@ -338,8 +411,21 @@ export function MapaAoVivo({
 
       aplicarPercurso(map, renderPoints);
       aplicarOcupado(map, occupiedSegment);
-      sincronizarVeiculos(map, vehicles, nowMs, selecionado, t);
+      sincronizarVeiculos(
+        map,
+        vehicles,
+        nowMs,
+        selecionado,
+        t,
+        new Set(
+          alerts
+            .filter(alertIsActive)
+            .map((a) => a.raisedBy?.positionId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
       sincronizarAlertas(map, alerts);
+      recalcularRotulos();
     },
     // Montagem única: o mapa é criado uma vez e tudo depois é imperativo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -359,10 +445,28 @@ export function MapaAoVivo({
   }, [occupiedSegment, aplicarOcupado]);
 
   useEffect(() => {
-    if (prontoRef.current && mapRef.current) {
-      sincronizarVeiculos(mapRef.current, vehicles, nowMs, selecionado, t);
-    }
-  }, [vehicles, nowMs, selecionado, sincronizarVeiculos, t]);
+    if (!prontoRef.current || !mapRef.current) return;
+
+    // Quem levantou alerta ainda aberto. É a primeira prioridade do rótulo:
+    // o veículo que pediu socorro não pode ser o que some do mapa.
+    const comAlerta = new Set(
+      alerts
+        .filter(alertIsActive)
+        .map((a) => a.raisedBy?.positionId)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    sincronizarVeiculos(mapRef.current, vehicles, nowMs, selecionado, t, comAlerta);
+    recalcularRotulos();
+  }, [
+    vehicles,
+    alerts,
+    nowMs,
+    selecionado,
+    sincronizarVeiculos,
+    recalcularRotulos,
+    t,
+  ]);
 
   useEffect(() => {
     if (prontoRef.current && mapRef.current) {
@@ -384,6 +488,36 @@ export function MapaAoVivo({
       duration: 600,
     });
   }, [focar]);
+
+  /**
+   * A sobreposição muda com o ZOOM, não só com os dados: os mesmos veículos que
+   * cabem lado a lado numa rua viram uma mancha no enquadramento da prova
+   * inteira. Então recalcula a cada movimento da câmera.
+   *
+   * Agendado num quadro de animação porque `move` dispara dezenas de vezes por
+   * segundo durante o arrasto, e medir o DOM em cada disparo trava o arrasto.
+   */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    let agendado = false;
+    const aoMover = () => {
+      if (agendado) return;
+      agendado = true;
+      requestAnimationFrame(() => {
+        agendado = false;
+        recalcularRotulos();
+      });
+    };
+
+    map.on("move", aoMover);
+    map.on("zoom", aoMover);
+    return () => {
+      map.off("move", aoMover);
+      map.off("zoom", aoMover);
+    };
+  }, [pronto, recalcularRotulos]);
 
   useEffect(() => {
     const veiculos = veiculoMarkers.current;
