@@ -276,6 +276,7 @@ export default async function ResumoDaProvaPage({
                 janelaAlvo: race.target_gap_minutes,
                 janelaMin: race.min_gap_minutes,
                 janelaMax: race.max_gap_minutes,
+                mapa: race.map_basemap ?? null,
               }}
             />
           </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { BASEMAP_PADRAO, basemapsDisponiveis } from "@/lib/map/basemaps";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -56,6 +57,11 @@ const provaSchema = z
       .min(0, "O limite mínimo não pode ser negativo.")
       .max(600, "O limite mínimo não pode passar de 600 minutos.")
       .nullable(),
+    mapa: z
+      .string()
+      .refine((v) => basemapsDisponiveis().some((b) => b.id === v), {
+        message: "Escolha um dos mapas disponíveis.",
+      }),
     janelaMax: z
       .number()
       .int("O limite máximo precisa ser um número inteiro de minutos.")
@@ -114,6 +120,9 @@ function lerFormulario(formData: FormData) {
     janelaAlvo: numeroOuNaN(formData.get("janelaAlvo")),
     janelaMin: numeroOuNulo(formData.get("janelaMin")),
     janelaMax: numeroOuNulo(formData.get("janelaMax")),
+    // Formulário antigo em aba aberta não manda o campo. Cair no padrão é
+    // melhor que rejeitar o salvamento inteiro por causa dele.
+    mapa: String(formData.get("mapa") ?? "") || BASEMAP_PADRAO,
   };
 }
 
@@ -168,6 +177,7 @@ export async function criarProva(
       target_gap_minutes: v.janelaAlvo,
       min_gap_minutes: v.janelaMin,
       max_gap_minutes: v.janelaMax,
+      map_basemap: v.mapa,
       created_by: user.id,
     })
     .select("id")
@@ -215,6 +225,7 @@ export async function atualizarProva(
         target_gap_minutes: v.janelaAlvo,
         min_gap_minutes: v.janelaMin,
         max_gap_minutes: v.janelaMax,
+      map_basemap: v.mapa,
       })
       .eq("id", raceId);
 

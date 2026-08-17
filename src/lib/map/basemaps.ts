@@ -59,8 +59,32 @@ export interface Basemap {
     light: { linha: string; casing: string };
     dark: { linha: string; casing: string };
   };
-  /** Constrói o estilo do MapLibre. `chave` só é usada por quem exige. */
-  estilo: (tema: "light" | "dark", chave?: string) => StyleSpecification;
+  /**
+   * Constrói o estilo do MapLibre.
+   *
+   * Devolve URL ou objeto: os fundos vetoriais do MapTiler já vêm com glyphs
+   * e sprites no `style.json` deles, e reconstruí-los aqui seria manter uma
+   * cópia do estilo de outra pessoa. Os raster continuam sendo objeto, porque
+   * ali o estilo é nosso mesmo — uma fonte e duas camadas.
+   */
+  estilo: (tema: "light" | "dark") => StyleSpecification | string;
+}
+
+/**
+ * A chave do MapTiler.
+ *
+ * `NEXT_PUBLIC_` porque ela é usada no navegador — não há como escondê-la, é
+ * da natureza de tile servido direto ao cliente. A proteção não é sigilo, é
+ * RESTRIÇÃO POR DOMÍNIO no painel do provedor: sem isso, qualquer um copia a
+ * chave do código-fonte e gasta a cota alheia.
+ *
+ * Sem chave configurada, os fundos que dependem dela somem da lista em vez de
+ * quebrar. É o caso do ambiente de quem clona o repositório e roda local.
+ */
+const CHAVE_MAPTILER = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? "";
+
+function estiloMapTiler(id: string): string {
+  return `https://api.maptiler.com/maps/${id}/style.json?key=${CHAVE_MAPTILER}`;
 }
 
 const ATRIBUICAO_OSM =
@@ -128,22 +152,25 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
     nome: "Satélite",
     descricao:
       "Imagem aérea. Serve para conferir se a estrada do GPX é mesmo a estrada da prova, e para reconhecer um ponto de apoio pelo que existe no chão.",
-    disponivel: false,
+    disponivel: true,
     licenca:
-      "PENDENTE. Imagem de satélite quase nunca é livre para produto comercial — Esri, Mapbox e Google licenciam por contrato e por volume. Antes de ligar: escolher o provedor, ler os termos de uso comercial e decidir quem paga (nós ou o cliente, via chave própria).",
+      "MapTiler, estilo `satellite`. O plano grátis deles cobre teste e uso NÃO COMERCIAL; no primeiro cliente pagante é preciso subir para o Flex. Sem isso o serviço pausa ao bater a cota — e aí o mapa cai para o asfalto sozinho, que é comportamento desenhado, não acidente.",
     exigeChave: true,
     rota: {
       // Sobre foto aérea o azul some no telhado e no asfalto. Só cor quente
       // com contorno preto sobrevive — é a mesma razão por que traçado de
-      // percurso em foto de prova é sempre laranja ou amarelo.
+      // percurso em foto de prova é sempre laranja.
+      //
+      // O laranja fica perto do âmbar de "dado incerto", e isso é aceitável
+      // aqui porque as duas coisas têm FORMAS diferentes na tela: a rota é uma
+      // linha fina contínua, o aviso é um disco com pictograma. Confusão de
+      // cor entre formas distintas o olho resolve; entre formas iguais, não.
       light: { linha: "#ff8a00", casing: "rgb(0 0 0 / 0.72)" },
       dark: { linha: "#ffa726", casing: "rgb(0 0 0 / 0.8)" },
     },
-    estilo: () => {
-      throw new Error(
-        "Satélite ainda não tem provedor definido. Ver `licenca` em BASEMAPS.satelite.",
-      );
-    },
+    // Sem variante escura: foto aérea é o que é. Trocar o tema muda os
+    // cartões e a cor da rota, não a imagem do chão.
+    estilo: () => estiloMapTiler("satellite"),
   },
 
   topografico: {
@@ -151,30 +178,53 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
     nome: "Topográfico",
     descricao:
       "Curva de nível, inclinação e estrada vicinal. É o único fundo que mostra a subida antes de ela acontecer — para prova de montanha, é o que muda a conversa no rádio.",
-    disponivel: false,
+    disponivel: true,
     licenca:
-      "PENDENTE. OpenTopoMap é comunitário e a política de uso pede que produtos não consumam em escala. Thunderforest (Outdoors/Landscape) é a alternativa desenhada para ciclismo e cobra por chave. Institutos nacionais (IGN, Swisstopo) são melhores nos Alpes e têm termos próprios por país.",
+      "MapTiler, estilos `outdoor-v2` e `outdoor-v2-dark`. Mesma ressalva do satélite: grátis só para teste e uso não comercial, Flex a partir do primeiro cliente pagante. O Thunderforest (OpenCycleMap) desenha melhor o gradiente de subida e custa cerca de quatro vezes mais — fica para quando um cliente pedir.",
     exigeChave: true,
     rota: {
-      // Fundo topográfico já é bege e verde com muitas linhas finas; o rouge
-      // é a única faixa do espectro que não está sendo usada pelo relevo.
-      light: { linha: "#d92d20", casing: "rgb(255 255 255 / 0.9)" },
-      dark: { linha: "#ff6b5c", casing: "rgb(10 13 16 / 0.7)" },
+      // MAGENTA, e não o rouge que eu tinha posto antes.
+      //
+      // O rouge seria bonito sobre bege e é exatamente o erro que a regra da
+      // casa existe para impedir: dentro da operação vermelho é uma pessoa no
+      // chão. Uma linha vermelha atravessando o mapa inteiro, o dia inteiro,
+      // ensina o olho a ignorar vermelho — e o alerta que importa chega numa
+      // tela onde vermelho já é paisagem.
+      //
+      // Magenta resolve os dois lados: é a convenção de traçado sobre mapa de
+      // relevo (é o que Komoot e Strava usam, então o ciclista já lê assim) e
+      // é a única faixa do espectro que um mapa topográfico não usa — ele é
+      // todo bege, verde e marrom.
+      light: { linha: "#c026d3", casing: "rgb(255 255 255 / 0.9)" },
+      dark: { linha: "#f0abfc", casing: "rgb(10 13 16 / 0.7)" },
     },
-    estilo: () => {
-      throw new Error(
-        "Topográfico ainda não tem provedor definido. Ver `licenca` em BASEMAPS.topografico.",
-      );
-    },
+    estilo: (tema) =>
+      estiloMapTiler(tema === "light" ? "outdoor-v2" : "outdoor-v2-dark"),
   },
 };
 
 /** O fundo que vale quando nada foi escolhido, ou quando o escolhido caiu. */
 export const BASEMAP_PADRAO: BasemapId = "asfalto";
 
-/** Os que podem ser oferecidos hoje. */
+/**
+ * Um fundo é utilizável se a licença foi resolvida E a chave existe.
+ *
+ * As duas condições são independentes e falham em lugares diferentes:
+ * `disponivel` é decisão de negócio, tomada no código; a chave é ambiente, e
+ * falta em quem clonou o repositório, em pré-visualização de branch e em
+ * qualquer deploy onde alguém esqueceu a variável. Um fundo que exige chave
+ * ausente não pode aparecer na lista — ele renderizaria um mapa cinza sem
+ * explicar por quê.
+ */
+export function basemapUtilizavel(b: Basemap): boolean {
+  if (!b.disponivel) return false;
+  if (b.exigeChave && !CHAVE_MAPTILER) return false;
+  return true;
+}
+
+/** Os que podem ser oferecidos hoje, neste ambiente. */
 export function basemapsDisponiveis(): Basemap[] {
-  return Object.values(BASEMAPS).filter((b) => b.disponivel);
+  return Object.values(BASEMAPS).filter(basemapUtilizavel);
 }
 
 /**
@@ -187,6 +237,6 @@ export function basemapsDisponiveis(): Basemap[] {
  */
 export function resolverBasemap(id: string | null | undefined): Basemap {
   const achado = id ? BASEMAPS[id as BasemapId] : undefined;
-  if (achado?.disponivel) return achado;
+  if (achado && basemapUtilizavel(achado)) return achado;
   return BASEMAPS[BASEMAP_PADRAO];
 }

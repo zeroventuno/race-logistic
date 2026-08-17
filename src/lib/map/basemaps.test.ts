@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   BASEMAPS,
   BASEMAP_PADRAO,
+  basemapUtilizavel,
   basemapsDisponiveis,
   resolverBasemap,
   type BasemapId,
@@ -20,11 +21,12 @@ describe("catálogo de mapas de fundo", () => {
     expect(BASEMAPS[BASEMAP_PADRAO].disponivel).toBe(true);
   });
 
-  it("nenhum fundo disponível hoje exige chave", () => {
-    // Enquanto não existe BYOK, um item disponível que peça chave renderiza um
-    // mapa cinza sem dizer por quê.
+  it("fundo que exige chave só aparece quando a chave existe", () => {
+    // Um item disponível que peça chave ausente renderiza mapa cinza sem
+    // dizer por quê. A lista tem que já vir filtrada pelo ambiente.
+    const temChave = Boolean(process.env.NEXT_PUBLIC_MAPTILER_KEY);
     for (const b of basemapsDisponiveis()) {
-      expect(b.exigeChave, b.id).toBe(false);
+      if (b.exigeChave) expect(temChave, b.id).toBe(true);
     }
   });
 
@@ -32,6 +34,17 @@ describe("catálogo de mapas de fundo", () => {
     for (const b of basemapsDisponiveis()) {
       for (const tema of ["light", "dark"] as const) {
         const estilo = b.estilo(tema);
+
+        if (typeof estilo === "string") {
+          // Estilo do provedor, por URL. O que importa checar é que a chave
+          // entrou: URL sem `key=` devolve 403 e o mapa fica cinza.
+          expect(estilo, `${b.id}/${tema}`).toMatch(/^https:\/\//);
+          if (b.exigeChave) {
+            expect(estilo, `${b.id}/${tema}`).toMatch(/[?&]key=.+/);
+          }
+          continue;
+        }
+
         expect(estilo.version, `${b.id}/${tema}`).toBe(8);
         expect(Object.keys(estilo.sources).length).toBeGreaterThan(0);
         // Atribuição não é opcional: é exigência de licença dos dados.
@@ -57,12 +70,16 @@ describe("catálogo de mapas de fundo", () => {
     }
   });
 
-  it("fundo desligado por licença também cai no padrão", () => {
-    // O caso real: uma prova foi criada com "satelite" ligado e depois o item
-    // foi desligado. A prova não pode ficar sem mapa por causa disso.
-    const desligado = Object.values(BASEMAPS).find((b) => !b.disponivel);
-    expect(desligado).toBeDefined();
-    expect(resolverBasemap(desligado!.id).id).toBe(BASEMAP_PADRAO);
+  it("fundo inutilizável cai no padrão", () => {
+    // Dois casos reais, e os dois acabam aqui: o item foi desligado por
+    // licença, ou a chave sumiu do ambiente. A prova não pode ficar sem mapa
+    // por causa de nenhum dos dois.
+    const inutilizavel = Object.values(BASEMAPS).find((b) => !basemapUtilizavel(b));
+    if (inutilizavel) {
+      expect(resolverBasemap(inutilizavel.id).id).toBe(BASEMAP_PADRAO);
+    }
+    // Com a chave presente todos são utilizáveis, e aí não há o que testar
+    // aqui — o caso do identificador desconhecido já está coberto acima.
   });
 
   it("o identificador cabe na restrição do banco", () => {

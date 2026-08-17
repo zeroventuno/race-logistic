@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import type { ProvaFormState } from "@/app/(director)/_actions/race";
 import { TIMEZONE_OPTIONS } from "@/app/(director)/_lib/timezone";
 import { Aviso, Botao, Campo, entradaClasse } from "@/components/director/ui";
+import { BASEMAP_PADRAO, basemapsDisponiveis } from "@/lib/map/basemaps";
 import { useT } from "@/lib/i18n/client";
 
 export interface ValoresProva {
@@ -18,6 +19,7 @@ export interface ValoresProva {
   janelaAlvo: number;
   janelaMin: number | null;
   janelaMax: number | null;
+  mapa?: string | null;
 }
 
 /**
@@ -150,6 +152,42 @@ export function ProvaForm({
             </option>
           ))}
         </select>
+      </Campo>
+
+      {/* i18n: precisa de chave — "Mapa de fundo", a dica e as descrições dos
+          fundos, que vêm do catálogo em @/lib/map/basemaps. */}
+      <Campo
+        label="Mapa de fundo"
+        htmlFor="mapa"
+        erro={campo("mapa")}
+        hint="Vale só para esta prova. O traçado troca de cor junto, para não sumir sobre o fundo escolhido."
+      >
+        <select
+          id="mapa"
+          name="mapa"
+          defaultValue={valores.mapa ?? BASEMAP_PADRAO}
+          className={entradaClasse(campo("mapa"))}
+        >
+          {basemapsDisponiveis().map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.nome}
+            </option>
+          ))}
+        </select>
+
+        {/* A descrição de cada fundo fica visível, não escondida atrás de
+            passar o mouse: quem escolhe faz isso uma vez por prova e não sabe
+            de cor o que "topográfico" muda na tela. */}
+        <ul className="mt-3 space-y-1.5">
+          {basemapsDisponiveis().map((b) => (
+            <li key={b.id} className="text-xs leading-relaxed text-ink-faint">
+              <span className="font-mono uppercase tracking-[0.14em] text-ink-muted">
+                {b.nome}
+              </span>{" "}
+              — {b.descricao}
+            </li>
+          ))}
+        </ul>
       </Campo>
 
       {/* i18n: precisa de chave — "Voltas sobre o percurso" e sua dica. */}
