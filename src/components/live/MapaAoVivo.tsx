@@ -389,7 +389,10 @@ export function MapaAoVivo({
             enquadrar(mapRef.current, renderPoints);
           }
         }}
-        className="absolute bottom-3 right-3 border border-border-strong bg-surface-2/95 px-3 py-2 text-xs font-medium text-ink shadow-lg hover:border-info"
+        // Acima da pilha do MapLibre: no canto de baixo à direita ele empilha
+        // a atribuição e o zoom, e a atribuição é obrigatória por licença —
+        // então quem sobe é o nosso botão, não o dele.
+        className="vidro absolute bottom-[7.25rem] right-3 px-3 py-2 text-xs font-medium text-ink hover:border-border-strong"
       >
         {t("map.fitRoute")}
       </button>
@@ -404,7 +407,8 @@ function LegendaSinal() {
   const estados: SignalHealth[] = ["live", "delayed", "stale", "lost"];
 
   return (
-    <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-x-3 gap-y-1 border border-border bg-surface-1/90 px-3 py-2 text-[11px] text-ink-muted">
+    // Acima da escala do MapLibre, que fica colada no canto.
+    <div className="vidro pointer-events-none absolute bottom-11 left-3 flex flex-wrap gap-x-3 gap-y-1 px-3 py-2 text-[11px] text-ink-muted">
       {estados.map((s) => (
         <span key={s} className="flex items-center gap-1.5">
           <span

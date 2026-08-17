@@ -349,12 +349,25 @@ body {
   border-top: 1px solid var(--color-border) !important;
 }
 
+/* A atribuição era um retângulo preto fixo — herança de quando o produto só
+   tinha tema escuro. Sobre mapa claro virava uma tarja no canto. Agora ela é
+   vidro, como o resto do que flutua sobre o mapa, e segue o tema. */
 .maplibregl-ctrl-attrib {
-  background: rgb(10 12 16 / 0.75) !important;
+  background: var(--color-glass) !important;
+  backdrop-filter: blur(8px);
   color: var(--color-ink-faint) !important;
 }
 
 .maplibregl-ctrl-attrib a {
+  color: var(--color-ink-muted) !important;
+}
+
+/* A escala tem o mesmo problema: o CSS da biblioteca assume fundo claro e
+   desenha borda preta com fundo branco translúcido. */
+.maplibregl-ctrl-scale {
+  background: var(--color-glass) !important;
+  backdrop-filter: blur(8px);
+  border-color: var(--color-border-strong) !important;
   color: var(--color-ink-muted) !important;
 }
 
