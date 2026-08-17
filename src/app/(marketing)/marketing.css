@@ -601,27 +601,73 @@ body:has(.fr-landing) {
   gap: 0.625rem;
 }
 
-/* O `<select>` nativo herda o desenho do painel, que é escuro. Aqui ele está
-   sobre papel claro (e, no topo da página, sobre a foto), então precisa da
-   moldura da landing — a mesma do botão de contorno, um ponto menor. */
+/*
+ * O `<select>` nativo do seletor de idioma.
+ *
+ * FUNDO EXPLÍCITO, E NÃO `transparent`. A lista que abre é desenhada pelo
+ * sistema, e o Chrome escolhe a cor dela subindo a árvore até achar um fundo
+ * opaco. Com o seletor transparente, isso dava duas listas diferentes na mesma
+ * página: branca no topo (onde a barra é invisível e o fundo achado é o papel
+ * da landing) e escura depois de rolar (onde a barra já ganhou o seu
+ * `rgb(12 15 18 / 0.62)`). O `color-scheme: dark` fecha a questão: lista
+ * escura sempre, que é o tom certo — o seletor vive sobre a foto do herói e
+ * sobre a barra fumê, nunca sobre papel.
+ *
+ * O ESPAÇO À DIREITA É PROPOSITAL E GENEROSO. O navegador mede a largura do
+ * `<select>` pelo texto ORIGINAL das opções, antes de aplicar
+ * `text-transform: uppercase` e o `letter-spacing`. "Português" medido em
+ * caixa baixa e desenhado em caixa alta com 0,14em de entreletra não cabe — e
+ * o que sobrava na tela era "PORTUGUÊ", sem o S. A folga cobre a diferença e
+ * ainda deixa a seta do sistema em paz.
+ */
 .fr-topo__acoes select {
   min-height: 2.25rem;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  background: transparent;
-  color: inherit;
+  border: 1px solid rgb(246 245 242 / 0.22);
+  background-color: rgb(12 15 18 / 0.72);
+  color: var(--fr-paper);
+  color-scheme: dark;
   font-family: var(--fr-mono);
   font-size: 0.625rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding-inline: 0.5rem;
+  padding-inline: 0.625rem 1.875rem;
   cursor: pointer;
 }
 
-/* No celular a barra tem logotipo, seletor e botão. Some com a bandeira e o
-   nome da língua fica; três elementos numa barra de 3,25 rem já é o limite. */
-@media (max-width: 26rem) {
-  .fr-topo__acoes select {
-    max-width: 6.5rem;
+/* O Firefox e o Windows pintam cada `<option>` por conta própria; sem isto a
+   lista sai escura com uma faixa clara por linha. */
+.fr-topo__acoes select option {
+  background-color: #12171c;
+  color: var(--fr-paper);
+}
+
+.fr-topo__acoes select:hover {
+  border-color: rgb(246 245 242 / 0.42);
+}
+
+.fr-topo__acoes select:focus-visible {
+  outline: 2px solid var(--fr-rouge);
+  outline-offset: 2px;
+}
+
+/*
+ * No celular o letreiro vira só a bandeirola.
+ *
+ * A barra tem três coisas e o espaço de uma e meia: letreiro (171 px),
+ * seletor de idioma (147 px) e o botão de entrar (88 px) não cabem em 375.
+ * Antes de existir o seletor cabia; a conta mudou quando ele entrou, e o que
+ * saía de cena era o BOTÃO — empurrado para fora da direita, invisível no
+ * telefone. Perder o call to action para caber a marca é a troca errada.
+ *
+ * Estreitar o seletor não resolve: a largura dele é o nome da língua, e o
+ * nome da língua é a razão de ele existir — quem procura "Deutsch" não
+ * reconhece "DE". A bandeirola sozinha, por outro lado, é a mesma marca: é o
+ * favicon, é o ícone na tela de início, e o link continua se anunciando como
+ * "Flamme Rouge" para quem usa leitor de tela.
+ */
+@media (max-width: 30rem) {
+  .fr-topo .fr-assinatura__nome {
+    display: none;
   }
 }
 
