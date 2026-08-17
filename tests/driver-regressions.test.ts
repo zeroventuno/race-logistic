@@ -1,3 +1,6 @@
+import { createTranslator } from "@/lib/i18n/translate";
+
+const t = createTranslator("pt-BR");
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -139,7 +142,7 @@ describe("crítico 2: confiança e ambiguidade da âncora", () => {
   }
 
   it("grava confiança, método e ambiguidade de cada ping", () => {
-    const parsed = validatePingBatch({ pings: [ping(1, 20_000, T0)] }, T0 + 1000);
+    const parsed = validatePingBatch({ pings: [ping(1, 20_000, T0)] }, T0 + 1000, t);
     if (!parsed.ok) throw new Error("lote inválido");
 
     const { rows } = prepareRows({
@@ -162,7 +165,7 @@ describe("crítico 2: confiança e ambiguidade da âncora", () => {
     // Sem `previous`, a busca é global: nos últimos 9 km o traçado repete a
     // ida, e o snap avisa que escolheu por desempate. Foi esse aviso descartado
     // que virou "ambulância a 200 m anunciada a 37,6 km".
-    const parsed = validatePingBatch({ pings: [ping(1, 47_000, T0)] }, T0 + 1000);
+    const parsed = validatePingBatch({ pings: [ping(1, 47_000, T0)] }, T0 + 1000, t);
     if (!parsed.ok) throw new Error("lote inválido");
 
     const { rows } = prepareRows({
@@ -301,7 +304,7 @@ describe("crítico 3: circuito de várias voltas", () => {
 
     for (let i = 0; i < pings.length; i += BATCH) {
       const slice = pings.slice(i, i + BATCH);
-      const parsed = validatePingBatch({ pings: slice }, T0 + pings.length * 5000);
+      const parsed = validatePingBatch({ pings: slice }, T0 + pings.length * 5000, t);
       if (!parsed.ok) throw new Error("lote inválido");
 
       const { rows, last } = prepareRows({

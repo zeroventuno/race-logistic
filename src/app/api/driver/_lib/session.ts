@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import type { NextResponse } from "next/server";
@@ -85,6 +86,7 @@ interface RaceEmbed {
 }
 
 export async function authenticateDriver(request: Request): Promise<AuthResult> {
+  const { t } = await getTranslator();
   const token = bearerFromHeader(request.headers.get("authorization"));
 
   if (!token) {
@@ -92,7 +94,7 @@ export async function authenticateDriver(request: Request): Promise<AuthResult> 
       ok: false,
       response: driverError(
         "session_unknown",
-        "Este aparelho não está vinculado a nenhuma posição.",
+        t("driver.api.notBound"),
       ),
     };
   }
@@ -117,7 +119,7 @@ export async function authenticateDriver(request: Request): Promise<AuthResult> 
       ok: false,
       response: driverError(
         "server_error",
-        "Falha ao validar a sessão. O aparelho continua vinculado; tentando de novo.",
+        t("driver.api.sessionCheckFailed"),
       ),
     };
   }
@@ -127,7 +129,7 @@ export async function authenticateDriver(request: Request): Promise<AuthResult> 
       ok: false,
       response: driverError(
         "session_unknown",
-        "Vínculo não reconhecido pelo servidor. Peça um código novo à direção.",
+        t("driver.api.sessionUnknown"),
       ),
     };
   }
@@ -138,8 +140,8 @@ export async function authenticateDriver(request: Request): Promise<AuthResult> 
       response: driverError(
         "session_revoked",
         data.revoked_reason
-          ? `Vínculo encerrado pela direção: ${data.revoked_reason}`
-          : "Este vínculo foi encerrado pela direção. Peça um código novo.",
+          ? t("driver.api.sessionRevokedWhy", { reason: data.revoked_reason })
+          : t("driver.api.sessionRevoked"),
       ),
     };
   }
@@ -152,7 +154,7 @@ export async function authenticateDriver(request: Request): Promise<AuthResult> 
       ok: false,
       response: driverError(
         "session_unknown",
-        "A posição vinculada a este aparelho não existe mais.",
+        t("driver.api.positionGone"),
       ),
     };
   }

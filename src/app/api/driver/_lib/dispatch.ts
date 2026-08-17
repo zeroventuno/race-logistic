@@ -1,3 +1,5 @@
+import { getTranslator } from "@/lib/i18n/server";
+import type { Translator } from "@/lib/i18n/translate";
 import "server-only";
 
 import { unwrapEmbed } from "@/app/api/driver/_lib/http";
@@ -164,6 +166,7 @@ export interface AutoDispatchParams {
  * seguir em frente com o alerta gravado.
  */
 export async function autoDispatch(params: AutoDispatchParams): Promise<DispatchOutcome> {
+  const { t } = await getTranslator();
   const admin = supabaseAdmin();
 
   const positions = params.positions ?? (await loadPositions(params.raceId));
@@ -241,7 +244,7 @@ export async function autoDispatch(params: AutoDispatchParams): Promise<Dispatch
       return { dispatched: null, suggestions: result.suggestions, note: result.note };
     }
 
-    const reason = describeDispatch(top);
+    const reason = describeDispatch(top, t);
 
     const { data, error: updateError } = await admin
       .from('alerts')
@@ -334,8 +337,11 @@ export async function scheduleDispatchRetry(
 }
 
 /** Texto que o diretor lê para entender (e contestar) a escolha do sistema. */
-function describeDispatch(s: NearestSuggestion): string {
-  const eta = s.etaSeconds == null ? "ETA indisponível" : `~${Math.max(1, Math.round(s.etaSeconds / 60))} min`;
+function describeDispatch(s: NearestSuggestion, t: Translator): string {
+  const eta =
+    s.etaSeconds == null
+      ? t("route.etaUnknown")
+      : `~${Math.max(1, Math.round(s.etaSeconds / 60))} min`;
   return `${s.label} — ${s.reason} · ${eta}`;
 }
 

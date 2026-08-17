@@ -1,3 +1,6 @@
+import { createTranslator } from "@/lib/i18n/translate";
+
+const t = createTranslator("pt-BR");
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -78,7 +81,7 @@ describe("validatePingBatch", () => {
       ],
     };
 
-    const result = validatePingBatch(raw, T0 + 60_000);
+    const result = validatePingBatch(raw, T0 + 60_000, t);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
@@ -98,7 +101,7 @@ describe("validatePingBatch", () => {
       ],
     };
 
-    const result = validatePingBatch(raw, T0 + 60_000);
+    const result = validatePingBatch(raw, T0 + 60_000, t);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
@@ -119,7 +122,7 @@ describe("validatePingBatch", () => {
       ],
     };
 
-    const result = validatePingBatch(raw, T0);
+    const result = validatePingBatch(raw, T0, t);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
@@ -138,7 +141,7 @@ describe("validatePingBatch", () => {
       ],
     };
 
-    const result = validatePingBatch(raw, T0);
+    const result = validatePingBatch(raw, T0, t);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.accepted).toHaveLength(1);
@@ -146,7 +149,7 @@ describe("validatePingBatch", () => {
 
   it("elimina duplicata dentro do lote sem reportá-la como recusa", () => {
     const duplicated = ping({ clientSeq: 1 });
-    const result = validatePingBatch({ pings: [duplicated, { ...duplicated }] }, T0 + 5000);
+    const result = validatePingBatch({ pings: [duplicated, { ...duplicated }] }, T0 + 5000, t);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -156,7 +159,7 @@ describe("validatePingBatch", () => {
 
   it("recusa o lote inteiro quando ele é grande demais para ser fila legítima", () => {
     const pings = Array.from({ length: 501 }, (_, i) => ping({ clientSeq: i + 1 }));
-    const result = validatePingBatch({ pings }, T0 + 60_000);
+    const result = validatePingBatch({ pings }, T0 + 60_000, t);
     expect(result.ok).toBe(false);
   });
 });
@@ -171,6 +174,7 @@ describe("estimateClockSkewMs", () => {
         ],
       },
       T0 + 10_000,
+      t,
     );
 
     expect(parsed.ok).toBe(true);
@@ -260,7 +264,7 @@ describe("reconstrução da fila offline sobre percurso real", () => {
     // junto com o ponto novo e a rede reordena.
     const shuffled = [...raw].sort(() => (Math.random() > 0.5 ? 1 : -1));
 
-    const parsed = validatePingBatch({ pings: shuffled }, T0 + 130_000);
+    const parsed = validatePingBatch({ pings: shuffled }, T0 + 130_000, t);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
 
@@ -293,7 +297,7 @@ describe("reconstrução da fila offline sobre percurso real", () => {
     const START = AMBIGUOUS_START_M;
     const { raw, truth } = drive(START, 40);
 
-    const parsed = validatePingBatch({ pings: raw }, T0 + 130_000);
+    const parsed = validatePingBatch({ pings: raw }, T0 + 130_000, t);
     if (!parsed.ok) throw new Error("lote inválido");
 
     const seed = { offsetM: START, recordedAtMs: T0 - 3000, speedMps: 12 };

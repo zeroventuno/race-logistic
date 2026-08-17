@@ -12,6 +12,7 @@
  * veículo pular pelo mapa.
  */
 
+import type { Translator } from "@/lib/i18n/translate";
 import { snapToRoute, SnapInputError, type SnapPrevious } from "@/lib/route/snap";
 import type { RouteIndex } from "@/lib/route/track";
 import type { ClientPing } from "@/lib/types";
@@ -69,15 +70,19 @@ export type BatchParse =
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function validatePingBatch(raw: unknown, serverNowMs: number): BatchParse {
+export function validatePingBatch(
+  raw: unknown,
+  serverNowMs: number,
+  t: Translator,
+): BatchParse {
   if (typeof raw !== "object" || raw === null) {
-    return { ok: false, error: "Corpo da requisição precisa ser um objeto JSON." };
+    return { ok: false, error: t("driver.api.bodyNotObject") };
   }
 
   const pings = (raw as { pings?: unknown }).pings;
 
   if (!Array.isArray(pings)) {
-    return { ok: false, error: "Campo `pings` precisa ser um array." };
+    return { ok: false, error: t("driver.api.pingsNotArray") };
   }
 
   if (pings.length === 0) {
@@ -87,7 +92,10 @@ export function validatePingBatch(raw: unknown, serverNowMs: number): BatchParse
   if (pings.length > MAX_BATCH_SIZE) {
     return {
       ok: false,
-      error: `Lote com ${pings.length} pings excede o máximo de ${MAX_BATCH_SIZE}. Divida o envio.`,
+      error: t("driver.api.batchTooLarge", {
+        count: pings.length,
+        max: MAX_BATCH_SIZE,
+      }),
     };
   }
 
@@ -96,7 +104,7 @@ export function validatePingBatch(raw: unknown, serverNowMs: number): BatchParse
   const seen = new Set<string>();
 
   for (const item of pings) {
-    const outcome = validateOne(item, serverNowMs);
+    const outcome = validateOne(item, serverNowMs, t);
 
     if (!outcome.ok) {
       rejected.push(outcome.rejection);
@@ -129,7 +137,11 @@ type OneResult =
   | { ok: true; ping: ValidatedPing }
   | { ok: false; rejection: PingRejection };
 
-function validateOne(item: unknown, serverNowMs: number): OneResult {
+function validateOne(
+  item: unknown,
+  serverNowMs: number,
+  t: Translator,
+): OneResult {
   const p = item as Partial<ClientPing> | null;
 
   const id = typeof p?.clientPingId === "string" ? p.clientPingId : "";
@@ -139,7 +151,10 @@ function validateOne(item: unknown, serverNowMs: number): OneResult {
   if (!UUID_RE.test(id)) {
     return {
       ok: false,
-      rejection: { clientPingId: id || "(sem id)", reason: "clientPingId não é um UUID válido." },
+      rejection: {
+        clientPingId: id || "(sem id)",
+        reason: t("driver.api.pingBadId"),
+      },
     };
   }
 
@@ -149,35 +164,42 @@ function validateOne(item: unknown, serverNowMs: number): OneResult {
   });
 
   if (!isFiniteNumber(p?.lat) || !isFiniteNumber(p?.lng)) {
-    return reject("Coordenada ausente ou não numérica.");
+    return reject(t("driver.api.pingNoCoord"));
   }
 
   const lat = p!.lat as number;
   const lng = p!.lng as number;
 
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return reject("Coordenada fora do intervalo geográfico válido.");
+    return reject(t("driver.api.pingOutOfRange"));
   }
 
   // (0, 0) é o Golfo da Guiné: nenhuma prova acontece lá, e é o valor que
   // aparece quando a API de geolocalização devolve um objeto zerado.
   if (lat === 0 && lng === 0) {
-    return reject("Coordenada (0, 0) — leitura inválida do GPS.");
+    return reject(t("driver.api.pingNullIsland"));
   }
 
   const accuracyM = optionalNumber(p?.accuracyM);
   if (accuracyM != null && accuracyM > MAX_ACCURACY_M) {
-    return reject(`Precisão de ${Math.round(accuracyM)} m acima do limite de ${MAX_ACCURACY_M} m.`);
+    return reject(
+      t("driver.api.pingInaccurate", {
+        accuracy: Math.round(accuracyM),
+        limit: MAX_ACCURACY_M,
+      }),
+    );
   }
 
   const recordedAtMs = parseIsoMs(p?.recordedAt);
   if (recordedAtMs === null) {
-    return reject("recordedAt não é uma data ISO 8601 válida.");
+    return reject(t("driver.api.pingBadDate"));
   }
 
   if (recordedAtMs - serverNowMs > MAX_FUTURE_SKEW_MS) {
     return reject(
-      `recordedAt está ${Math.round((recordedAtMs - serverNowMs) / 60000)} min no futuro — relógio do aparelho desregulado.`,
+      t("driver.api.pingFuture", {
+        minutes: Math.round((recordedAtMs - serverNowMs) / 60000),
+      }),
     );
   }
 

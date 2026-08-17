@@ -1,3 +1,5 @@
+import type { Translator } from "@/lib/i18n/translate";
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -85,12 +87,13 @@ interface RaceRow {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const { t } = await getTranslator();
   const ctx = await clientContext(request);
   const ipKey = `ip:${await sha256Hex(ctx.ip)}`;
 
   const body = await readJsonBody(request);
   if (!body.ok) {
-    return driverError("bad_request", "Corpo da requisição não é JSON válido.");
+    return driverError("bad_request", t("driver.api.badJson"));
   }
 
   const payload = body.value as Partial<BindRequest>;
@@ -117,7 +120,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     await recordAttempt({ ...attempt, succeeded: false, positionId: null, raceId: null });
     return driverError(
       "rate_limited",
-      `Muitas tentativas seguidas. Aguarde ${Math.ceil(limit.retryAfterSeconds / 60)} min e confira o código com a direção.`,
+      t("driver.api.bindRateLimited", {
+        minutes: Math.ceil(limit.retryAfterSeconds / 60),
+      }),
       { retryAfterSeconds: limit.retryAfterSeconds },
     );
   }
@@ -125,7 +130,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!code) {
     await recordAttempt({ ...attempt, succeeded: false, positionId: null, raceId: null });
     await slowDown();
-    return invalidCode();
+    return invalidCode(t);
   }
 
   const admin = supabaseAdmin();
@@ -140,7 +145,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     .maybeSingle<PositionRow>();
 
   if (positionError) {
-    return driverError("server_error", "Falha ao consultar o código. Tente de novo.");
+    return driverError("server_error", t("driver.api.bindLookupFailed"));
   }
 
   const expired =
@@ -155,7 +160,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       raceId: position?.race_id ?? null,
     });
     await slowDown();
-    return invalidCode();
+    return invalidCode(t);
   }
 
   const { data: race, error: raceError } = await admin
@@ -165,7 +170,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     .maybeSingle<RaceRow>();
 
   if (raceError || !race) {
-    return driverError("server_error", "Falha ao carregar a prova deste código.");
+    return driverError("server_error", t("driver.api.bindRaceFailed"));
   }
 
   // Prova encerrada responde EXATAMENTE como código inexistente.
@@ -184,7 +189,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       raceId: race.id,
     });
     await slowDown();
-    return invalidCode();
+    return invalidCode(t);
   }
 
   const bound = await bindSession({
@@ -192,12 +197,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     raceId: position.race_id,
     deviceLabel,
     userAgent: ctx.userAgent,
-  });
+  }, t);
 
   if (!bound) {
     return driverError(
       "server_error",
-      "Não foi possível concluir o vínculo. Tente de novo em alguns segundos.",
+      t("driver.api.bindFailed"),
     );
   }
 
@@ -233,11 +238,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 }
 
 /** Mensagem única para todos os motivos de recusa do código. */
-function invalidCode(): NextResponse {
-  return driverError(
-    "invalid_code",
-    "Código não reconhecido. Confira os 6 caracteres com a direção da prova.",
-  );
+function invalidCode(t: Translator): NextResponse {
+  return driverError("invalid_code", t("driver.api.bindUnknownCode"));
 }
 
 interface RateLimitVerdict {
@@ -370,7 +372,10 @@ interface BindParams {
  * O retry existe para o caso de dois aparelhos vincularem no mesmo instante: um
  * dos dois perde a corrida contra o índice único e precisa refazer o ciclo.
  */
-async function bindSession(params: BindParams): Promise<{ token: string } | null> {
+async function bindSession(
+  params: BindParams,
+  t: Translator,
+): Promise<{ token: string } | null> {
   const admin = supabaseAdmin();
 
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -378,7 +383,7 @@ async function bindSession(params: BindParams): Promise<{ token: string } | null
       .from("position_sessions")
       .update({
         revoked_at: new Date().toISOString(),
-        revoked_reason: "outro aparelho assumiu esta posição",
+        revoked_reason: t("driver.api.takenOver"),
       })
       .eq("position_id", params.positionId)
       .is("revoked_at", null);

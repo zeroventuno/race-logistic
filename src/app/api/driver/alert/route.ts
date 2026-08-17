@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -99,6 +100,7 @@ interface SuggestionRow {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const { t } = await getTranslator();
   const auth = await authenticateDriver(request);
   if (!auth.ok) return auth.response;
 
@@ -185,7 +187,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!alert) {
       return driverError(
         "server_error",
-        "Não foi possível registrar o alerta. Mantenha na fila e avise pelo rádio.",
+        t("driver.api.alertSaveFailed"),
       );
     }
 
@@ -195,7 +197,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!alert) {
     return driverError(
       "server_error",
-      "Não foi possível registrar o alerta. Mantenha na fila e avise pelo rádio.",
+      t("driver.api.alertSaveFailed"),
     );
   }
 

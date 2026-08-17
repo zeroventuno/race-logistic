@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -150,6 +151,7 @@ export async function buildLiveSnapshot(
   supabase: SupabaseClient,
   raceId: string,
 ): Promise<LiveSnapshot> {
+  const { t } = await getTranslator();
   const nowMs = Date.now();
   const warnings: string[] = [];
 
@@ -201,7 +203,7 @@ export async function buildLiveSnapshot(
   const raceRow = raceRes.data as Record<string, unknown> | null;
   // RLS: quem não é membro recebe zero linhas, não um 403. "Não existe para
   // você" é a resposta certa — não vaza nem a existência do evento.
-  if (!raceRow) throw new LiveSnapshotError(404, "Prova não encontrada.");
+  if (!raceRow) throw new LiveSnapshotError(404, t("errors.raceNotFound"));
 
   const laps = Math.max(1, Number(raceRow.laps ?? 1) || 1);
 
@@ -225,15 +227,16 @@ export async function buildLiveSnapshot(
   if (positionsRes.error) {
     throw new LiveSnapshotError(
       500,
-      `Falha ao ler as posições: ${positionsRes.error.message}`,
+      t("live.warnPositions", { detail: positionsRes.error.message }),
     );
   }
 
   const positions = (positionsRes.data ?? []) as unknown as PositionRow[];
 
-  if (statesRes.error) warnings.push("Falha ao ler as posições ao vivo dos veículos.");
-  if (sessionsRes.error) warnings.push("Falha ao ler os vínculos de aparelho.");
-  if (alertsRes.error) warnings.push(`Falha ao ler os alertas: ${alertsRes.error.message}`);
+  if (statesRes.error) warnings.push(t("live.warnStates"));
+  if (sessionsRes.error) warnings.push(t("live.warnSessions"));
+  if (alertsRes.error)
+    warnings.push(t("live.warnAlerts", { detail: alertsRes.error.message }));
 
   const states = new Map<string, StateRow>();
   for (const s of (statesRes.data ?? []) as unknown as StateRow[]) {
@@ -258,7 +261,7 @@ export async function buildLiveSnapshot(
     track = loaded?.track ?? null;
   } catch (error) {
     warnings.push(
-      `Geometria do percurso indisponível: ${(error as Error).message}. O trecho ocupado não será desenhado.`,
+      t("live.warnGeometry", { detail: `${(error as Error).message}.` }),
     );
   }
 

@@ -11,6 +11,8 @@
  * funções sobre a mesma entrada, então o número da tela é o número do banco.
  */
 
+import type { Locale } from "@/lib/i18n/config";
+import type { Translator } from "@/lib/i18n/translate";
 import type { RawRoutePoint } from "@/lib/route/track";
 import type { RoutePointTuple } from "@/lib/types";
 
@@ -77,22 +79,29 @@ export interface WireValidation {
  * primeiro ponto ruim, dizendo qual é o índice — que é o que ajuda quem está
  * tentando entender por que o arquivo dele não entra.
  */
-export function validateWirePoints(value: unknown): WireValidation {
+export function validateWirePoints(
+  value: unknown,
+  t: Translator,
+  locale: Locale,
+): WireValidation {
   if (!Array.isArray(value)) {
-    return { ok: false, error: "A lista de pontos do percurso não veio." };
+    return { ok: false, error: t("route.pointsMissing") };
   }
 
   if (value.length < 2) {
     return {
       ok: false,
-      error: "O percurso precisa de pelo menos 2 pontos.",
+      error: t("errors.db.trackPoints"),
     };
   }
 
   if (value.length > MAX_UPLOAD_POINTS) {
     return {
       ok: false,
-      error: `O percurso tem ${value.length.toLocaleString("pt-BR")} pontos, acima do limite de ${MAX_UPLOAD_POINTS.toLocaleString("pt-BR")}. Recorte o arquivo para o trecho da prova antes de enviar.`,
+      error: t("route.pointsTooMany", {
+        count: value.length.toLocaleString(locale),
+        limit: MAX_UPLOAD_POINTS.toLocaleString(locale),
+      }),
     };
   }
 
@@ -101,7 +110,7 @@ export function validateWirePoints(value: unknown): WireValidation {
   for (let i = 0; i < value.length; i++) {
     const p: unknown = value[i];
     if (!Array.isArray(p) || p.length < 2) {
-      return { ok: false, error: `O ponto ${i + 1} está malformado.` };
+      return { ok: false, error: t("route.pointMalformed", { index: i + 1 }) };
     }
 
     const lat = Number(p[0]);
@@ -111,13 +120,13 @@ export function validateWirePoints(value: unknown): WireValidation {
     if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
       return {
         ok: false,
-        error: `O ponto ${i + 1} tem latitude inválida (${String(p[0])}).`,
+        error: t("route.pointBadLat", { index: i + 1, value: String(p[0]) }),
       };
     }
     if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
       return {
         ok: false,
-        error: `O ponto ${i + 1} tem longitude inválida (${String(p[1])}).`,
+        error: t("route.pointBadLng", { index: i + 1, value: String(p[1]) }),
       };
     }
 

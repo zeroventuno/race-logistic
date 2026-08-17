@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -136,6 +137,7 @@ interface AlertRow {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
+  const { t } = await getTranslator();
   const auth = await authenticateDriver(request);
   if (!auth.ok) return auth.response;
 
@@ -182,7 +184,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   ]);
 
   if (positionsResult.error) {
-    return driverError("server_error", "Falha ao carregar as posições da prova.");
+    return driverError("server_error", t("driver.api.positionsFailed"));
   }
 
   const rows = positionsResult.data ?? [];

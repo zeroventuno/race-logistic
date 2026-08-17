@@ -11,34 +11,60 @@
  * horário de verão, e o que falta é só inverter a conta.
  */
 
-/** Fusos oferecidos no formulário. Curados: a lista completa da IANA tem ~600
- *  entradas e transformaria um campo trivial numa caça ao tesouro. */
-export const TIMEZONE_OPTIONS: ReadonlyArray<{ value: string; label: string }> =
-  [
-    { value: "Europe/Rome", label: "Itália — Roma (Europe/Rome)" },
-    { value: "Europe/Lisbon", label: "Portugal — Lisboa (Europe/Lisbon)" },
-    { value: "Europe/Madrid", label: "Espanha — Madri (Europe/Madrid)" },
-    { value: "Europe/Paris", label: "França — Paris (Europe/Paris)" },
-    { value: "Europe/Brussels", label: "Bélgica — Bruxelas (Europe/Brussels)" },
-    { value: "Europe/Zurich", label: "Suíça — Zurique (Europe/Zurich)" },
-    { value: "Europe/Berlin", label: "Alemanha — Berlim (Europe/Berlin)" },
-    { value: "Europe/Vienna", label: "Áustria — Viena (Europe/Vienna)" },
-    { value: "Europe/Amsterdam", label: "Países Baixos (Europe/Amsterdam)" },
-    { value: "Europe/London", label: "Reino Unido — Londres (Europe/London)" },
-    { value: "Europe/Warsaw", label: "Polônia — Varsóvia (Europe/Warsaw)" },
-    { value: "Europe/Athens", label: "Grécia — Atenas (Europe/Athens)" },
-    { value: "UTC", label: "UTC (sem horário de verão)" },
-    { value: "America/Sao_Paulo", label: "Brasil — São Paulo" },
-    { value: "America/Bahia", label: "Brasil — Salvador" },
-    { value: "America/Manaus", label: "Brasil — Manaus" },
-    {
-      value: "America/Argentina/Buenos_Aires",
-      label: "Argentina — Buenos Aires",
-    },
-    { value: "America/Bogota", label: "Colômbia — Bogotá" },
-    { value: "America/New_York", label: "EUA — Nova York" },
-    { value: "America/Los_Angeles", label: "EUA — Los Angeles" },
-  ];
+/**
+ * Fusos oferecidos no formulário.
+ *
+ * Curados: a lista completa da IANA tem ~600 entradas e transformaria um campo
+ * trivial numa caça ao tesouro.
+ *
+ * O RÓTULO É MONTADO, não escrito. O nome do país sai do `Intl.DisplayNames`,
+ * que já sabe dizer "Itália", "Italia", "Italy", "Italien" — traduzir vinte
+ * países à mão em seis idiomas seria copiar para dentro do repositório uma
+ * tabela que o navegador e o Node já carregam. O identificador IANA fica entre
+ * parênteses porque é o que resolve a ambiguidade real ("Brasil" tem quatro
+ * fusos) e porque quem conhece fuso reconhece o identificador antes do nome.
+ */
+const FUSOS: ReadonlyArray<{ value: string; region: string | null }> = [
+  { value: "Europe/Rome", region: "IT" },
+  { value: "Europe/Lisbon", region: "PT" },
+  { value: "Europe/Madrid", region: "ES" },
+  { value: "Europe/Paris", region: "FR" },
+  { value: "Europe/Brussels", region: "BE" },
+  { value: "Europe/Zurich", region: "CH" },
+  { value: "Europe/Berlin", region: "DE" },
+  { value: "Europe/Vienna", region: "AT" },
+  { value: "Europe/Amsterdam", region: "NL" },
+  { value: "Europe/London", region: "GB" },
+  { value: "Europe/Warsaw", region: "PL" },
+  { value: "Europe/Athens", region: "GR" },
+  { value: "UTC", region: null },
+  { value: "America/Sao_Paulo", region: "BR" },
+  { value: "America/Bahia", region: "BR" },
+  { value: "America/Manaus", region: "BR" },
+  { value: "America/Argentina/Buenos_Aires", region: "AR" },
+  { value: "America/Bogota", region: "CO" },
+  { value: "America/New_York", region: "US" },
+  { value: "America/Los_Angeles", region: "US" },
+];
+
+export interface TimeZoneOption {
+  value: string;
+  label: string;
+}
+
+export function timeZoneOptions(intlTag: string): TimeZoneOption[] {
+  let paises: Intl.DisplayNames | null = null;
+  try {
+    paises = new Intl.DisplayNames([intlTag], { type: "region" });
+  } catch {
+    // Ambiente sem ICU completo: sobra o identificador, que continua servindo.
+  }
+
+  return FUSOS.map(({ value, region }) => {
+    const pais = region && paises ? (paises.of(region) ?? region) : null;
+    return { value, label: pais ? `${pais} (${value})` : value };
+  });
+}
 
 export const DEFAULT_TIMEZONE = "Europe/Rome";
 

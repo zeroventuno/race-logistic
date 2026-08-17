@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import type { ProvaFormState } from "@/app/(director)/_actions/race";
-import { TIMEZONE_OPTIONS } from "@/app/(director)/_lib/timezone";
+import { timeZoneOptions } from "@/app/(director)/_lib/timezone";
 import { Aviso, Botao, Campo, entradaClasse } from "@/components/director/ui";
 import { BASEMAP_PADRAO, basemapsDisponiveis } from "@/lib/map/basemaps";
-import { useT } from "@/lib/i18n/client";
+import { useI18n, useT } from "@/lib/i18n/client";
+import { LOCALE_META } from "@/lib/i18n/config";
 
 export interface ValoresProva {
   raceId?: string;
@@ -43,6 +44,14 @@ export function ProvaForm({
   modo: "criar" | "editar";
 }) {
   const t = useT();
+  const { locale } = useI18n();
+
+  // A lista de fusos é recalculada por idioma, e não uma vez no módulo: o nome
+  // do país vem do Intl e muda junto com a escolha da pessoa.
+  const fusos = useMemo(
+    () => timeZoneOptions(LOCALE_META[locale]?.intlTag ?? "pt-BR"),
+    [locale],
+  );
   const [estado, submeter, pendente] = useActionState<ProvaFormState, FormData>(
     acao,
     {},
@@ -148,10 +157,10 @@ export function ProvaForm({
           defaultValue={valores.fuso}
           className={entradaClasse(campo("fuso"))}
         >
-          {TIMEZONE_OPTIONS.some((tz) => tz.value === valores.fuso) ? null : (
+          {fusos.some((tz) => tz.value === valores.fuso) ? null : (
             <option value={valores.fuso}>{valores.fuso}</option>
           )}
-          {TIMEZONE_OPTIONS.map((tz) => (
+          {fusos.map((tz) => (
             <option key={tz.value} value={tz.value}>
               {tz.label}
             </option>

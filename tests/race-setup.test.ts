@@ -1,3 +1,6 @@
+import { createTranslator } from "@/lib/i18n/translate";
+
+const t = createTranslator("pt-BR");
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -263,15 +266,15 @@ describe("formatação", () => {
 
 describe("validateWirePoints", () => {
   it("recusa lista curta demais para ser um percurso", () => {
-    expect(validateWirePoints([[44.9, 7.6, null]]).ok).toBe(false);
-    expect(validateWirePoints("nada").ok).toBe(false);
+    expect(validateWirePoints([[44.9, 7.6, null]], t, "pt-BR").ok).toBe(false);
+    expect(validateWirePoints("nada", t, "pt-BR").ok).toBe(false);
   });
 
   it("aponta qual ponto está errado", () => {
     const r = validateWirePoints([
       [44.9, 7.6, 100],
       [91, 7.6, 100],
-    ]);
+    ], t, "pt-BR");
     expect(r.ok).toBe(false);
     expect(r.error).toContain("ponto 2");
     expect(r.error).toContain("latitude");
@@ -281,7 +284,7 @@ describe("validateWirePoints", () => {
     const gigante = Array.from({ length: MAX_UPLOAD_POINTS + 1 }, () => [
       44.9, 7.6, null,
     ]);
-    const r = validateWirePoints(gigante);
+    const r = validateWirePoints(gigante, t, "pt-BR");
     expect(r.ok).toBe(false);
     expect(r.error).toContain("limite");
   });
@@ -290,7 +293,7 @@ describe("validateWirePoints", () => {
     const r = validateWirePoints([
       [44.9, 7.6],
       [44.91, 7.61, "312"],
-    ]);
+    ], t, "pt-BR");
     expect(r.ok).toBe(true);
     expect(r.points?.[0]?.[2]).toBeNull();
     expect(r.points?.[1]?.[2]).toBe(312);

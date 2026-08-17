@@ -40,7 +40,7 @@ export async function POST(
   context: { params: Promise<{ raceId: string }> },
 ) {
   const { raceId } = await context.params;
-  const { t } = await getTranslator();
+  const { locale, t } = await getTranslator();
 
   if (!isUuid(raceId)) {
     return erro(400, t("errors.invalidRace"));
@@ -82,7 +82,7 @@ export async function POST(
     return erro(400, "Origem do percurso desconhecida.");
   }
 
-  const validacao = validateWirePoints(payload?.points);
+  const validacao = validateWirePoints(payload?.points, t, locale);
   if (!validacao.ok || !validacao.points) {
     return erro(400, validacao.error ?? t("route.uploadBadPoints"));
   }

@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -112,13 +113,17 @@ export async function readJsonBody(
   request: Request,
   maxBytes = DEFAULT_MAX_BODY_BYTES,
 ): Promise<JsonBody> {
+  const { t } = await getTranslator();
   const declared = Number(request.headers.get("content-length") ?? "");
   if (Number.isFinite(declared) && declared > maxBytes) {
-    return { ok: false, reason: `Corpo de ${declared} bytes acima do limite de ${maxBytes}.` };
+    return {
+      ok: false,
+      reason: t("driver.api.bodyTooLarge", { bytes: declared, limit: maxBytes }),
+    };
   }
 
   const body = request.body;
-  if (!body) return { ok: false, reason: "Requisição sem corpo." };
+  if (!body) return { ok: false, reason: t("driver.api.noBody") };
 
   const reader = body.getReader();
   const chunks: Uint8Array[] = [];
@@ -133,12 +138,15 @@ export async function readJsonBody(
       total += value.byteLength;
       if (total > maxBytes) {
         await reader.cancel().catch(() => undefined);
-        return { ok: false, reason: `Corpo acima do limite de ${maxBytes} bytes.` };
+        return {
+          ok: false,
+          reason: t("driver.api.bodyOverLimit", { limit: maxBytes }),
+        };
       }
       chunks.push(value);
     }
   } catch {
-    return { ok: false, reason: "Falha ao ler o corpo da requisição." };
+    return { ok: false, reason: t("driver.api.bodyReadFailed") };
   }
 
   const merged = new Uint8Array(total);
@@ -151,7 +159,7 @@ export async function readJsonBody(
   try {
     return { ok: true, value: JSON.parse(new TextDecoder().decode(merged)) };
   } catch {
-    return { ok: false, reason: "Corpo da requisição não é JSON válido." };
+    return { ok: false, reason: t("driver.api.badJson") };
   }
 }
 

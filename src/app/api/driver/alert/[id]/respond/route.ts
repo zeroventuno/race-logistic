@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -65,6 +66,7 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
+  const { t } = await getTranslator();
   const auth = await authenticateDriver(request);
   if (!auth.ok) return auth.response;
 
@@ -73,13 +75,16 @@ export async function POST(
   const { id } = await context.params;
 
   const body = await readJsonBody(request);
-  if (!body.ok) return driverError("bad_request", "Corpo da requisição não é JSON válido.");
+  if (!body.ok) return driverError("bad_request", t("driver.api.badJson"));
 
   const payload = body.value as Partial<DispatchResponseRequest>;
   const action = payload?.action;
 
   if (!action || !ACTIONS.includes(action)) {
-    return driverError("bad_request", `Ação inválida: ${String(action)}.`);
+    return driverError(
+      "bad_request",
+      t("driver.api.actionInvalid", { action: String(action) }),
+    );
   }
 
   const { data: alert } = await admin
@@ -94,7 +99,7 @@ export async function POST(
     .maybeSingle<AlertRow>();
 
   if (!alert) {
-    return driverError("not_found", "Alerta não encontrado nesta prova.");
+    return driverError("not_found", t("driver.api.alertNotFound"));
   }
 
   const result = (status: DriverAlertStatus, extra?: Partial<DispatchResponseResult>) =>

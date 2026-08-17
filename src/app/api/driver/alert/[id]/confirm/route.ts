@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -35,6 +36,7 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
+  const { t } = await getTranslator();
   const auth = await authenticateDriver(request);
   if (!auth.ok) return auth.response;
 
@@ -43,13 +45,16 @@ export async function POST(
   const { id } = await context.params;
 
   const body = await readJsonBody(request);
-  if (!body.ok) return driverError("bad_request", "Corpo da requisição não é JSON válido.");
+  if (!body.ok) return driverError("bad_request", t("driver.api.badJson"));
 
   const payload = body.value as Partial<AlertConfirmationRequest>;
 
   const kind = payload?.kind;
   if (!kind || !KINDS.includes(kind)) {
-    return driverError("bad_request", `Tipo de confirmação inválido: ${String(kind)}.`);
+    return driverError(
+      "bad_request",
+      t("driver.api.confirmKindInvalid", { kind: String(kind) }),
+    );
   }
 
   const clientConfirmationId =
@@ -65,7 +70,7 @@ export async function POST(
     .eq("race_id", session.raceId)
     .maybeSingle<{ id: string }>();
 
-  if (!alert) return driverError("not_found", "Alerta não encontrado nesta prova.");
+  if (!alert) return driverError("not_found", t("driver.api.alertNotFound"));
 
   const { data: existing } = await admin
     .from("alert_confirmations")
@@ -97,7 +102,7 @@ export async function POST(
   });
 
   if (error && error.code !== "23505") {
-    return driverError("server_error", "Falha ao registrar a confirmação. Tente de novo.");
+    return driverError("server_error", t("driver.api.confirmFailed"));
   }
 
   await logAlertEvent(alert.id, "confirmation", "driver", {

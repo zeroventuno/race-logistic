@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import "server-only";
 
 import { NextResponse } from "next/server";
@@ -73,6 +74,7 @@ interface PreviousPingRow {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const { t } = await getTranslator();
   const auth = await authenticateDriver(request);
   if (!auth.ok) return auth.response;
 
@@ -85,7 +87,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const serverNowMs = Date.now();
-  const parsed = validatePingBatch(body.value, serverNowMs);
+  const parsed = validatePingBatch(body.value, serverNowMs, t);
 
   if (!parsed.ok) {
     return driverError("bad_request", parsed.error);
