@@ -49,6 +49,13 @@ export interface LiveRaceView {
   targetGapSeconds: number;
   minGapSeconds: number | null;
   maxGapSeconds: number | null;
+  /**
+   * Mapa de fundo escolhido para esta prova — identificador do catálogo em
+   * `@/lib/map/basemaps`. Vem do payload, e não de configuração do cliente,
+   * porque o app do motorista precisa do mesmo fundo que a direção e não tem
+   * sessão para consultar preferência de conta.
+   */
+  basemap: string | null;
 }
 
 export interface LiveRouteView {

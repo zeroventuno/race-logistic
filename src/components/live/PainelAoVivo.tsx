@@ -180,6 +180,7 @@ export function PainelAoVivo({
         <div className="absolute inset-0">
           {renderPoints.length >= 2 ? (
             <MapaAoVivo
+              basemap={snapshot.race.basemap}
               renderPoints={renderPoints}
               vehicles={snapshot.vehicles}
               alerts={snapshot.alerts}

@@ -4,7 +4,8 @@ import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { alertGlyphSvg } from "@/components/icons/alerta";
-import { resolverCor } from "@/lib/cor-token";
+import { resolverBasemap } from "@/lib/map/basemaps";
+import { resolverTema } from "@/lib/tema-atual";
 import { vehicleGlyphSvg } from "@/components/icons/vehicle";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { useT } from "@/lib/i18n/client";
@@ -48,6 +49,8 @@ import {
  */
 
 export interface MapaAoVivoProps {
+  /** Mapa de fundo escolhido na prova. */
+  basemap?: string | null;
   renderPoints: [number, number][];
   vehicles: LiveVehicleView[];
   alerts: LiveAlertView[];
@@ -67,22 +70,18 @@ type Translate = ReturnType<typeof useT>;
  * A rota, exatamente como o handoff especifica: casing de 9 px, traço de 4,5,
  * junta arredondada.
  *
- * As cores vêm de tokens porque o percurso é a única linha do mapa que é NOSSA
- * — todo o resto vem do basemap. Sobre mapa claro o azul escuro se sustenta;
- * sobre o escuro ele precisa clarear, senão desaparece nas estradas cinzas.
- *
- * A resolução passa por `resolverCor` e não por `getPropertyValue`: o token é
- * um `light-dark()`, e ler a propriedade direto devolve o texto cru, que o
- * MapLibre não interpreta. Foi assim que a rota sumiu do mapa uma vez.
+ * A COR VEM DO FUNDO, não de um token global. A linha do percurso é a única
+ * coisa nossa no mapa, e ela precisa sobreviver ao que estiver embaixo: azul
+ * escuro some sobre satélite noturno, laranja some sobre topográfico bege. Por
+ * isso cada fundo do catálogo carrega o próprio par de cores, já calibrado —
+ * e trocar de fundo troca a rota junto, sem ninguém precisar lembrar.
  */
-function corDaRota(): { linha: string; casing: string } {
-  return {
-    linha: resolverCor("--route-line", "#78bef0"),
-    casing: resolverCor("--route-casing", "rgba(10,13,16,.6)"),
-  };
+function corDaRota(basemap?: string | null): { linha: string; casing: string } {
+  return resolverBasemap(basemap).rota[resolverTema()];
 }
 
 export function MapaAoVivo({
+  basemap,
   renderPoints,
   vehicles,
   alerts,
@@ -144,7 +143,7 @@ export function MapaAoVivo({
         (fonte as maplibregl.GeoJSONSource).setData(geo);
       } else {
         map.addSource("percurso", { type: "geojson", data: geo });
-        const cor = corDaRota();
+        const cor = corDaRota(basemap);
         map.addLayer({
           id: "percurso-halo",
           type: "line",

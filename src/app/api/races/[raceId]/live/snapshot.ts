@@ -219,6 +219,7 @@ export async function buildLiveSnapshot(
       raceRow.min_gap_minutes == null ? null : Number(raceRow.min_gap_minutes) * 60,
     maxGapSeconds:
       raceRow.max_gap_minutes == null ? null : Number(raceRow.max_gap_minutes) * 60,
+    basemap: (raceRow.map_basemap as string | null) ?? null,
   };
 
   if (positionsRes.error) {

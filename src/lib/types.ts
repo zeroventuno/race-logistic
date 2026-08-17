@@ -240,6 +240,12 @@ export interface Race {
   created_by: string;
   created_at: string;
   updated_at: string;
+  /**
+   * Mapa de fundo desta prova (identificador do catálogo em
+   * `@/lib/map/basemaps`). Opcional porque a coluna é nova: prova criada
+   * antes da migração devolve `undefined`, e quem resolve cai no padrão.
+   */
+  map_basemap?: string | null;
 }
 
 /** Formato compacto persistido: [lng, lat, distância cumulativa, elevação]. */
