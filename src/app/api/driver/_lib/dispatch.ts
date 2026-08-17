@@ -212,6 +212,32 @@ export async function autoDispatch(params: AutoDispatchParams): Promise<Dispatch
     const top = result.suggestions[0];
 
     if (!top) {
+      // NINGUÉM FOI ACIONADO — e o diretor precisa saber POR QUÊ, agora.
+      //
+      // "Nenhum apoio a caminho" sem explicação faz o diretor procurar o
+      // problema no lugar errado. A nota diz o que aconteceu de verdade
+      // ("2 candidatos ignorados por sinal perdido"), e essa frase é
+      // acionável: significa pegar o rádio, não recarregar a página.
+      //
+      // Vai em `dispatch_reason`, que é o campo do "por que este
+      // acionamento é o que é" — inclusive quando ele não existe. O guarda de
+      // `dispatched_position_id` nulo impede que uma retentativa apague o
+      // motivo de um acionamento que deu certo antes.
+      const { error: notaErro } = await admin
+        .from('alerts')
+        .update({ dispatch_reason: result.note })
+        .eq('id', params.alertId)
+        .is('dispatched_position_id', null);
+
+      if (notaErro) {
+        // Não pode derrubar o alerta: sem a nota o diretor fica sem a
+        // explicação, com o alerta perdido ele fica sem o acidente.
+        console.warn(
+          '[driver/alert] falha ao gravar o motivo de não acionar:',
+          notaErro.message,
+        );
+      }
+
       return { dispatched: null, suggestions: result.suggestions, note: result.note };
     }
 

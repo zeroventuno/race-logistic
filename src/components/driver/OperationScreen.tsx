@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { AlertPad } from "@/components/driver/AlertPad";
 import { DispatchBanner, DispatchTakeover } from "@/components/driver/DispatchTakeover";
@@ -76,8 +76,33 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
       .map((a) => a.alertId),
   );
 
+  /**
+   * O que ESTE APARELHO já respondeu, guardado até o servidor confirmar.
+   *
+   * Sem isto a tela cheia de acionamento VOLTAVA sozinha, e voltava no pior
+   * momento possível. A sequência: o motorista toca "Estou indo", a resposta
+   * entra na fila local, a fila é enviada e esvazia — e o `acknowledgedAt` do
+   * servidor só chega na próxima leitura de estado, que é 10 s depois com a
+   * tela à frente e 30 s com ela atrás. Nessa janela o alerta volta a parecer
+   * não respondido, a tela cheia reaparece, e o motorista responde de novo.
+   *
+   * Foi exatamente o que apareceu no teste de campo como "essa ação repetiu
+   * algumas vezes". Não era lag: era a fila esvaziando antes de a confirmação
+   * chegar.
+   *
+   * É `ref` e não estado porque isto não desenha nada sozinho — quem
+   * redesenha é a leitura de estado que chega logo em seguida. E é por
+   * APARELHO, não persistido: se o motorista recarregar a página antes de o
+   * servidor registrar, ver a tela de novo é o certo, porque aí ninguém sabe
+   * que ele respondeu.
+   */
+  const respondidosLocalmente = useRef<Set<string>>(new Set());
+  for (const id of answeredIds) respondidosLocalmente.current.add(id);
+
   const isAnswered = (alert: DriverAlertView) =>
-    Boolean(alert.dispatch?.acknowledgedAt) || answeredIds.has(alert.alertId);
+    Boolean(alert.dispatch?.acknowledgedAt) ||
+    answeredIds.has(alert.alertId) ||
+    respondidosLocalmente.current.has(alert.alertId);
 
   // A tela cheia é só até o motorista responder, e só para UM acionamento por
   // vez — o mais antigo, que é o que está esperando há mais tempo. Depois disso
@@ -87,6 +112,13 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
   // seria punir o sinal ruim.
   const takeover = dispatchedToMe.find((a) => !isAnswered(a)) ?? null;
   const enRoute = dispatchedToMe.filter((a) => isAnswered(a));
+
+  // Alerta encerrado sai do conjunto. Sem isto ele cresceria a prova inteira,
+  // e um alerta reacionado para o mesmo veículo nunca mais mostraria a tela.
+  const idsVivos = new Set(dispatchedToMe.map((a) => a.alertId));
+  for (const id of respondidosLocalmente.current) {
+    if (!idsVivos.has(id)) respondidosLocalmente.current.delete(id);
+  }
 
   const distanceToAlert = (alert: DriverAlertView | null) =>
     alert && alert.routeOffsetM != null && selfOffsetM != null
