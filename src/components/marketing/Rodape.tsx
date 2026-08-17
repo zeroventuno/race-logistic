@@ -50,7 +50,11 @@ export function Rodape() {
           quarta coluna de navegação. Ele fecha a página. */}
       <div className="fr-shell fr-rodape__creditos">
         <p>
-          Flamme Rouge · uma ferramenta <strong>Ventuno</strong> · 2026
+          Flamme Rouge · uma ferramenta{" "}
+          <a href="https://zeroventuno.com" target="_blank" rel="noopener noreferrer">
+            Ventuno
+          </a>{" "}
+          · 2026
         </p>
       </div>
     </footer>

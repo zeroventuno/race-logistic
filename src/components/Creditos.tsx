@@ -18,7 +18,18 @@ export function Creditos({ className }: { className?: string }) {
       className={`font-mono text-[0.6rem] uppercase tracking-[0.18em] text-ink-ghost ${className ?? ""}`}
     >
       Flamme Rouge · uma ferramenta{" "}
-      <span className="text-ink-faint">Ventuno</span> · {ANO_INICIAL}
+      <a
+        href="https://zeroventuno.com"
+        target="_blank"
+        // `noreferrer` junto do `noopener`: sem ele a página de destino recebe
+        // no cabeçalho a URL de onde o clique veio — que aqui pode ser o painel
+        // de uma prova, com o id dela no endereço.
+        rel="noopener noreferrer"
+        className="text-ink-faint underline decoration-transparent underline-offset-4 transition hover:text-ink hover:decoration-current"
+      >
+        Ventuno
+      </a>{" "}
+      · {ANO_INICIAL}
     </p>
   );
 }

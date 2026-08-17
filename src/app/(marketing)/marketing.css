@@ -1772,7 +1772,15 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
   color: rgb(246 245 242 / 0.36);
 }
 
-.fr-rodape__creditos strong {
+.fr-rodape__creditos a {
   font-weight: 500;
   color: rgb(246 245 242 / 0.62);
+  text-decoration: none;
+  transition: color var(--fr-dur-ui) var(--fr-ease);
+}
+
+.fr-rodape__creditos a:hover {
+  color: var(--fr-paper);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
