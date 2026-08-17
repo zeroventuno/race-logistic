@@ -42,12 +42,11 @@ export interface ListaVeiculosProps {
   onSelecionar: (positionId: string) => void;
 }
 
-const ORDENS: Array<{ valor: VehicleSort; rotulo: string }> = [
-  // i18n: precisa de chaves — rótulos de ordenação da lista de veículos
-  { valor: "prova", rotulo: "Posição na prova" },
-  { valor: "ordinal", rotulo: "Cadastro" },
-  { valor: "papel", rotulo: "Papel" },
-];
+const ORDENS = [
+  { valor: "prova", chave: "live.sortByRace" },
+  { valor: "ordinal", chave: "live.sortByOrdinal" },
+  { valor: "papel", chave: "positions.role" },
+] as const;
 
 export function ListaVeiculos({
   vehicles,
@@ -91,7 +90,7 @@ export function ListaVeiculos({
                   : "border-border text-ink-muted hover:text-ink"
               }`}
             >
-              {o.rotulo}
+              {t(o.chave)}
             </button>
           ))}
         </div>

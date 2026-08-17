@@ -148,14 +148,14 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
           onClick={() => runtime.reconhecerLacuna()}
           className="border-b border-warn-line bg-warn-dim px-4 py-3 text-left text-sm text-warn-ink"
         >
-          {/* i18n: precisa de chave — lacuna de transmissão e como evitar */}
           <span className="font-semibold">
-            Você ficou {fmt.age(snapshot.gapSemTransmitirS)} sem transmitir.
+            {t("driver.gapWarning", {
+              age: fmt.age(snapshot.gapSemTransmitirS),
+            })}
           </span>{" "}
-          A direção não viu sua posição nesse período. Mantenha esta tela à
-          frente e o aparelho ligado na energia.
+          {t("driver.gapWarningBody")}
           <span className="mt-1 block font-mono text-[0.65rem] uppercase tracking-[0.16em] opacity-70">
-            tocar para dispensar
+            {t("driver.tapToDismiss")}
           </span>
         </button>
       ) : null}
@@ -227,10 +227,8 @@ export function OperationScreen({ runtime, session, onUnbind }: OperationScreenP
             {t("driver.bindAction")}
           </button>
           {snapshot.queuedAlerts > 0 ? (
-            /* i18n: precisa de chave — aviso de alertas presos na fila */
             <p className="text-sm font-medium text-warn">
-              {snapshot.queuedAlerts} alerta(s) ainda não entregue(s). Avise pelo
-              rádio.
+              {t("driver.queuedAlerts", { count: snapshot.queuedAlerts })}
             </p>
           ) : null}
         </div>
@@ -273,8 +271,7 @@ function StatusBar({
         : "bg-warn";
 
   const connectionLabel = rejecting
-    ? /* i18n: precisa de chave — posição recusada pelo servidor */
-      "POSIÇÃO RECUSADA"
+    ? t("driver.pingRejected")
     : snapshot.connection === "online"
       ? t("driver.transmitting")
       : snapshot.connection === "sending"
@@ -319,13 +316,13 @@ function StatusBar({
       </div>
 
       {snapshot.rejectedPings ? (
-        /* i18n: precisa de chave — pings recusados e o motivo do servidor */
         <p
           role="alert"
           className="border-t border-critical bg-critical-dim/50 px-3 py-2 text-xs font-semibold text-ink"
         >
-          O servidor recusou {snapshot.rejectedPings.count} posição(ões): sua
-          posição NÃO está aparecendo no mapa da direção.
+          {t("driver.pingRejectedDetail", {
+            count: snapshot.rejectedPings.count,
+          })}
           <span className="mt-0.5 block font-normal text-ink-muted">
             {snapshot.rejectedPings.reason}
           </span>
@@ -346,23 +343,23 @@ function StatusBar({
           {gpsLabel ? (
             <span className="text-warn">
               {gpsLabel}
-              {/* i18n: precisa de chave — instrução por sistema operacional.
-                  Vem de `permissionInstructions()` e hoje só existe em
-                  português. É a parte ACIONÁVEL da mensagem: sem ela o
-                  motorista sabe que está bloqueado e não sabe o que fazer. */}
-              {snapshot.gps === "denied" && snapshot.gpsMessage ? (
-                <span className="block text-ink-muted">{snapshot.gpsMessage}</span>
+              {/* A instrução por sistema operacional é a parte ACIONÁVEL da
+                  mensagem: sem ela o motorista sabe que está bloqueado e não
+                  sabe o que fazer. */}
+              {snapshot.gps === "denied" && snapshot.gpsMessageKey ? (
+                <span className="block text-ink-muted">
+                  {t(snapshot.gpsMessageKey)}
+                </span>
               ) : null}
             </span>
           ) : null}
           {!snapshot.durableQueue ? (
-            /* i18n: precisa de chave — fila apenas em memória */
-            <span className="text-warn">
-              Armazenamento local indisponível: a fila se perde se o app fechar.
-            </span>
+            <span className="text-warn">{t("driver.queueNotDurable")}</span>
           ) : null}
-          {/* i18n: precisa de chave — último erro de comunicação. Sem isto o
-              motorista não tem como saber que o app está falando sozinho. */}
+          {/* O último erro de comunicação vem do servidor ou da rede, já em
+              texto livre — não há chave possível para ele, e escondê-lo seria
+              pior: sem isto o motorista não sabe que o app está falando
+              sozinho. */}
           {snapshot.lastSyncError || snapshot.stateError ? (
             <span className="text-ink-faint">
               {snapshot.lastSyncError ?? snapshot.stateError}

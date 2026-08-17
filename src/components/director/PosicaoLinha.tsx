@@ -100,11 +100,9 @@ export function PosicaoLinha({
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3 p-4">
         {podeEditar ? (
           <div className="flex flex-col gap-1">
-            {/* i18n: precisa de chave — rótulos acessíveis "Subir {posição}" e
-                "Descer {posição}" dos botões de reordenar */}
             <button
               type="button"
-              aria-label={`Subir ${posicao.label}`}
+              aria-label={t("positions.moveUp", { position: posicao.label })}
               disabled={primeira || pendente}
               onClick={() =>
                 executar(() => moverPosicao(raceId, posicao.id, "cima"))
@@ -115,7 +113,7 @@ export function PosicaoLinha({
             </button>
             <button
               type="button"
-              aria-label={`Descer ${posicao.label}`}
+              aria-label={t("positions.moveDown", { position: posicao.label })}
               disabled={ultima || pendente}
               onClick={() =>
                 executar(() => moverPosicao(raceId, posicao.id, "baixo"))
@@ -145,8 +143,7 @@ export function PosicaoLinha({
           </div>
 
           <p className="mt-1 text-sm text-ink-muted">
-            {/* i18n: precisa de chave — "Motorista não informado" */}
-            {posicao.driver_name || "Motorista não informado"}
+            {posicao.driver_name || t("positions.noDriver")}
             {posicao.driver_phone ? (
               <>
                 {" · "}
@@ -166,14 +163,12 @@ export function PosicaoLinha({
           <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
             {t("positions.code")}
           </span>
-          {/* i18n: precisa de chave — "revogado — gere outro", "expirado",
-              "sem acesso", "Copiar código" e o aviso "copiado" */}
           {revogado ? (
-            <span className="text-sm text-warn">revogado — gere outro</span>
+            <span className="text-sm text-warn">{t("positions.codeRevoked")}</span>
           ) : semAcesso ? (
             <span
               className="text-sm text-ink-faint"
-              title="Só quem edita a prova enxerga os códigos."
+              title={t("positions.codeHidden")}
             >
               —
             </span>
@@ -209,13 +204,9 @@ export function PosicaoLinha({
               )
             }
           >
-            {/* i18n: precisa de chave — ação "Marcar como abertura". As chaves
-                `positions.referenceLead/Sweep` existem, mas são a legenda de uma
-                caixa de seleção ("É o carro de abertura oficial") e ficam
-                ilegíveis como rótulo de botão. */}
             {posicao.is_reference_lead
               ? `✓ ${t("roles.lead_car.short")}`
-              : "Marcar como abertura"}
+              : t("positions.markLead")}
           </BotaoDeLinha>
 
           <BotaoDeLinha
@@ -231,10 +222,9 @@ export function PosicaoLinha({
               )
             }
           >
-            {/* i18n: precisa de chave — ação "Marcar como fechamento". */}
             {posicao.is_reference_sweep
               ? `✓ ${t("roles.sweep_car.short")}`
-              : "Marcar como fechamento"}
+              : t("positions.markSweep")}
           </BotaoDeLinha>
 
           <BotaoDeLinha
@@ -254,8 +244,9 @@ export function PosicaoLinha({
           <span className="ml-auto flex items-center gap-2">
             {confirmandoRemocao ? (
               <>
-                {/* i18n: precisa de chave — "Remover mesmo?" */}
-                <span className="text-sm text-ink-muted">Remover mesmo?</span>
+                <span className="text-sm text-ink-muted">
+                  {t("positions.confirmRemove")}
+                </span>
                 <BotaoDeLinha
                   pendente={pendente}
                   onClick={() =>
@@ -307,8 +298,7 @@ export function PosicaoLinha({
               />
             </Campo>
 
-            {/* i18n: precisa de chave — rótulo "Papel" do seletor de função */}
-            <Campo label="Papel" htmlFor={`role-${posicao.id}`}>
+            <Campo label={t("positions.role")} htmlFor={`role-${posicao.id}`}>
               <select
                 id={`role-${posicao.id}`}
                 name="role"
@@ -341,8 +331,7 @@ export function PosicaoLinha({
             <Campo
               label={t("positions.driverPhone")}
               htmlFor={`phone-${posicao.id}`}
-              /* i18n: precisa de chave — dica "Com código do país se for de fora." */
-              hint="Com código do país se for de fora."
+              hint={t("positions.driverPhoneHint")}
             >
               <input
                 id={`phone-${posicao.id}`}

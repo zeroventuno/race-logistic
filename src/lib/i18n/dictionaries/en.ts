@@ -79,6 +79,7 @@ export const en: Dictionary = {
     details: "Race details",
     lapsTotal: "{laps} laps = {distance} of racing.",
     lap: "lap {lap}/{laps}",
+    lapsCircuit: "{laps}-lap circuit",
     lapUnknown: "lap ?",
 
     form: {
@@ -314,6 +315,14 @@ export const en: Dictionary = {
     gpsDeniedBrowser:
       "Location blocked by the browser. Allow location access in the site permissions and reload the page.",
 
+    gapWarning: "You went {age} without transmitting.",
+    gapWarningBody:
+      "Race control could not see your position during that time. Keep this screen in front and the phone on power.",
+    tapToDismiss: "tap to dismiss",
+    alertNotSaved: "ALERT NOT SAVED ON THIS PHONE — USE THE RADIO NOW.",
+    alertNotSavedDetail:
+      "Local storage refused the write ({reason}). Nothing will be resent on its own.",
+    alertAttempts: "{count} attempt(s) failed. Report it on the radio.",
     transmitting: "Transmitting",
     paused: "Paused",
     queuedPings: "{count} points queued",
@@ -350,6 +359,17 @@ export const en: Dictionary = {
     goLive: "Start race",
     finish: "Finish race",
 
+    areaOverline: "Race control area",
+    filterAll: "All",
+    filterReady: "Ready",
+    filterPreparing: "In preparation",
+    filterFinished: "Finished",
+    noneInFilter: "No race in this state.",
+    openRace: "Open",
+    openRecord: "Record",
+    supportShort: "Support",
+    listErrorBody:
+      "Reload the page. If it persists, sign out and back in — your session may have expired.",
     steps: "Race setup steps",
     overview: "Overview",
     live: "Live",
@@ -422,6 +442,7 @@ export const en: Dictionary = {
     replaceWarning:
       "Replacing the course recalculates every position in the race. Do it before the start.",
     parseError: "Could not read the file",
+    noGpx: "No GPX",
     pointCount: "{count} points",
     current: "Current course",
     replace: "Replace course",
@@ -572,6 +593,18 @@ export const en: Dictionary = {
     showAll: "Show all",
     noWebGL:
       "This browser does not support WebGL. Position data is still correct in the lists.",
+    basemapLabel: "Base map",
+    basemapHint:
+      "Applies to this race only. The route line changes colour with it, so it never disappears against the background you pick.",
+    basemapAsphalt: "Asphalt",
+    basemapAsphaltHint:
+      "Clean lines, no terrain. It competes least with the vehicles — the right choice for a city race and for a screen projected in race control.",
+    basemapTopo: "Topographic",
+    basemapTopoHint:
+      "Contour lines, gradient and back roads. It is the only background that shows the climb before it happens — on a mountain race, that changes what gets said on the radio.",
+    basemapSatellite: "Satellite",
+    basemapSatelliteHint:
+      "Aerial imagery. Useful to check that the road in the GPX really is the race road, and to recognise a support point by what is actually on the ground.",
     slowTitle: "The map did not finish loading.",
     slowBody:
       "It may be a background tab, WebGL unavailable, or the map tiles blocked on the network. The distances, the window and the vehicle list beside it are still correct.",

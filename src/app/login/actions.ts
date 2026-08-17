@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { getTranslator } from "@/lib/i18n/server";
+import type { Translator } from "@/lib/i18n/translate";
 import { supabaseServer } from "@/lib/supabase/server";
 
 /**
@@ -13,8 +15,13 @@ import { supabaseServer } from "@/lib/supabase/server";
  * de ficar de fora do próprio painel.
  *
  * As mensagens de erro do Supabase vêm em inglês e são genéricas de propósito
- * (para não revelar se um e-mail existe). Aqui elas viram frases em português
- * que dizem o próximo passo — mantendo a mesma discrição.
+ * (para não revelar se um e-mail existe). Aqui elas viram frases no idioma da
+ * pessoa que dizem o próximo passo — mantendo a mesma discrição.
+ *
+ * OS ESQUEMAS SÃO CONSTRUÍDOS POR CHAMADA, e não uma vez no módulo, porque a
+ * mensagem de cada regra depende do idioma da requisição. Um esquema de módulo
+ * congelaria o idioma de quem carregou o processo primeiro — em produção, o de
+ * um estranho.
  */
 
 export interface AuthState {
@@ -25,41 +32,49 @@ export interface AuthState {
   valores?: { email?: string; nome?: string };
 }
 
-const emailSchema = z
-  .string()
-  .trim()
-  .min(1, "Informe o e-mail.")
-  .email("Esse e-mail não parece válido. Confira se falta o @ ou o domínio.");
-
-const loginSchema = z.object({
-  email: emailSchema,
-  senha: z.string().min(1, "Informe a senha."),
-});
-
-const cadastroSchema = z.object({
-  nome: z
+function esquemaEmail(t: Translator) {
+  return z
     .string()
     .trim()
-    .min(2, "Informe seu nome — é ele que aparece para a equipe da prova.")
-    .max(80, "Nome muito longo (máximo 80 caracteres)."),
-  email: emailSchema,
-  senha: z
-    .string()
-    .min(8, "A senha precisa ter pelo menos 8 caracteres.")
-    .max(72, "A senha pode ter no máximo 72 caracteres."),
-  confirmacao: z.string(),
-});
+    .min(1, t("auth.emailRequired"))
+    .email(t("auth.emailInvalid"));
+}
+
+function esquemaLogin(t: Translator) {
+  return z.object({
+    email: esquemaEmail(t),
+    senha: z.string().min(1, t("auth.passwordRequired")),
+  });
+}
+
+function esquemaCadastro(t: Translator) {
+  return z.object({
+    nome: z
+      .string()
+      .trim()
+      .min(2, t("auth.nameRequired"))
+      .max(80, t("auth.nameTooLong")),
+    email: esquemaEmail(t),
+    senha: z
+      .string()
+      .min(8, t("auth.passwordTooShort"))
+      .max(72, t("auth.passwordTooLong")),
+    confirmacao: z.string(),
+  });
+}
 
 export async function entrar(
   _anterior: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  const { t } = await getTranslator();
+
   const bruto = {
     email: String(formData.get("email") ?? ""),
     senha: String(formData.get("senha") ?? ""),
   };
 
-  const parsed = loginSchema.safeParse(bruto);
+  const parsed = esquemaLogin(t).safeParse(bruto);
   if (!parsed.success) {
     return {
       campos: camposDeZod(parsed.error),
@@ -75,7 +90,7 @@ export async function entrar(
 
   if (error) {
     return {
-      erro: traduzirErroDeAuth(error.message, error.code),
+      erro: traduzirErroDeAuth(error.message, error.code, t),
       valores: { email: parsed.data.email },
     };
   }
@@ -87,6 +102,8 @@ export async function cadastrar(
   _anterior: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  const { t } = await getTranslator();
+
   const bruto = {
     nome: String(formData.get("nome") ?? ""),
     email: String(formData.get("email") ?? ""),
@@ -94,7 +111,7 @@ export async function cadastrar(
     confirmacao: String(formData.get("confirmacao") ?? ""),
   };
 
-  const parsed = cadastroSchema.safeParse(bruto);
+  const parsed = esquemaCadastro(t).safeParse(bruto);
   if (!parsed.success) {
     return {
       campos: camposDeZod(parsed.error),
@@ -104,7 +121,7 @@ export async function cadastrar(
 
   if (parsed.data.senha !== parsed.data.confirmacao) {
     return {
-      campos: { senha: "As duas senhas não são iguais. Digite de novo." },
+      campos: { senha: t("auth.passwordMismatch") },
       valores: { email: parsed.data.email, nome: parsed.data.nome },
     };
   }
@@ -118,7 +135,7 @@ export async function cadastrar(
 
   if (error) {
     return {
-      erro: traduzirErroDeAuth(error.message, error.code),
+      erro: traduzirErroDeAuth(error.message, error.code, t),
       valores: { email: parsed.data.email, nome: parsed.data.nome },
     };
   }
@@ -128,7 +145,7 @@ export async function cadastrar(
   // beco sem saída de "cadastrei e não aconteceu nada".
   if (!data.session) {
     return {
-      aviso: `Conta criada. Enviamos um e-mail de confirmação para ${parsed.data.email}. Confirme e volte aqui para entrar (confira também a caixa de spam).`,
+      aviso: t("auth.confirmSent", { email: parsed.data.email }),
       valores: { email: parsed.data.email },
     };
   }
@@ -161,34 +178,35 @@ function camposDeZod(
 function traduzirErroDeAuth(
   mensagem: string,
   codigo: string | undefined,
+  t: Translator,
 ): string {
   const m = mensagem.toLowerCase();
 
   if (codigo === "invalid_credentials" || m.includes("invalid login")) {
-    return "E-mail ou senha incorretos. Se você acabou de se cadastrar, confirme o e-mail antes de entrar.";
+    return t("auth.invalidCredentials");
   }
   if (codigo === "email_not_confirmed" || m.includes("not confirmed")) {
-    return "Este e-mail ainda não foi confirmado. Abra a mensagem que enviamos e clique no link (confira o spam).";
+    return t("auth.emailNotConfirmed");
   }
   if (codigo === "user_already_exists" || m.includes("already registered")) {
-    return "Já existe uma conta com este e-mail. Vá para a tela de entrar; se esqueceu a senha, peça a redefinição pelo Supabase.";
+    return t("auth.userExists");
   }
   if (codigo === "email_address_invalid" || m.includes("is invalid")) {
-    return "O servidor recusou este endereço de e-mail. Use um e-mail real que você consiga abrir agora — a confirmação chega nele.";
+    return t("auth.emailRejected");
   }
   if (codigo === "weak_password" || m.includes("password should be")) {
-    return "Senha fraca demais para o servidor. Use pelo menos 8 caracteres, misturando letras e números.";
+    return t("auth.weakPassword");
   }
   if (
     codigo === "over_email_send_rate_limit" ||
     codigo === "over_request_rate_limit" ||
     m.includes("rate limit")
   ) {
-    return "Muitas tentativas em pouco tempo. Espere alguns minutos antes de tentar de novo.";
+    return t("auth.rateLimited");
   }
   if (codigo === "signup_disabled" || m.includes("signups not allowed")) {
-    return "O cadastro está desativado neste servidor. Peça a alguém da equipe para criar sua conta.";
+    return t("auth.signupDisabled");
   }
 
-  return "Não foi possível concluir agora. Confira sua conexão e tente de novo.";
+  return t("auth.genericFailure");
 }

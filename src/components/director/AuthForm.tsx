@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import type { AuthState } from "@/app/login/actions";
 import { Aviso, Botao, Campo, entradaClasse } from "@/components/director/ui";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Formulário de entrada e de cadastro.
@@ -14,11 +15,6 @@ import { Aviso, Botao, Campo, entradaClasse } from "@/components/director/ui";
  * ganhasse uma correção de acessibilidade que o outro não recebe.
  *
  * A ação vem por prop: quem monta a página decide se é `entrar` ou `cadastrar`.
- *
- * i18n: precisa de chaves — o dicionário ainda não tem namespace de
- * autenticação. Todo o texto visível deste componente (rótulos dos campos,
- * dicas, botões, links entre entrar e cadastrar) e as mensagens de erro de
- * `src/app/login/actions.ts` estão em português literal, listadas no relatório.
  */
 export function AuthForm({
   modo,
@@ -27,6 +23,7 @@ export function AuthForm({
   modo: "login" | "cadastro";
   acao: (estado: AuthState, formData: FormData) => Promise<AuthState>;
 }) {
+  const t = useT();
   const [estado, submeter, pendente] = useActionState<AuthState, FormData>(
     acao,
     {},
@@ -37,24 +34,24 @@ export function AuthForm({
   return (
     <form action={submeter} className="space-y-5" noValidate>
       {estado.erro ? (
-        <Aviso tone="warn" titulo="Não deu para continuar">
+        <Aviso tone="warn" titulo={t("auth.errorTitle")}>
           {estado.erro}
         </Aviso>
       ) : null}
 
       {estado.aviso ? (
-        <Aviso tone="ok" titulo="Quase lá">
+        <Aviso tone="ok" titulo={t("auth.noticeTitle")}>
           {estado.aviso}
         </Aviso>
       ) : null}
 
       {ehCadastro ? (
         <Campo
-          label="Seu nome"
+          label={t("auth.name")}
           htmlFor="nome"
           obrigatorio
           erro={estado.campos?.nome}
-          hint="Aparece para a equipe da prova."
+          hint={t("auth.nameHint")}
         >
           <input
             id="nome"
@@ -63,13 +60,13 @@ export function AuthForm({
             autoComplete="name"
             defaultValue={estado.valores?.nome ?? ""}
             className={entradaClasse(estado.campos?.nome)}
-            placeholder="Marina Ferrero"
+            placeholder={t("auth.namePlaceholder")}
           />
         </Campo>
       ) : null}
 
       <Campo
-        label="E-mail"
+        label={t("auth.email")}
         htmlFor="email"
         obrigatorio
         erro={estado.campos?.email}
@@ -84,16 +81,16 @@ export function AuthForm({
           spellCheck={false}
           defaultValue={estado.valores?.email ?? ""}
           className={entradaClasse(estado.campos?.email)}
-          placeholder="direcao@suaprova.it"
+          placeholder={t("auth.emailPlaceholder")}
         />
       </Campo>
 
       <Campo
-        label="Senha"
+        label={t("auth.password")}
         htmlFor="senha"
         obrigatorio
         erro={estado.campos?.senha}
-        hint={ehCadastro ? "Mínimo de 8 caracteres." : undefined}
+        hint={ehCadastro ? t("auth.passwordHint") : undefined}
       >
         <input
           id="senha"
@@ -105,7 +102,7 @@ export function AuthForm({
       </Campo>
 
       {ehCadastro ? (
-        <Campo label="Repita a senha" htmlFor="confirmacao" obrigatorio>
+        <Campo label={t("auth.passwordRepeat")} htmlFor="confirmacao" obrigatorio>
           <input
             id="confirmacao"
             name="confirmacao"
@@ -124,31 +121,31 @@ export function AuthForm({
         disabled={pendente}
       >
         {pendente
-          ? "Aguarde…"
+          ? t("auth.submitting")
           : ehCadastro
-            ? "Criar conta"
-            : "Entrar no painel"}
+            ? t("auth.signUp")
+            : t("auth.signIn")}
       </Botao>
 
       <p className="text-center text-sm text-ink-muted">
         {ehCadastro ? (
           <>
-            Já tem conta?{" "}
+            {t("auth.haveAccount")}{" "}
             <Link
               href="/login"
               className="text-info underline underline-offset-4"
             >
-              Entrar
+              {t("auth.signInLink")}
             </Link>
           </>
         ) : (
           <>
-            Primeira vez?{" "}
+            {t("auth.firstTime")}{" "}
             <Link
               href="/cadastro"
               className="text-info underline underline-offset-4"
             >
-              Criar conta de direção
+              {t("auth.signUpLink")}
             </Link>
           </>
         )}

@@ -102,8 +102,7 @@ export function PosicoesPainel({
                 htmlFor="papel-lote"
                 className="block font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted"
               >
-                {/* i18n: precisa de chave — rótulo "Papel" */}
-                Papel
+                {t("positions.role")}
               </label>
               <select
                 id="papel-lote"
@@ -158,13 +157,7 @@ export function PosicoesPainel({
           </div>
 
           <p className="mt-3 text-xs text-ink-faint">
-            {/* i18n: precisa de chave — explicação do código automático e da
-                referência marcada sozinha */}
-            Cada posição nasce com um código de vínculo único e um nome que você
-            pode trocar depois. O primeiro carro de abertura e o primeiro de
-            fechamento já entram marcados como referência — são eles que
-            definem a janela, porque é a passagem do fechamento que devolve a
-            via ao trânsito. A vassoura vem depois disso e não entra na conta.
+            {t("positions.addHint")}
           </p>
 
           {erro ? (
@@ -177,10 +170,8 @@ export function PosicoesPainel({
 
       {posicoes.length === 0 ? (
         <Cartao className="p-6">
-          {/* i18n: precisa de chave — estado vazio de posições (título e os dois
-              parágrafos que explicam o que é uma posição) */}
           <h2 className="titulo font-semibold text-ink text-xl">
-            Nenhuma posição cadastrada
+            {t("positions.emptyTitle")}
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-ink-muted">
             Uma posição é um papel na prova (&ldquo;Moto 3&rdquo;,
@@ -196,25 +187,20 @@ export function PosicoesPainel({
       ) : (
         <div className="space-y-4">
           {!temAbertura || !temFechamento ? (
-            /* i18n: precisa de chave — aviso de referências faltando */
-            <Aviso tone="warn" titulo="Faltam referências da janela">
+            <Aviso tone="warn" titulo={t("positions.missingRefsTitle")}>
               {!temAbertura
                 ? t("director.needsLead")
                 : t("director.needsSweep")}
-              . Sem as duas, o painel não consegue calcular o tempo entre a
-              frente e o fim do pelotão.
+              . {t("positions.missingRefsBody")}
             </Aviso>
           ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-ink-muted">
-              {/* i18n: precisa de chave — "a ordem da lista é a ordem do painel
-                  ao vivo" */}
               <span className="tnum font-semibold text-ink">
                 {posicoes.length}
               </span>{" "}
-              {t("race.positions").toLowerCase()} · a ordem da lista é a ordem
-              em que elas aparecem no painel ao vivo.
+              {t("race.positions").toLowerCase()} · {t("positions.orderHint")}
             </p>
             <BotaoLink
               href={`/dashboard/${raceId}/posicoes/codigos`}

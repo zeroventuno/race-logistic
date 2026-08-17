@@ -25,10 +25,19 @@ const MAX_PONTOS = 64;
 export interface MiniPercursoProps {
   /** `render_points` da tabela: pares [lng, lat] já simplificados. */
   pontos: [number, number][];
+  /**
+   * O que escrever quando a prova ainda não tem traçado. Vem de fora já
+   * traduzido: este componente é puro e não tem tradutor próprio.
+   */
+  rotuloSemPercurso: string;
   className?: string;
 }
 
-export function MiniPercurso({ pontos, className }: MiniPercursoProps) {
+export function MiniPercurso({
+  pontos,
+  rotuloSemPercurso,
+  className,
+}: MiniPercursoProps) {
   const d = caminho(pontos);
 
   if (!d) {
@@ -39,8 +48,7 @@ export function MiniPercurso({ pontos, className }: MiniPercursoProps) {
         style={{ width: LARGURA, height: ALTURA }}
       >
         <span className="font-mono text-[0.5625rem] uppercase tracking-[0.18em] text-ink-faint">
-          {/* i18n: precisa de chave — miniatura sem percurso */}
-          Sem GPX
+          {rotuloSemPercurso}
         </span>
       </div>
     );

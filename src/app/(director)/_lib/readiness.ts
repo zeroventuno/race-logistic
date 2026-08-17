@@ -7,6 +7,8 @@
  * dia da prova — não a uma etapa burocrática.
  */
 
+import type { TranslationKey } from "@/lib/i18n/translate";
+
 export type ReadinessKey =
   | "route"
   | "positions"
@@ -24,9 +26,17 @@ export interface ReadinessInput {
 
 export interface ReadinessItem {
   key: ReadinessKey;
-  label: string;
+  /**
+   * Chave de tradução, não texto.
+   *
+   * Este módulo é chamado de Server Component, de layout e de página, cada um
+   * com o seu tradutor já pronto. Devolver a frase feita obrigaria a passar o
+   * idioma para cá — e obrigaria a lembrar disso em toda chamada nova. A chave
+   * atravessa qualquer fronteira e é o `Dictionary` que garante que ela existe.
+   */
+  labelKey: TranslationKey;
   /** O que fazer, em imperativo, quando está pendente. */
-  hint: string;
+  hintKey: TranslationKey;
   done: boolean;
   /** Bloqueia a prova de ir ao ar? Itens não obrigatórios só informam. */
   required: boolean;
@@ -48,40 +58,40 @@ export function computeReadiness(input: ReadinessInput): Readiness {
   const items: ReadinessItem[] = [
     {
       key: "route",
-      label: "Percurso carregado",
-      hint: "Suba o GPX da prova ou desenhe o traçado no mapa. Sem percurso não há cálculo de quilometragem nem de janela.",
+      labelKey: "director.checklist.routeLabel",
+      hintKey: "director.checklist.routeHint",
       done: input.hasActiveRoute,
       required: true,
       path: "percurso",
     },
     {
       key: "positions",
-      label: "Posições de apoio cadastradas",
-      hint: "Cadastre os veículos de apoio. Cada um recebe um código para o motorista digitar no celular.",
+      labelKey: "director.checklist.positionsLabel",
+      hintKey: "director.checklist.positionsHint",
       done: input.positionCount > 0,
       required: true,
       path: "posicoes",
     },
     {
       key: "lead",
-      label: "Referência de abertura definida",
-      hint: "Marque qual posição é o carro de abertura. É o começo da janela que a direção acompanha.",
+      labelKey: "director.checklist.leadLabel",
+      hintKey: "director.checklist.leadHint",
       done: input.hasReferenceLead,
       required: true,
       path: "posicoes",
     },
     {
       key: "sweep",
-      label: "Referência de fechamento definida",
-      hint: "Marque qual posição é a vassoura. Sem ela o sistema não sabe onde termina o pelotão.",
+      labelKey: "director.checklist.sweepLabel",
+      hintKey: "director.checklist.sweepHint",
       done: input.hasReferenceSweep,
       required: true,
       path: "posicoes",
     },
     {
       key: "start",
-      label: "Horário de largada",
-      hint: "Opcional, mas é o que faz o painel mostrar contagem regressiva em vez de só o relógio.",
+      labelKey: "director.checklist.startLabel",
+      hintKey: "director.checklist.startHint",
       done: input.hasScheduledStart,
       required: false,
       path: "",

@@ -70,9 +70,7 @@ export default async function ResumoDaProvaPage({
 
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-ink">
-                  {/* i18n: precisa de chave — rótulos e dicas do checklist
-                      (readiness.ts: route/positions/lead/sweep/start) */}
-                  {item.label}
+                  {t(item.labelKey)}
                   {!item.required && !item.done ? (
                     <span className="ml-2 text-xs font-normal text-ink-faint">
                       {t("common.optional")}
@@ -80,7 +78,7 @@ export default async function ResumoDaProvaPage({
                   ) : null}
                 </p>
                 {!item.done ? (
-                  <p className="mt-0.5 text-sm text-ink-muted">{item.hint}</p>
+                  <p className="mt-0.5 text-sm text-ink-muted">{t(item.hintKey)}</p>
                 ) : null}
               </div>
 
@@ -89,8 +87,7 @@ export default async function ResumoDaProvaPage({
                   href={`/dashboard/${race.id}/${item.path}`}
                   className="shrink-0 self-center text-sm text-info underline underline-offset-4"
                 >
-                  {/* i18n: precisa de chave — "Resolver" */}
-                  Resolver
+                  {t("director.resolveItem")}
                 </Link>
               ) : null}
             </li>
@@ -144,14 +141,13 @@ export default async function ResumoDaProvaPage({
               </div>
               {voltas > 1 ? (
                 <div className="col-span-2 border border-border bg-surface-2/50 px-3 py-2 text-sm text-ink-muted">
-                  {/* i18n: precisa de chave — distância total com voltas */}
-                  <span className="tnum">{voltas}</span> voltas ={" "}
-                  <span className="tnum font-semibold text-ink">
-                    {formatDistance(
+                  {t("race.lapsTotal", {
+                    laps: voltas,
+                    distance: formatDistance(
                       activeTrack.total_distance_m * voltas,
                       locale,
-                    )}
-                  </span>{" "}
+                    ),
+                  })}{" "}
                   de prova.
                 </div>
               ) : null}
@@ -163,18 +159,16 @@ export default async function ResumoDaProvaPage({
                   })}
                 </span>
                 {" · "}
-                {/* i18n: precisa de chave — origem do percurso
-                    ("importado de {arquivo}" / "desenhado no mapa") */}
                 {activeTrack.source === "gpx"
-                  ? `importado de ${activeTrack.original_filename ?? "GPX"}`
-                  : "desenhado no mapa"}
+                  ? t("route.sourceGpx", {
+                      filename: activeTrack.original_filename ?? "GPX",
+                    })
+                  : t("route.sourceDrawn")}
               </div>
             </dl>
           ) : (
             <p className="mt-4 text-sm text-ink-muted">
-              {/* i18n: precisa de chave — por que o percurso é indispensável */}
-              Sem percurso. Sem ele o sistema não consegue dizer em que
-              quilômetro cada veículo está, nem calcular a janela.
+              {t("route.missingExplain")}
             </p>
           )}
         </Cartao>
@@ -258,8 +252,7 @@ export default async function ResumoDaProvaPage({
 
       {canEdit ? (
         <Cartao className="p-5 sm:p-6">
-          {/* i18n: precisa de chave — "Dados da prova" */}
-          <TituloSecao>Dados da prova</TituloSecao>
+          <TituloSecao>{t("race.details")}</TituloSecao>
           <div className="mt-4">
             <ProvaForm
               acao={atualizarProva}

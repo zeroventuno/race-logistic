@@ -89,15 +89,13 @@ export function AlertPad({ snapshot, onRaise }: AlertPadProps) {
   return (
     <section aria-label={t("alerts.title")} className="flex flex-col gap-2 p-3">
       {storageFailure ? (
-        /* i18n: precisa de chave — falha de gravação local do alerta */
         <p
           role="alert"
           className="alert-pulse border-2 border-critical bg-critical px-3 py-3 text-sm font-bold text-white"
         >
-          ALERTA NÃO SALVO NESTE APARELHO — USE O RÁDIO AGORA.
+          {t("driver.alertNotSaved")}
           <span className="mt-1 block text-xs font-normal opacity-90">
-            O armazenamento local recusou a gravação ({storageFailure}). Nada
-            será reenviado sozinho.
+            {t("driver.alertNotSavedDetail", { reason: storageFailure })}
           </span>
         </p>
       ) : null}
@@ -254,8 +252,7 @@ function buildLines(snapshot: DriverSnapshot, t: Translate): Line[] {
       label: snapshot.connection === "sending" ? t("alerts.sending") : t("alerts.queued"),
       detail:
         pending.attempts > 0
-          ? /* i18n: precisa de chave — contagem de tentativas e instrução de rádio */
-            `${pending.attempts} tentativa(s) sem sucesso. Avise pelo rádio.`
+          ? t("driver.alertAttempts", { count: pending.attempts })
           : null,
     });
   }

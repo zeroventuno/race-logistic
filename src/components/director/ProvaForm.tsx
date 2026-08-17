@@ -60,10 +60,6 @@ export function ProvaForm({
         <input type="hidden" name="raceId" value={valores.raceId} />
       ) : null}
 
-      {/* i18n: precisa de chave — este formulário inteiro (rótulos "Nome da
-          prova", "Local", "Data/Horário da largada", "Fuso horário da prova",
-          "Janela alvo", "Alerta abaixo/acima de", suas dicas, e os títulos dos
-          avisos de sucesso e erro). */}
       {estado.erro ? (
         <Aviso tone="warn" titulo={t("common.error")}>
           {estado.erro}
@@ -71,10 +67,15 @@ export function ProvaForm({
       ) : null}
 
       {estado.ok ? (
-        <Aviso tone="ok" titulo="Dados da prova atualizados" />
+        <Aviso tone="ok" titulo={t("race.form.saved")} />
       ) : null}
 
-      <Campo label="Nome da prova" htmlFor="nome" obrigatorio erro={campo("nome")}>
+      <Campo
+        label={t("race.form.nameLabel")}
+        htmlFor="nome"
+        obrigatorio
+        erro={campo("nome")}
+      >
         <input
           id="nome"
           name="nome"
@@ -82,15 +83,15 @@ export function ProvaForm({
           maxLength={200}
           defaultValue={valores.nome}
           className={entradaClasse(campo("nome"))}
-          placeholder="Giro delle Langhe — 2ª etapa"
+          placeholder={t("race.form.namePlaceholder")}
         />
       </Campo>
 
       <Campo
-        label="Local"
+        label={t("race.form.locationLabel")}
         htmlFor="local"
         erro={campo("local")}
-        hint="Cidade ou região da largada. Aparece na lista de provas."
+        hint={t("race.form.locationHint")}
       >
         <input
           id="local"
@@ -99,12 +100,16 @@ export function ProvaForm({
           maxLength={200}
           defaultValue={valores.local}
           className={entradaClasse(campo("local"))}
-          placeholder="Alba, Piemonte"
+          placeholder={t("race.form.locationPlaceholder")}
         />
       </Campo>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Campo label="Data da largada" htmlFor="data" erro={campo("data")}>
+        <Campo
+          label={t("race.form.dateLabel")}
+          htmlFor="data"
+          erro={campo("data")}
+        >
           <input
             id="data"
             name="data"
@@ -115,10 +120,10 @@ export function ProvaForm({
         </Campo>
 
         <Campo
-          label="Horário da largada"
+          label={t("race.form.timeLabel")}
           htmlFor="hora"
           erro={campo("hora")}
-          hint="No relógio do local da prova."
+          hint={t("race.form.timeHint")}
         >
           <input
             id="hora"
@@ -131,11 +136,11 @@ export function ProvaForm({
       </div>
 
       <Campo
-        label="Fuso horário da prova"
+        label={t("race.form.timezoneLabel")}
         htmlFor="fuso"
         obrigatorio
         erro={campo("fuso")}
-        hint="Tudo que a direção vê é convertido para este fuso, inclusive no celular do motorista."
+        hint={t("race.form.timezoneHint")}
       >
         <select
           id="fuso"
@@ -143,24 +148,22 @@ export function ProvaForm({
           defaultValue={valores.fuso}
           className={entradaClasse(campo("fuso"))}
         >
-          {TIMEZONE_OPTIONS.some((t) => t.value === valores.fuso) ? null : (
+          {TIMEZONE_OPTIONS.some((tz) => tz.value === valores.fuso) ? null : (
             <option value={valores.fuso}>{valores.fuso}</option>
           )}
-          {TIMEZONE_OPTIONS.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
+          {TIMEZONE_OPTIONS.map((tz) => (
+            <option key={tz.value} value={tz.value}>
+              {tz.label}
             </option>
           ))}
         </select>
       </Campo>
 
-      {/* i18n: precisa de chave — "Mapa de fundo", a dica e as descrições dos
-          fundos, que vêm do catálogo em @/lib/map/basemaps. */}
       <Campo
-        label="Mapa de fundo"
+        label={t("map.basemapLabel")}
         htmlFor="mapa"
         erro={campo("mapa")}
-        hint="Vale só para esta prova. O traçado troca de cor junto, para não sumir sobre o fundo escolhido."
+        hint={t("map.basemapHint")}
       >
         <select
           id="mapa"
@@ -170,7 +173,7 @@ export function ProvaForm({
         >
           {basemapsDisponiveis().map((b) => (
             <option key={b.id} value={b.id}>
-              {b.nome}
+              {t(b.nomeChave)}
             </option>
           ))}
         </select>
@@ -182,21 +185,20 @@ export function ProvaForm({
           {basemapsDisponiveis().map((b) => (
             <li key={b.id} className="text-xs leading-relaxed text-ink-faint">
               <span className="font-mono uppercase tracking-[0.14em] text-ink-muted">
-                {b.nome}
+                {t(b.nomeChave)}
               </span>{" "}
-              — {b.descricao}
+              — {t(b.descricaoChave)}
             </li>
           ))}
         </ul>
       </Campo>
 
-      {/* i18n: precisa de chave — "Voltas sobre o percurso" e sua dica. */}
       <Campo
-        label="Voltas sobre o percurso"
+        label={t("race.form.lapsLabel")}
         htmlFor="voltas"
         obrigatorio
         erro={campo("voltas")}
-        hint="1 para prova ponto-a-ponto. Num circuito, a distância da prova é o traçado multiplicado pelas voltas."
+        hint={t("race.form.lapsHint")}
         className="max-w-[14rem]"
       >
         <input
@@ -216,14 +218,10 @@ export function ProvaForm({
         <legend className="px-1 text-sm font-medium text-ink">
           {t("gap.title")}
         </legend>
-        <p className="mt-1 text-xs text-ink-faint">
-          Quantos minutos a direção quer entre o carro de abertura e o de fechamento.
-          É a partir daqui que o painel decide se o pelotão esticou ou comprimiu
-          demais.
-        </p>
+        <p className="mt-1 text-xs text-ink-faint">{t("race.form.gapHint")}</p>
 
         <Campo
-          label="Janela alvo (minutos)"
+          label={t("race.form.targetLabel")}
           htmlFor="janelaAlvo"
           obrigatorio
           erro={campo("janelaAlvo")}
@@ -245,10 +243,10 @@ export function ProvaForm({
         {mostrarLimites ? (
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Campo
-              label="Alerta abaixo de (minutos)"
+              label={t("race.form.minLabel")}
               htmlFor="janelaMin"
               erro={campo("janelaMin")}
-              hint="Pelotão comprimido demais."
+              hint={t("race.form.minHint")}
             >
               <input
                 id="janelaMin"
@@ -264,10 +262,10 @@ export function ProvaForm({
             </Campo>
 
             <Campo
-              label="Alerta acima de (minutos)"
+              label={t("race.form.maxLabel")}
               htmlFor="janelaMax"
               erro={campo("janelaMax")}
-              hint="Pelotão esticado demais."
+              hint={t("race.form.maxHint")}
             >
               <input
                 id="janelaMax"
@@ -288,7 +286,7 @@ export function ProvaForm({
             onClick={() => setMostrarLimites(true)}
             className="mt-3 text-sm text-info underline underline-offset-4"
           >
-            Definir limites de alerta ({t("common.optional")})
+            {t("race.form.showLimits")} ({t("common.optional")})
           </button>
         )}
       </fieldset>
@@ -299,7 +297,7 @@ export function ProvaForm({
         </Botao>
         {modo === "criar" ? (
           <p className="text-sm text-ink-muted">
-            Depois de salvar você vai direto para o percurso.
+            {t("race.form.afterSave")}
           </p>
         ) : null}
       </div>

@@ -182,7 +182,6 @@ export function ControleProva({
 
       {!pronta && (status === "draft" || status === "armed") ? (
         <span className="text-xs text-warn">
-          {/* i18n: precisa de chave — pendências que travam a largada */}
           {pendencias.join(" · ")}
         </span>
       ) : null}

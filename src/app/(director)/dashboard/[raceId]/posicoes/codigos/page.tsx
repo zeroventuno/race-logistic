@@ -67,9 +67,7 @@ export default async function CodigosPage({
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-ink-muted">
               {t("positions.printHint")}{" "}
-              {/* i18n: precisa de chave — o que acontece se um papel se perder */}
-              Se um papel se perder, gere outro na tela de posições e o antigo
-              para de valer na hora.
+              {t("positions.printLost")}
             </p>
           </div>
           <BotaoImprimir rotulo={t("positions.print")} />
@@ -78,33 +76,22 @@ export default async function CodigosPage({
         {!enderecoApp ? (
           <Aviso
             tone="warn"
-            /* i18n: precisa de chave — aviso de NEXT_PUBLIC_APP_URL ausente */
-            titulo="Endereço do app não configurado"
+            titulo={t("positions.printNoUrlTitle")}
             className="mt-5"
           >
-            A variável <code>NEXT_PUBLIC_APP_URL</code> está vazia, então a
-            folha sai sem o endereço que o motorista precisa abrir. Escreva o
-            endereço à mão antes de distribuir.
+            {t("positions.printNoUrlBody", { variable: "NEXT_PUBLIC_APP_URL" })}
           </Aviso>
         ) : null}
 
         {revogadas > 0 ? (
           <Aviso tone="warn" className="mt-5">
-            {/* i18n: precisa de chave — posições sem código válido ficaram de fora */}
-            <span className="tnum">{revogadas}</span>{" "}
-            {revogadas === 1
-              ? "posição está sem código válido e ficou de fora"
-              : "posições estão sem código válido e ficaram de fora"}{" "}
-            desta folha. Gere um código novo para elas na tela de posições.
+            {t("positions.printMissing", { count: revogadas })}
           </Aviso>
         ) : null}
 
         {expiradas > 0 ? (
           <Aviso tone="warn" className="mt-5">
-            {/* i18n: precisa de chave — códigos vencidos na folha */}
-            <span className="tnum">{expiradas}</span> código(s) desta folha já
-            passaram da validade e não vinculam mais nenhum celular. Gere
-            códigos novos antes de imprimir.
+            {t("positions.printExpired", { count: expiradas })}
           </Aviso>
         ) : null}
 
@@ -112,10 +99,9 @@ export default async function CodigosPage({
           <Aviso
             tone="warn"
             className="mt-5"
-            /* i18n: precisa de chave — "Nada para imprimir" */
-            titulo="Nada para imprimir"
+            titulo={t("positions.printNothingTitle")}
           >
-            Cadastre as posições de apoio primeiro.
+            {t("positions.printNothingBody")}
           </Aviso>
         ) : null}
       </div>
@@ -132,13 +118,9 @@ export default async function CodigosPage({
             </span>
           </p>
           <p className="mt-2 text-sm text-ink-muted">
-            {/* i18n: precisa de chave — instrução de abrir o endereço e digitar
-                o código do bloco */}
-            Cada motorista abre{" "}
-            <strong className="text-ink">
-              {enderecoMotorista || "(endereço do app)"}
-            </strong>{" "}
-            no celular e digita o código do bloco dele.
+            {t("positions.printInstruction", {
+              url: enderecoMotorista || t("positions.printUrlMissing"),
+            })}
           </p>
         </header>
 
@@ -189,9 +171,7 @@ export default async function CodigosPage({
         </div>
 
         <p className="rodape-folha mt-6 text-xs text-ink-faint">
-          {/* i18n: precisa de chave — rodapé da folha impressa */}
-          {t("meta.appName")} · o código vale só para esta prova e só para este
-          veículo. Vincular um celular novo derruba o anterior.
+          {t("meta.appName")} · {t("positions.printFooter")}
         </p>
       </section>
     </main>

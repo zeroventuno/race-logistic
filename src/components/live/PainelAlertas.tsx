@@ -108,10 +108,9 @@ export function PainelAlertas({
             onClick={() => setMostrarEncerrados((v) => !v)}
             className="text-xs text-ink-muted underline underline-offset-4 hover:text-ink"
           >
-            {/* i18n: precisa de chave — "{n} encerrados" / "ocultar encerrados" */}
             {mostrarEncerrados
-              ? "ocultar encerrados"
-              : `${encerrados.length} encerrados`}
+              ? t("live.hideClosed")
+              : t("live.showClosed", { count: encerrados.length })}
           </button>
         ) : null}
       </header>
@@ -208,8 +207,9 @@ function CartaoAlerta({
         nowMs,
         verTodosApoios ? 12 : 3,
         LOCALE_META[locale]?.intlTag ?? "pt-BR",
+        t,
       ),
-    [alerta, vehicles, nowMs, verTodosApoios, locale],
+    [alerta, vehicles, nowMs, verTodosApoios, locale, t],
   );
 
   const borda = gritando
@@ -320,8 +320,7 @@ function CartaoAlerta({
             ) : null}
             {alerta.dispatch.mode === "auto" ? (
               <span className="font-mono rounded border border-border px-1 text-[10px] uppercase tracking-wide opacity-80">
-                {/* i18n: precisa de chave — "automático" */}
-                automático
+                {t("alerts.dispatch.auto")}
               </span>
             ) : null}
           </div>
@@ -330,8 +329,7 @@ function CartaoAlerta({
             role="alert"
             className="border border-critical/60 bg-critical/15 px-2.5 py-1.5 text-sm font-semibold text-critical"
           >
-            {/* i18n: precisa de chave — "Ninguém foi acionado" */}
-            ⚠ Ninguém foi acionado para este alerta.
+            ⚠ {t("alerts.nobodyDispatched")}
           </p>
         ) : null}
 
@@ -393,8 +391,7 @@ function CartaoAlerta({
               <p className="font-mono mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
                 {alerta.dispatch
                   ? t("alerts.dispatch.reassign")
-                  : /* i18n: precisa de chave — "Acionar apoio" */
-                    "Acionar apoio"}
+                  : t("alerts.dispatch.dispatch")}
               </p>
               <ul className="space-y-1.5">
                 {alternativas.map((s) => (
@@ -462,8 +459,7 @@ function CartaoAlerta({
                 onClick={() => setVerTodosApoios((v) => !v)}
                 className="mt-1.5 text-xs text-ink-muted underline underline-offset-4 hover:text-ink"
               >
-                {/* i18n: precisa de chave — "ver todos os veículos" / "ver menos" */}
-                {verTodosApoios ? "ver menos" : "ver todos os veículos"}
+                {verTodosApoios ? t("live.showFewer") : t("live.showAllVehicles")}
               </button>
             </div>
           ) : semNinguem ? (
@@ -498,8 +494,7 @@ function CartaoAlerta({
               }`}
             >
               {confirmandoCancelar
-                ? /* i18n: precisa de chave — "confirmar cancelamento?" */
-                  "confirmar? (alarme falso)"
+                ? t("alerts.actions.confirmCancel")
                 : t("alerts.actions.cancel")}
             </button>
           </div>
@@ -521,8 +516,7 @@ function CartaoAlerta({
         onClick={() => setVerHistorico((v) => !v)}
         className="mt-2 text-[11px] text-ink-faint underline underline-offset-4 hover:text-ink-muted"
       >
-        {/* i18n: precisa de chave — "histórico" */}
-        {verHistorico ? "ocultar histórico" : "histórico"}
+        {verHistorico ? t("live.hideHistory") : t("live.history")}
       </button>
 
       {verHistorico ? <HistoricoAlerta alertId={alerta.alertId} /> : null}
@@ -553,6 +547,7 @@ function apoiosAlternativos(
   nowMs: number,
   limite: number,
   intlTag: string,
+  t: ReturnType<typeof useT>,
 ): LiveAlertSuggestionView[] {
   const acionado = alerta.dispatch?.positionId ?? null;
 
@@ -588,14 +583,15 @@ function apoiosAlternativos(
           origem !== null && v.routeOffsetM !== null
             ? v.routeOffsetM > origem
             : null,
-        /* i18n: precisa de chave — ressalva da lista de emergência */
         reason:
           distancia === null
-            ? "Sem sugestão calculada e sem posição na rota — ordem arbitrária. Confirme pelo rádio."
-            : `Sem sugestão calculada. ${new Intl.NumberFormat(intlTag, {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              }).format(distancia / 1000)} km de diferença no percurso, sem cálculo de retorno nem de ETA.`,
+            ? t("alerts.dispatch.fallbackNoPosition")
+            : t("alerts.dispatch.fallbackReason", {
+                distance: `${new Intl.NumberFormat(intlTag, {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                }).format(distancia / 1000)} km`,
+              }),
         signal: vehicleSignal(v, nowMs),
         ageSeconds: serverAgeSeconds(v.receivedAt, nowMs),
       } satisfies LiveAlertSuggestionView;

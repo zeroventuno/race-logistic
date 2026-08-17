@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import { definirStatusDaProva } from "@/app/(director)/_actions/race";
 import { Aviso, Botao } from "@/components/director/ui";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Marca a prova como pronta (`armed`) ou devolve para rascunho.
@@ -12,8 +13,8 @@ import { Aviso, Botao } from "@/components/director/ui";
  * marca e desmarca isso várias vezes enquanto ajusta a equipe, e um diálogo de
  * confirmação em cada clique só ensinaria a clicar em "sim" sem ler.
  *
- * i18n: precisa de chaves — "Marcar prova como pronta", "Voltar para rascunho"
- * e o aviso de pendências. `director.goLive` é outra coisa (iniciar a prova).
+ * "Marcar como pronta" NÃO é `director.goLive`: pronta é o estado de véspera,
+ * iniciar é o clique da largada.
  */
 export function StatusProvaBotao({
   raceId,
@@ -24,6 +25,7 @@ export function StatusProvaBotao({
   status: string;
   pronta: boolean;
 }) {
+  const t = useT();
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
 
@@ -55,14 +57,14 @@ export function StatusProvaBotao({
           title={
             pronta
               ? undefined
-              : "Resolva as pendências obrigatórias primeiro."
+              : t("director.resolveBlockingFirst")
           }
         >
-          {pendente ? "Marcando…" : "Marcar prova como pronta"}
+          {pendente ? t("director.marking") : t("director.markReady")}
         </Botao>
       ) : (
         <Botao type="button" variant="ghost" onClick={executar} disabled={pendente}>
-          {pendente ? "Voltando…" : "Voltar para rascunho"}
+          {pendente ? t("director.reverting") : t("director.backToDraft")}
         </Botao>
       )}
     </div>

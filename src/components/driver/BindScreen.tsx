@@ -166,10 +166,8 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
           className="touch-target mt-2 w-full border-2 border-border-strong bg-surface-1 px-4 py-5 text-center font-mono text-4xl tracking-[0.25em] text-ink outline-none placeholder:text-ink-faint focus:border-info"
         />
 
-        {/* i18n: precisa de chave — dica sobre colar e sobre O/I virarem 0/1 */}
         <p id="bind-help" className="mt-2 text-xs text-ink-faint">
-          Pode colar. As letras O e I são lidas como 0 e 1 — o código não usa
-          essas letras.
+          {t("driver.bindPasteHint")}
         </p>
       </div>
 
@@ -196,11 +194,9 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
         {busy ? t("common.loading") : t("driver.bindAction")}
       </button>
 
-      {/* i18n: precisa de chave — instrução de manter a tela aberta */}
       <Creditos className="text-center" />
       <p className="text-center text-xs text-ink-faint">
-        Mantenha esta tela aberta durante a prova. A posição é enviada
-        automaticamente, mesmo com sinal ruim.
+        {t("driver.keepScreenOpen")}
       </p>
     </main>
   );

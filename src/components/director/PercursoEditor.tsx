@@ -343,9 +343,7 @@ export function PercursoEditor({
   return (
     <div className="space-y-6">
       {resultado ? (
-        /* i18n: precisa de chave — confirmação "Percurso gravado" e o aviso de
-           que o percurso anterior foi desativado. */
-        <Aviso tone="ok" titulo="Percurso gravado">
+        <Aviso tone="ok" titulo={t("route.savedTitle")}>
           <span className="tnum">
             {fmt.distance(resultado.totalDistanceM)}
           </span>{" "}
@@ -366,8 +364,7 @@ export function PercursoEditor({
       ) : null}
 
       {erroSalvar ? (
-        /* i18n: precisa de chave — título "Não deu para gravar" */
-        <Aviso tone="warn" titulo="Não deu para gravar">
+        <Aviso tone="warn" titulo={t("route.saveErrorTitle")}>
           {erroSalvar}
         </Aviso>
       ) : null}
@@ -433,8 +430,7 @@ export function PercursoEditor({
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
             <p className="text-sm text-ink-muted">
-              {/* i18n: precisa de chave — "Ainda não tem o arquivo do percurso?" */}
-              Ainda não tem o arquivo do percurso?{" "}
+              {t("route.noFileYet")}{" "}
               <button
                 type="button"
                 onClick={() => {
@@ -539,10 +535,11 @@ function ResumoDoPercurso({
               {t("route.current")}
             </h2>
             <p className="mt-1 text-sm text-ink-muted">
-              {/* i18n: precisa de chave — origem do percurso */}
               {track.source === "gpx"
-                ? `Importado de ${track.originalFilename ?? "arquivo GPX"}`
-                : "Desenhado no mapa"}
+                ? t("route.sourceGpx", {
+                    filename: track.originalFilename ?? "GPX",
+                  })
+                : t("route.sourceDrawn")}
               {track.name ? ` · ${track.name}` : ""}
             </p>
           </div>
@@ -572,8 +569,7 @@ function ResumoDoPercurso({
           </div>
           <div>
             <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
-              {/* i18n: precisa de chave — "Pontos de geometria" */}
-              Pontos de geometria
+              {t("route.geometryPoints")}
             </dt>
             <dd className="medido tnum mt-1 text-3xl text-ink">
               {formatInteger(track.pointCount, locale)}
@@ -658,11 +654,7 @@ function AreaDeSoltar({
             {lendo ? t("common.loading") : t("route.uploadDrop")}
           </span>
           <span className="max-w-md text-sm text-ink-muted">
-            {/* i18n: precisa de chave — subtexto da área de soltar (lista de
-                origens de arquivo aceitas) */}
-            {lendo
-              ? "Arquivos grandes levam alguns segundos."
-              : "Ou clique para escolher. Serve o que sai do Strava, Garmin Connect, RideWithGPS, Komoot ou do software de traçado da prova."}
+            {lendo ? t("route.uploadReading") : t("route.uploadHint")}
           </span>
         </button>
 
@@ -716,8 +708,7 @@ function PreviewDaImportacao({
     <Cartao className="overflow-hidden">
       <div className="border-b border-border p-5 sm:p-6">
         <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
-          {/* i18n: precisa de chave — "Conferindo antes de gravar" */}
-          Conferindo antes de gravar
+          {t("route.reviewTitle")}
         </p>
         <h2 className="titulo mt-1 font-semibold text-ink text-xl">
           {preview.nomeArquivo}
@@ -742,8 +733,7 @@ function PreviewDaImportacao({
           </div>
           <div>
             <dt className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
-              {/* i18n: precisa de chave — "Pontos de geometria" */}
-              Pontos de geometria
+              {t("route.geometryPoints")}
             </dt>
             <dd className="medido tnum mt-1 text-3xl text-ink">
               {formatInteger(preview.pontosNoBanco, locale)}
@@ -757,9 +747,9 @@ function PreviewDaImportacao({
               {t("route.chooseSegment")}
             </legend>
             <p className="mt-1 text-xs text-ink-faint">
-              {/* i18n: precisa de chave — por que os traçados não são unidos */}
-              O arquivo tem {preview.segmentos.length} traçados. Juntar todos
-              criaria um salto no meio da prova, então escolha um.
+                {t("route.chooseSegmentHint", {
+                count: preview.segmentos.length,
+              })}
             </p>
             <div className="mt-3 space-y-2">
               {preview.segmentos.map((seg, i) => (
@@ -780,21 +770,18 @@ function PreviewDaImportacao({
                   />
                   <span className="min-w-0 flex-1 text-sm">
                     <span className="block truncate font-medium text-ink">
-                      {/* i18n: precisa de chave — "Traçado {n}" */}
-                      {seg.name ?? `Traçado ${i + 1}`}
+                      {seg.name ?? t("route.segmentName", { number: i + 1 })}
                     </span>
                     <span className="tnum block text-xs text-ink-faint">
                       {t("route.pointCount", {
                         count: formatInteger(seg.points.length, locale),
                       })}{" "}
                       ·{" "}
-                      {/* i18n: precisa de chave — tipo do traçado no GPX
-                          (trilha gravada / rota planejada / waypoints soltos) */}
                       {seg.kind === "track"
-                        ? "trilha gravada"
+                        ? t("route.kindTrack")
                         : seg.kind === "route"
-                          ? "rota planejada"
-                          : "waypoints soltos"}
+                          ? t("route.kindRoute")
+                          : t("route.kindWaypoints")}
                     </span>
                   </span>
                 </label>
@@ -806,12 +793,9 @@ function PreviewDaImportacao({
         {preview.avisos.length > 0 ? (
           <Aviso
             tone="warn"
-            /* i18n: precisa de chave — "N pontos de atenção neste arquivo" */
-            titulo={
-              preview.avisos.length === 1
-                ? "Um ponto de atenção neste arquivo"
-                : `${preview.avisos.length} pontos de atenção neste arquivo`
-            }
+            titulo={t("route.warningsTitle", {
+              count: preview.avisos.length,
+            })}
             className="mt-6"
           >
             <ul className="list-disc space-y-1 pl-5">
@@ -830,8 +814,7 @@ function PreviewDaImportacao({
             onClick={onConfirmar}
             disabled={salvando}
           >
-            {/* i18n: precisa de chave — "Confirmar e usar este percurso" */}
-            {salvando ? t("common.saving") : "Confirmar e usar este percurso"}
+            {salvando ? t("common.saving") : t("route.confirmUse")}
           </Botao>
           <Botao
             type="button"
@@ -839,8 +822,7 @@ function PreviewDaImportacao({
             onClick={onTrocarArquivo}
             disabled={salvando}
           >
-            {/* i18n: precisa de chave — "Escolher outro arquivo" */}
-            Escolher outro arquivo
+            {t("route.chooseAnotherFile")}
           </Botao>
         </div>
       </div>
@@ -913,10 +895,7 @@ function EditorDeDesenho({
             </h2>
             <p className="mt-1 max-w-2xl text-sm text-ink-muted">
               {t("route.drawHint")}{" "}
-              {/* i18n: precisa de chave — atalhos de teclado do desenho
-                  (Delete apaga o vértice, Ctrl+Z desfaz) */}
-              <Tecla>Delete</Tecla> apaga o vértice selecionado (ou clique com o
-              botão direito). <Tecla>Ctrl</Tecla>+<Tecla>Z</Tecla> desfaz.
+              {t("route.drawShortcuts")}
             </p>
           </div>
 
@@ -931,8 +910,7 @@ function EditorDeDesenho({
             </div>
             <div>
               <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
-                {/* i18n: precisa de chave — "Vértices" */}
-                Vértices
+                {t("route.vertices")}
               </p>
               <p className="medido tnum mt-0.5 text-2xl text-ink">
                 {vertices.length}
@@ -948,8 +926,7 @@ function EditorDeDesenho({
             onClick={onSalvar}
             disabled={salvando || vertices.length < 2 || excedeu}
           >
-            {/* i18n: precisa de chave — "Salvar percurso" */}
-            {salvando ? t("common.saving") : "Salvar percurso"}
+            {salvando ? t("common.saving") : t("route.saveDrawn")}
           </Botao>
           <Botao
             type="button"
@@ -965,8 +942,7 @@ function EditorDeDesenho({
             onClick={onApagarVertice}
             disabled={selecionado === null}
           >
-            {/* i18n: precisa de chave — "Apagar vértice" */}
-            Apagar vértice
+            {t("route.deleteVertex")}
             {selecionado !== null ? ` ${selecionado + 1}` : ""}
           </Botao>
           <Botao
@@ -975,8 +951,7 @@ function EditorDeDesenho({
             onClick={onFechar}
             disabled={vertices.length < 3}
           >
-            {/* i18n: precisa de chave — "Fechar circuito" */}
-            Fechar circuito
+            {t("route.closeLoop")}
           </Botao>
           <Botao
             type="button"
@@ -999,18 +974,16 @@ function EditorDeDesenho({
           </Botao>
         </div>
 
-        {/* i18n: precisa de chave — os dois avisos do desenho (excesso de
-            vértices e "um vértice só não é percurso") */}
         {excedeu ? (
           <Aviso tone="warn" className="mt-4">
-            {vertices.length} vértices é mais do que um traçado desenhado à mão
-            deveria ter (limite {MAX_DRAWN_POINTS}). Se o percurso é mesmo
-            longo, importe um GPX.
+            {t("route.tooManyVertices", {
+              count: vertices.length,
+              limit: MAX_DRAWN_POINTS,
+            })}
           </Aviso>
         ) : vertices.length === 1 ? (
           <Aviso tone="warn" className="mt-4">
-            Um vértice só não é percurso. Clique no mapa para marcar por onde a
-            prova passa.
+            {t("route.oneVertex")}
           </Aviso>
         ) : null}
       </div>

@@ -94,6 +94,7 @@ export const ptBR = {
     details: "Dados da prova",
     lapsTotal: "{laps} voltas = {distance} de prova.",
     lap: "volta {lap}/{laps}",
+    lapsCircuit: "circuito de {laps} voltas",
     lapUnknown: "volta ?",
 
     form: {
@@ -329,6 +330,14 @@ export const ptBR = {
     gpsDeniedBrowser:
       "Localização bloqueada pelo navegador. Libere o acesso à localização nas permissões do site e recarregue a página.",
 
+    gapWarning: "Você ficou {age} sem transmitir.",
+    gapWarningBody:
+      "A direção não viu sua posição nesse período. Mantenha esta tela à frente e o aparelho ligado na energia.",
+    tapToDismiss: "tocar para dispensar",
+    alertNotSaved: "ALERTA NÃO SALVO NESTE APARELHO — USE O RÁDIO AGORA.",
+    alertNotSavedDetail:
+      "O armazenamento local recusou a gravação ({reason}). Nada será reenviado sozinho.",
+    alertAttempts: "{count} tentativa(s) sem sucesso. Avise pelo rádio.",
     transmitting: "Transmitindo",
     paused: "Pausado",
     queuedPings: "{count} pontos na fila",
@@ -365,6 +374,17 @@ export const ptBR = {
     goLive: "Iniciar prova",
     finish: "Encerrar prova",
 
+    areaOverline: "Área da direção de prova",
+    filterAll: "Todas",
+    filterReady: "Prontas",
+    filterPreparing: "Em preparação",
+    filterFinished: "Encerradas",
+    noneInFilter: "Nenhuma prova neste estado.",
+    openRace: "Abrir",
+    openRecord: "Registro",
+    supportShort: "Apoio",
+    listErrorBody:
+      "Recarregue a página. Se persistir, saia e entre de novo — sua sessão pode ter expirado.",
     steps: "Etapas da prova",
     overview: "Resumo",
     live: "Ao vivo",
@@ -437,6 +457,7 @@ export const ptBR = {
     replaceWarning:
       "Substituir o percurso recalcula todas as posições em prova. Faça isso antes da largada.",
     parseError: "Não foi possível ler o arquivo",
+    noGpx: "Sem GPX",
     pointCount: "{count} pontos",
     current: "Percurso atual",
     replace: "Substituir percurso",
@@ -589,6 +610,18 @@ export const ptBR = {
     showAll: "Mostrar todos",
     noWebGL:
       "Este navegador não suporta WebGL. Os dados de posição continuam corretos nas listas.",
+    basemapLabel: "Mapa de fundo",
+    basemapHint:
+      "Vale só para esta prova. O traçado troca de cor junto, para não sumir sobre o fundo escolhido.",
+    basemapAsphalt: "Asfalto",
+    basemapAsphaltHint:
+      "Traçado limpo, sem relevo. É o que menos disputa atenção com os veículos — a escolha certa para prova urbana e para tela projetada na sala de direção.",
+    basemapTopo: "Topográfico",
+    basemapTopoHint:
+      "Curva de nível, inclinação e estrada vicinal. É o único fundo que mostra a subida antes de ela acontecer — para prova de montanha, é o que muda a conversa no rádio.",
+    basemapSatellite: "Satélite",
+    basemapSatelliteHint:
+      "Imagem aérea. Serve para conferir se a estrada do GPX é mesmo a estrada da prova, e para reconhecer um ponto de apoio pelo que existe no chão.",
     slowTitle: "O mapa não terminou de carregar.",
     slowBody:
       "Pode ser aba em segundo plano, WebGL indisponível ou os blocos do mapa bloqueados na rede. Os quilômetros, a janela e a lista de veículos ao lado continuam corretos.",

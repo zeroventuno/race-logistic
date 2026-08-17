@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Os passos de montar uma prova.
@@ -20,13 +24,14 @@ import Link from "next/link";
  */
 
 const PASSOS = [
-  /* i18n: precisa de chave — os três passos e seus nomes. */
-  { n: 1, nome: "Dados da prova" },
-  { n: 2, nome: "Percurso" },
-  { n: 3, nome: "Posições de apoio" },
+  { n: 1, chave: "race.details" },
+  { n: 2, chave: "race.route" },
+  { n: 3, chave: "race.positions" },
 ] as const;
 
 export function PassosDaProva({ atual }: { atual: 1 | 2 | 3 }) {
+  const t = useT();
+
   return (
     <nav aria-label="Passos para montar a prova">
       <Link
@@ -34,8 +39,7 @@ export function PassosDaProva({ atual }: { atual: 1 | 2 | 3 }) {
         className="inline-flex min-h-9 items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-faint transition hover:text-ink"
       >
         <span aria-hidden>←</span>
-        {/* i18n: precisa de chave — "Minhas provas" */}
-        Minhas provas
+        {t("director.myRaces")}
       </Link>
 
       <ol className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-2">
@@ -56,7 +60,7 @@ export function PassosDaProva({ atual }: { atual: 1 | 2 | 3 }) {
                 }`}
               >
                 <span className="tnum">{feito ? "✓" : p.n}</span>
-                {p.nome}
+                {t(p.chave)}
               </span>
 
               {i < PASSOS.length - 1 ? (

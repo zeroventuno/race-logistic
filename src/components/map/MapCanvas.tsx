@@ -3,6 +3,7 @@
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 
+import type { TranslationKey } from "@/lib/i18n/translate";
 import { resolverBasemap, type BasemapId } from "@/lib/map/basemaps";
 import { resolverTema, useTemaResolvido } from "@/lib/tema-atual";
 
@@ -29,7 +30,7 @@ export interface MapCanvasProps {
    * para o padrão. Quem recebe decide como avisar — aqui não se interrompe
    * ninguém.
    */
-  onFundoIndisponivel?: (nome: string) => void;
+  onFundoIndisponivel?: (nomeChave: TranslationKey) => void;
 }
 
 /**
@@ -150,7 +151,7 @@ export function MapCanvas({
       avisouRef.current = true;
       estiloAtualRef.current = null;
       map.setStyle(resolverBasemap(null).estilo(resolverTema()), { diff: false });
-      onFundoIndisponivel?.(escolhido.nome);
+      onFundoIndisponivel?.(escolhido.nomeChave);
     });
 
     const observer = new ResizeObserver(() => map.resize());

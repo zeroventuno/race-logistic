@@ -79,6 +79,7 @@ export const es: Dictionary = {
     details: "Datos de la carrera",
     lapsTotal: "{laps} vueltas = {distance} de carrera.",
     lap: "vuelta {lap}/{laps}",
+    lapsCircuit: "circuito de {laps} vueltas",
     lapUnknown: "vuelta ?",
 
     form: {
@@ -316,6 +317,14 @@ export const es: Dictionary = {
     gpsDeniedBrowser:
       "Ubicación bloqueada por el navegador. Permita el acceso a la ubicación en los permisos del sitio y recargue la página.",
 
+    gapWarning: "Estuviste {age} sin transmitir.",
+    gapWarningBody:
+      "La dirección no vio tu posición en ese tiempo. Mantén esta pantalla al frente y el teléfono conectado a la corriente.",
+    tapToDismiss: "toca para descartar",
+    alertNotSaved: "ALERTA NO GUARDADA EN ESTE TELÉFONO — USA LA RADIO AHORA.",
+    alertNotSavedDetail:
+      "El almacenamiento local rechazó la escritura ({reason}). Nada se reenviará solo.",
+    alertAttempts: "{count} intento(s) sin éxito. Avisa por radio.",
     transmitting: "Transmitiendo",
     paused: "En pausa",
     queuedPings: "{count} puntos en cola",
@@ -352,6 +361,17 @@ export const es: Dictionary = {
     goLive: "Iniciar carrera",
     finish: "Finalizar carrera",
 
+    areaOverline: "Área de dirección de carrera",
+    filterAll: "Todas",
+    filterReady: "Listas",
+    filterPreparing: "En preparación",
+    filterFinished: "Finalizadas",
+    noneInFilter: "Ninguna carrera en este estado.",
+    openRace: "Abrir",
+    openRecord: "Registro",
+    supportShort: "Apoyo",
+    listErrorBody:
+      "Recarga la página. Si continúa, cierra sesión y vuelve a entrar: tu sesión puede haber caducado.",
     steps: "Fases de la carrera",
     overview: "Resumen",
     live: "En directo",
@@ -425,6 +445,7 @@ export const es: Dictionary = {
     replaceWarning:
       "Sustituir el recorrido recalcula todas las posiciones en carrera. Hágalo antes de la salida.",
     parseError: "No se pudo leer el archivo",
+    noGpx: "Sin GPX",
     pointCount: "{count} puntos",
     current: "Recorrido actual",
     replace: "Sustituir recorrido",
@@ -579,6 +600,18 @@ export const es: Dictionary = {
     showAll: "Mostrar todos",
     noWebGL:
       "Este navegador no admite WebGL. Los datos de posición siguen siendo correctos en las listas.",
+    basemapLabel: "Mapa base",
+    basemapHint:
+      "Solo para esta carrera. El trazado cambia de color con él, para no desaparecer sobre el fondo elegido.",
+    basemapAsphalt: "Asfalto",
+    basemapAsphaltHint:
+      "Trazado limpio, sin relieve. Es el que menos compite con los vehículos: la opción correcta para carrera urbana y para pantalla proyectada en dirección.",
+    basemapTopo: "Topográfico",
+    basemapTopoHint:
+      "Curvas de nivel, pendiente y caminos vecinales. Es el único fondo que muestra la subida antes de que llegue: en una carrera de montaña cambia lo que se habla por radio.",
+    basemapSatellite: "Satélite",
+    basemapSatelliteHint:
+      "Imagen aérea. Sirve para comprobar que la carretera del GPX es la de la carrera y para reconocer un punto de apoyo por lo que hay en el terreno.",
     slowTitle: "El mapa no ha terminado de cargar.",
     slowBody:
       "Puede ser una pestaña en segundo plano, WebGL no disponible o las teselas del mapa bloqueadas en la red. Los kilómetros, la ventana y la lista de vehículos de al lado siguen siendo correctos.",

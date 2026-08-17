@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+
+import { useT } from "@/lib/i18n/client";
 import { usePathname } from "next/navigation";
 
 /**
@@ -18,12 +20,13 @@ export function RaceNav({
   raceId: string;
   itens: Array<{ path: string; label: string; done: boolean | null }>;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const base = `/dashboard/${raceId}`;
 
   return (
     <nav
-      aria-label="Etapas da prova"
+      aria-label={t("director.steps")}
       className="-mb-px flex gap-1 overflow-x-auto"
     >
       {itens.map((item) => {
@@ -70,8 +73,7 @@ export function RaceNav({
         }`}
       >
         <span aria-hidden>◉</span>
-        {/* i18n: precisa de chave — "Ao vivo" (aba do painel operacional) */}
-        Ao vivo
+        {t("director.live")}
       </Link>
     </nav>
   );

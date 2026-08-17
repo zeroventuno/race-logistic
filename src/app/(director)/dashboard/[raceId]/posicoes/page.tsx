@@ -18,12 +18,8 @@ export default async function PosicoesPage({
         <h1 className="titulo text-2xl font-semibold text-ink">
           {t("positions.title")}
         </h1>
-        {/* i18n: precisa de chave — explicação de como o motorista entra pelo código */}
         <p className="mt-1 max-w-3xl text-sm text-ink-muted">
-          Cada veículo de apoio da prova vira uma posição com código próprio. O
-          motorista digita o código no celular dele — sem instalar aplicativo,
-          sem criar conta — e a partir daí o aparelho transmite a posição
-          daquele veículo.
+          {t("positions.intro")}
         </p>
       </header>
 

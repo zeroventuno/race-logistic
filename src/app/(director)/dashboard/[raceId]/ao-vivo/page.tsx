@@ -1,6 +1,7 @@
 import { buildLiveSnapshot, LiveSnapshotError } from "@/app/api/races/[raceId]/live/snapshot";
 import { PainelAoVivo } from "@/components/live/PainelAoVivo";
 import { Aviso } from "@/components/director/ui";
+import { getTranslator } from "@/lib/i18n/server";
 
 import { getRaceContext } from "../../../_lib/session";
 
@@ -28,6 +29,7 @@ export default async function AoVivoPage({
 }) {
   const { raceId } = await params;
   const { supabase, user, race, readiness, canEdit } = await getRaceContext(raceId);
+  const { t } = await getTranslator();
 
   const [trackRes, snapshot] = await Promise.all([
     supabase
@@ -46,9 +48,7 @@ export default async function AoVivoPage({
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
         <Aviso tone="warn" titulo="Não foi possível montar o painel ao vivo">
-          {/* i18n: precisa de chave — falha ao montar o painel */}
-          A prova existe, mas o estado ao vivo não pôde ser lido. Recarregue a
-          página; se continuar, confira sua conexão com o banco.
+          {t("live.snapshotErrorBody")}
         </Aviso>
       </main>
     );
@@ -66,7 +66,7 @@ export default async function AoVivoPage({
       inicial={snapshot}
       renderPoints={renderPoints}
       pronta={readiness.ready}
-      pendencias={readiness.blocking.map((i) => i.label)}
+      pendencias={readiness.blocking.map((i) => t(i.labelKey))}
     />
   );
 }

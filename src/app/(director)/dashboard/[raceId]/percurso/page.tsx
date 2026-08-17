@@ -48,21 +48,15 @@ export default async function PercursoPage({
           {t("race.route")}
         </h1>
         <p className="mt-1 max-w-3xl text-sm text-ink-muted">
-          {/* i18n: precisa de chave — explicação de para que serve o percurso */}
-          É o traçado que transforma a coordenada de GPS de cada veículo em
-          &ldquo;quilômetro 42 da prova&rdquo;. Sem ele não há cálculo de janela
-          entre abertura e fechamento, nem sugestão de apoio mais próximo pela
-          estrada.
+          {t("route.purpose")}
         </p>
       </header>
 
       {canEdit ? (
         <PercursoEditor raceId={race.id} trackAtual={trackAtual} />
       ) : (
-        /* i18n: precisa de chave — aviso de acesso somente leitura */
-        <Aviso tone="warn" titulo="Somente leitura">
-          Você participa desta prova como observador e não pode alterar o
-          percurso.
+        <Aviso tone="warn" titulo={t("director.readOnly")}>
+          {t("director.readOnlyRoute")}
         </Aviso>
       )}
     </main>

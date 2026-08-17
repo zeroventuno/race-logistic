@@ -70,8 +70,7 @@ export default async function DirectorLayout({
                   type="submit"
                   className="min-h-9 border border-border px-3 text-sm text-ink-muted transition hover:border-border-strong hover:text-ink"
                 >
-                  {/* i18n: precisa de chave — "Sair" (logout) */}
-                  Sair
+                  {t("common.logout")}
                 </button>
               </form>
             </div>

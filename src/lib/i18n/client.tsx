@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useMemo } from "react";
 
 import { LOCALE_COOKIE, type Locale } from "@/lib/i18n/config";
@@ -44,6 +45,8 @@ export function I18nProvider({
   timeZone: string;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
   const value = useMemo<I18nValue>(() => {
     const t = createTranslator(locale);
 
@@ -64,10 +67,22 @@ export function I18nProvider({
         // Um ano de validade: a escolha de idioma não deve evaporar entre uma
         // prova e a próxima.
         document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
-        window.location.reload();
+
+        // `router.refresh()` e NÃO `location.reload()`. Três motivos, em ordem
+        // de importância:
+        //
+        // 1. O app do motorista não pode piscar. Recarregar a página derruba o
+        //    Wake Lock, zera o watch de GPS e reinicia a fila offline no meio
+        //    de uma prova; trocar de idioma não é motivo para nada disso.
+        // 2. Recarregar faz o navegador RESTAURAR o valor antigo dos campos de
+        //    formulário — inclusive o do próprio seletor, que voltava a mostrar
+        //    o idioma anterior com a tela já traduzida no novo.
+        // 3. O idioma vem de um Server Component lendo o cookie, então
+        //    reidratar a árvore do servidor é exatamente o suficiente.
+        router.refresh();
       },
     };
-  }, [locale, timeZone]);
+  }, [locale, timeZone, router]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

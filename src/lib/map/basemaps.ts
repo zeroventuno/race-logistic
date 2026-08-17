@@ -1,5 +1,7 @@
 import type { StyleSpecification } from "maplibre-gl";
 
+import type { TranslationKey } from "@/lib/i18n/translate";
+
 /**
  * O catálogo de mapas de fundo.
  *
@@ -34,10 +36,16 @@ export type BasemapId = "asfalto" | "satelite" | "topografico";
 
 export interface Basemap {
   id: BasemapId;
-  /** Nome curto, como aparece para quem escolhe. */
-  nome: string;
+  /**
+   * Nome curto e descrição, como CHAVES de tradução — não como texto.
+   *
+   * O catálogo é lido do servidor e do cliente, e é a mesma lista para as seis
+   * línguas. Guardar a frase aqui obrigaria a duplicar o catálogo inteiro por
+   * idioma; guardar a chave deixa o dicionário fazer o trabalho dele.
+   */
+  nomeChave: TranslationKey;
   /** O que este fundo mostra que os outros não mostram. */
-  descricao: string;
+  descricaoChave: TranslationKey;
   /**
    * Falso enquanto a licença comercial não estiver verificada.
    *
@@ -112,9 +120,8 @@ function raster(
 export const BASEMAPS: Record<BasemapId, Basemap> = {
   asfalto: {
     id: "asfalto",
-    nome: "Asfalto",
-    descricao:
-      "Traçado limpo, sem relevo. É o que menos disputa atenção com os veículos — a escolha certa para prova urbana e para tela projetada na sala de direção.",
+    nomeChave: "map.basemapAsphalt",
+    descricaoChave: "map.basemapAsphaltHint",
     disponivel: true,
     licenca:
       "CARTO basemaps sobre dados do OpenStreetMap, com atribuição obrigatória (já embutida no estilo). É o fundo que este produto usa desde o começo.",
@@ -149,9 +156,8 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
 
   topografico: {
     id: "topografico",
-    nome: "Topográfico",
-    descricao:
-      "Curva de nível, inclinação e estrada vicinal. É o único fundo que mostra a subida antes de ela acontecer — para prova de montanha, é o que muda a conversa no rádio.",
+    nomeChave: "map.basemapTopo",
+    descricaoChave: "map.basemapTopoHint",
     disponivel: true,
     licenca:
       "MapTiler, estilos `topo-v2` e `topo-v2-dark`. Mesma ressalva do satélite: grátis só para teste e uso não comercial, Flex a partir do primeiro cliente pagante. O Thunderforest (OpenCycleMap) desenha melhor o gradiente de subida e custa cerca de quatro vezes mais — fica para quando um cliente pedir.",
@@ -189,9 +195,8 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
   },
   satelite: {
     id: "satelite",
-    nome: "Satélite",
-    descricao:
-      "Imagem aérea. Serve para conferir se a estrada do GPX é mesmo a estrada da prova, e para reconhecer um ponto de apoio pelo que existe no chão.",
+    nomeChave: "map.basemapSatellite",
+    descricaoChave: "map.basemapSatelliteHint",
     disponivel: true,
     licenca:
       "MapTiler, estilo `satellite`. O plano grátis deles cobre teste e uso NÃO COMERCIAL; no primeiro cliente pagante é preciso subir para o Flex. Sem isso o serviço pausa ao bater a cota — e aí o mapa cai para o asfalto sozinho, que é comportamento desenhado, não acidente.",

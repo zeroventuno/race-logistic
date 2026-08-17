@@ -92,13 +92,14 @@ export function SaudeConexao({
       </span>
 
       <span className="opacity-80">
-        {/* i18n: precisa de chaves — estado do canal de tempo real */}
-        tempo real:{" "}
-        {connection.realtime === "connected"
-          ? "ligado"
-          : connection.realtime === "connecting"
-            ? "conectando…"
-            : "caído"}
+        {t("live.realtime", {
+          state:
+            connection.realtime === "connected"
+              ? t("live.realtimeOn")
+              : connection.realtime === "connecting"
+                ? t("live.realtimeConnecting")
+                : t("live.realtimeOff"),
+        })}
       </span>
 
       {health === "down" ? (
@@ -107,9 +108,9 @@ export function SaudeConexao({
         </span>
       ) : health === "degraded" && connection.realtime !== "connected" ? (
         <span>
-          {/* i18n: precisa de chave — realtime caiu, polling continua */}
-          sem atualização instantânea; reconciliando a cada{" "}
-          <span className="tnum">{Math.round(POLL_INTERVAL_MS / 1000)} s</span>
+          {t("live.pollingOnly", {
+            interval: `${Math.round(POLL_INTERVAL_MS / 1000)} s`,
+          })}
         </span>
       ) : null}
 

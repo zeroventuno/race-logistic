@@ -79,6 +79,7 @@ export const de: Dictionary = {
     details: "Renndaten",
     lapsTotal: "{laps} Runden = {distance} Renndistanz.",
     lap: "Runde {lap}/{laps}",
+    lapsCircuit: "Rundkurs mit {laps} Runden",
     lapUnknown: "Runde ?",
 
     form: {
@@ -318,6 +319,14 @@ export const de: Dictionary = {
     gpsDeniedBrowser:
       "Standort vom Browser blockiert. Erlauben Sie den Standortzugriff in den Website-Berechtigungen und laden Sie die Seite neu.",
 
+    gapWarning: "Sie haben {age} lang nicht gesendet.",
+    gapWarningBody:
+      "Die Rennleitung hat Ihre Position in dieser Zeit nicht gesehen. Halten Sie diesen Bildschirm im Vordergrund und das Gerät am Strom.",
+    tapToDismiss: "zum Ausblenden tippen",
+    alertNotSaved: "ALARM AUF DIESEM GERÄT NICHT GESPEICHERT — JETZT FUNK BENUTZEN.",
+    alertNotSavedDetail:
+      "Der lokale Speicher hat das Schreiben abgelehnt ({reason}). Nichts wird von selbst erneut gesendet.",
+    alertAttempts: "{count} Versuch(e) ohne Erfolg. Melden Sie es über Funk.",
     transmitting: "Überträgt",
     paused: "Pausiert",
     queuedPings: "{count} Punkte in der Warteschlange",
@@ -354,6 +363,17 @@ export const de: Dictionary = {
     goLive: "Rennen starten",
     finish: "Rennen beenden",
 
+    areaOverline: "Bereich Rennleitung",
+    filterAll: "Alle",
+    filterReady: "Bereit",
+    filterPreparing: "In Vorbereitung",
+    filterFinished: "Beendet",
+    noneInFilter: "Kein Rennen in diesem Zustand.",
+    openRace: "Öffnen",
+    openRecord: "Protokoll",
+    supportShort: "Begleitung",
+    listErrorBody:
+      "Laden Sie die Seite neu. Wenn es bleibt, melden Sie sich ab und wieder an — Ihre Sitzung ist möglicherweise abgelaufen.",
     steps: "Schritte des Rennens",
     overview: "Übersicht",
     live: "Live",
@@ -427,6 +447,7 @@ export const de: Dictionary = {
     replaceWarning:
       "Das Ersetzen der Strecke berechnet alle Positionen im Rennen neu. Vor dem Start durchführen.",
     parseError: "Datei konnte nicht gelesen werden",
+    noGpx: "Kein GPX",
     pointCount: "{count} Punkte",
     current: "Aktuelle Strecke",
     replace: "Strecke ersetzen",
@@ -580,6 +601,18 @@ export const de: Dictionary = {
     showAll: "Alle anzeigen",
     noWebGL:
       "Dieser Browser unterstützt kein WebGL. Die Positionsdaten in den Listen bleiben korrekt.",
+    basemapLabel: "Hintergrundkarte",
+    basemapHint:
+      "Gilt nur für dieses Rennen. Die Streckenlinie wechselt die Farbe mit, damit sie auf dem gewählten Hintergrund nicht verschwindet.",
+    basemapAsphalt: "Asphalt",
+    basemapAsphaltHint:
+      "Klare Linien, kein Relief. Er lenkt am wenigsten von den Fahrzeugen ab — die richtige Wahl für ein Stadtrennen und für die projizierte Leinwand in der Rennleitung.",
+    basemapTopo: "Topografisch",
+    basemapTopoHint:
+      "Höhenlinien, Steigung und Nebenstraßen. Der einzige Hintergrund, der den Anstieg zeigt, bevor er kommt — bei einem Bergrennen ändert das, was über Funk gesagt wird.",
+    basemapSatellite: "Satellit",
+    basemapSatelliteHint:
+      "Luftbild. Nützlich, um zu prüfen, ob die Straße im GPX wirklich die Rennstrecke ist, und um einen Versorgungspunkt an dem zu erkennen, was tatsächlich vor Ort steht.",
     slowTitle: "Die Karte ist nicht fertig geladen.",
     slowBody:
       "Das kann an einem Tab im Hintergrund liegen, an fehlendem WebGL oder an im Netz blockierten Kartenkacheln. Die Kilometer, das Fenster und die Fahrzeugliste daneben bleiben korrekt.",

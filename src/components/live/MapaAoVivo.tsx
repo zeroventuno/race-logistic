@@ -541,12 +541,9 @@ export function MapaAoVivo({
 
       {!pronto && demorou ? (
         <div className="pointer-events-none absolute inset-x-3 top-3 border border-warn/60 bg-surface-1/95 px-3 py-2 text-sm text-warn">
-          {/* i18n: precisa de chave — mapa não terminou de carregar */}
-          <p className="font-semibold">O mapa não terminou de carregar.</p>
+          <p className="font-semibold">{t("map.slowTitle")}</p>
           <p className="mt-0.5 text-ink-muted">
-            Pode ser aba em segundo plano, WebGL indisponível ou os blocos do
-            mapa bloqueados na rede. Os quilômetros, a janela e a lista de
-            veículos ao lado continuam corretos.
+            {t("map.slowBody")}
           </p>
         </div>
       ) : null}

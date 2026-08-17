@@ -281,6 +281,7 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
  * ninguém a nada.
  */
 function Veredito({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean }) {
+  const t = useT();
   const fmt = useFormat();
   const conselho = gapAdvice(gap.gapSeconds, gap.targetSeconds, confiavel);
 
@@ -289,11 +290,12 @@ function Veredito({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean }) 
   if (conselho.drift === "on_target") {
     return (
       <p className="flex items-baseline gap-2 text-sm text-ok">
-        {/* i18n: precisa de chave — janela dentro do combinado */}
         <span aria-hidden="true">✓</span>
-        <span>
-          Janela <strong className="tnum">{fmt.duration(gap.gapSeconds)}</strong>, combinado{" "}
-          <strong className="tnum">{fmt.duration(gap.targetSeconds)}</strong>. Nada a corrigir.
+        <span className="tnum">
+          {t("gap.onTarget", {
+            gap: fmt.duration(gap.gapSeconds),
+            target: fmt.duration(gap.targetSeconds),
+          })}
         </span>
       </p>
     );
@@ -309,24 +311,17 @@ function Veredito({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean }) 
           : "border-warn/50 bg-warn/10 text-warn"
       }`}
     >
-      {/* i18n: precisa de chave — veredito da janela com remédio e custo */}
-      <span>
-        Janela <strong className="tnum">{fmt.duration(gap.gapSeconds)}</strong>, combinado{" "}
-        <strong className="tnum">{fmt.duration(gap.targetSeconds)}</strong> —{" "}
-        <strong>
-          {adiantado ? "adiantado" : "atrasado"}{" "}
-          <span className="tnum">{fmt.duration(conselho.driftSeconds)}</span>
-        </strong>
-        .
+      <span className="tnum font-semibold">
+        {t(adiantado ? "gap.verdictAhead" : "gap.verdictBehind", {
+          gap: fmt.duration(gap.gapSeconds),
+          target: fmt.duration(gap.targetSeconds),
+          drift: fmt.duration(conselho.driftSeconds),
+        })}
       </span>
       <span className="font-medium text-ink">
-        {adiantado
-          ? "Retarde o carro de fechamento."
-          : "Acelere o carro de fechamento."}{" "}
+        {t(adiantado ? "gap.remedyAhead" : "gap.remedyBehind")}{" "}
         <span className="font-normal text-ink-muted">
-          {adiantado
-            ? "A via está reabrindo antes do previsto e quem ficou para trás perde a proteção cedo demais."
-            : "A interdição está passando do tempo autorizado pela autoridade de trânsito."}
+          {t(adiantado ? "gap.costAhead" : "gap.costBehind")}
         </span>
       </span>
     </p>

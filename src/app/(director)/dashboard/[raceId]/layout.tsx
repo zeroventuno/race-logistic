@@ -54,8 +54,7 @@ export default async function RaceLayout({
                           locale,
                           race.timezone,
                         )
-                      : /* i18n: precisa de chave — "Sem horário de largada" */
-                        "Sem horário de largada"}
+                      : t("race.noStart")}
                   </span>
                 </p>
               </div>
@@ -68,11 +67,9 @@ export default async function RaceLayout({
                   <Selo tone="ok">✓ {t("director.ready")}</Selo>
                 ) : (
                   <Selo tone="warn">
-                    {/* i18n: precisa de chave — "{count} pendência(s)" */}
-                    <span className="tnum">{readiness.blocking.length}</span>{" "}
-                    {readiness.blocking.length === 1
-                      ? "pendência"
-                      : "pendências"}
+                    {t("director.pendingCount", {
+                      count: readiness.blocking.length,
+                    })}
                   </Selo>
                 )}
               </div>
@@ -84,8 +81,7 @@ export default async function RaceLayout({
                 itens={[
                   {
                     path: "",
-                    /* i18n: precisa de chave — "Resumo" (aba de visão geral) */
-                    label: "Resumo",
+                    label: t("director.overview"),
                     done: null,
                   },
                   {

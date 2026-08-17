@@ -1,5 +1,7 @@
 "use client";
 
+import type { TranslationKey } from "@/lib/i18n/translate";
+
 /**
  * Captura de posição.
  *
@@ -34,7 +36,15 @@ export interface GeoFix {
 
 export interface WatchHandlers {
   onFix: (fix: GeoFix) => void;
-  onStatus: (status: GeolocationStatus, message: string | null) => void;
+  /**
+   * O segundo argumento é uma CHAVE de tradução, não uma frase.
+   *
+   * Este módulo roda antes de existir provedor de idioma — é chamado do
+   * runtime, que é uma classe, não um componente. Devolver a frase pronta
+   * congelaria o português no lugar mais importante do app do motorista: a
+   * instrução de como desbloquear a localização.
+   */
+  onStatus: (status: GeolocationStatus, messageKey: TranslationKey | null) => void;
 }
 
 /** Intervalo mínimo entre pontos transmitidos. */
@@ -52,10 +62,7 @@ const MAX_ACCURACY_M = 1500;
 
 export function watchDriverPosition(handlers: WatchHandlers): () => void {
   if (typeof navigator === "undefined" || !navigator.geolocation) {
-    handlers.onStatus(
-      "unavailable",
-      "Este navegador não fornece localização. Use o Chrome ou o Safari do celular.",
-    );
+    handlers.onStatus("unavailable", "driver.gpsNoApi");
     return () => undefined;
   }
 
@@ -101,19 +108,16 @@ export function watchDriverPosition(handlers: WatchHandlers): () => void {
     (error) => {
       switch (error.code) {
         case error.PERMISSION_DENIED:
-          handlers.onStatus("denied", permissionInstructions());
+          handlers.onStatus("denied", chaveDaInstrucao());
           break;
         case error.POSITION_UNAVAILABLE:
-          handlers.onStatus(
-            "unavailable",
-            "Sem sinal de GPS. Em túnel ou garagem isso é esperado; a captura volta sozinha.",
-          );
+          handlers.onStatus("unavailable", "driver.gpsNoFix");
           break;
         case error.TIMEOUT:
-          handlers.onStatus("timeout", "GPS demorando para responder. Continuando a tentar.");
+          handlers.onStatus("timeout", "driver.gpsTimeout");
           break;
         default:
-          handlers.onStatus("unavailable", error.message || "Falha ao obter posição.");
+          handlers.onStatus("unavailable", "driver.gpsFailed");
       }
     },
     {
@@ -133,18 +137,12 @@ export function watchDriverPosition(handlers: WatchHandlers): () => void {
  * Instruções concretas. "Permissão negada" sozinho deixa o motorista preso: no
  * celular, o caminho para reabilitar não está no app, está no navegador.
  */
-export function permissionInstructions(): string {
+export function chaveDaInstrucao(): TranslationKey {
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
 
-  if (/iPhone|iPad|iPod/i.test(ua)) {
-    return "Localização bloqueada. No iPhone: Ajustes → Safari → Localização → Perguntar, depois recarregue esta página. Se usa o app do Chrome, é Ajustes → Chrome → Localização.";
-  }
-
-  if (/Android/i.test(ua)) {
-    return "Localização bloqueada. No Android: toque no cadeado ao lado do endereço → Permissões → Localização → Permitir, e recarregue a página.";
-  }
-
-  return "Localização bloqueada pelo navegador. Libere o acesso à localização nas permissões do site e recarregue a página.";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "driver.gpsDeniedIOS";
+  if (/Android/i.test(ua)) return "driver.gpsDeniedAndroid";
+  return "driver.gpsDeniedBrowser";
 }
 
 /** Aproximação plana suficiente para decidir "andou o bastante?". */

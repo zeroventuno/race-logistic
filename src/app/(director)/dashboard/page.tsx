@@ -5,7 +5,7 @@ import { BotaoLink, Cartao, Selo } from "@/components/director/ui";
 import { formatDistance, formatDuration } from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/config";
-import type { Translator } from "@/lib/i18n/translate";
+import type { TranslationKey, Translator } from "@/lib/i18n/translate";
 import type { Race } from "@/lib/types";
 
 import { RACE_STATUS_TONE, formatRaceDate } from "../_lib/format";
@@ -26,12 +26,11 @@ export const metadata = { title: "Flamme Rouge" };
 const FILTROS = ["todas", "prontas", "preparacao", "encerradas"] as const;
 type Filtro = (typeof FILTROS)[number];
 
-const ROTULO_FILTRO: Record<Filtro, string> = {
-  /* i18n: precisa de chave — as quatro abas de filtro da lista de provas */
-  todas: "Todas",
-  prontas: "Prontas",
-  preparacao: "Em preparação",
-  encerradas: "Encerradas",
+const CHAVE_FILTRO: Record<Filtro, TranslationKey> = {
+  todas: "director.filterAll",
+  prontas: "director.filterReady",
+  preparacao: "director.filterPreparing",
+  encerradas: "director.filterFinished",
 };
 
 export default async function DashboardPage({
@@ -163,15 +162,13 @@ export default async function DashboardPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.24em] text-ink-faint">
-            {/* i18n: precisa de chave — sobretítulo da lista */}
-            Área da direção de prova
+            {t("director.areaOverline")}
           </p>
           <h1 className="titulo mt-3 text-[2.75rem] font-bold leading-[1.02] text-ink">
             {t("director.myRaces")}
           </h1>
           <p className="mt-2 text-[0.96875rem] text-ink-muted">
-            {/* i18n: precisa de chave — "Cada prova tem seu percurso, suas posições de apoio e seus códigos." */}
-            Cada prova tem seu percurso, suas posições de apoio e seus códigos.
+            {t("director.myRacesSubtitle")}
           </p>
         </div>
         <BotaoLink href="/dashboard/nova" variant="primary">
@@ -197,7 +194,7 @@ export default async function DashboardPage({
                     : "border-transparent text-ink-faint hover:text-ink-muted"
                 }`}
               >
-                {ROTULO_FILTRO[f]}{" "}
+                {t(CHAVE_FILTRO[f])}{" "}
                 <span className="tnum text-ink-ghost">
                   {contagemPorFiltro[f]}
                 </span>
@@ -211,9 +208,7 @@ export default async function DashboardPage({
         <Cartao className="mt-8 border-warn/45 p-5">
           <p className="font-semibold text-warn">{t("common.error")}</p>
           <p className="mt-1 text-sm text-ink-muted">
-            {/* i18n: precisa de chave — recuperação de falha ao listar provas */}
-            Recarregue a página. Se persistir, saia e entre de novo — sua sessão
-            pode ter expirado.
+            {t("director.listErrorBody")}
           </p>
         </Cartao>
       ) : races.length === 0 ? (
@@ -261,8 +256,9 @@ export default async function DashboardPage({
                     </span>
                     {(race as { laps?: number }).laps &&
                     (race as { laps?: number }).laps! > 1
-                      ? /* i18n: precisa de chave — "circuito de N voltas" */
-                        ` · circuito de ${(race as { laps?: number }).laps} voltas`
+                      ? ` · ${t("race.lapsCircuit", {
+                          laps: (race as { laps?: number }).laps ?? 1,
+                        })}`
                       : ""}
                   </p>
 
@@ -276,16 +272,14 @@ export default async function DashboardPage({
                       }
                     />
                     <Metrica
-                      /* i18n: precisa de chave — rótulo curto "Janela alvo" */
-                      rotulo="Janela alvo"
+                      rotulo={t("gap.targetLabel")}
                       valor={formatDuration(
                         race.target_gap_minutes * 60,
                         locale,
                       )}
                     />
                     <Metrica
-                      /* i18n: precisa de chave — rótulo curto "Apoio" */
-                      rotulo="Apoio"
+                      rotulo={t("director.supportShort")}
                       valor={`${contagem.total} ${t("race.positions").toLowerCase()}`}
                     />
                   </dl>
@@ -312,11 +306,11 @@ export default async function DashboardPage({
                 <div className="flex items-center gap-6 sm:flex-col sm:items-end sm:gap-4">
                   <MiniPercurso
                     pontos={percurso?.render_points ?? []}
+                    rotuloSemPercurso={t("route.noGpx")}
                     className="shrink-0 border border-border"
                   />
                   <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-ink-muted">
-                    {/* i18n: precisa de chave — "Abrir" / "Registro" */}
-                    {encerrada ? "Registro" : "Abrir"} →
+                    {encerrada ? t("director.openRecord") : t("director.openRace")} →
                   </span>
                 </div>
               </Link>
@@ -325,8 +319,7 @@ export default async function DashboardPage({
 
           {visiveis.length === 0 ? (
             <li className="bg-surface-1 px-7 py-12 text-center text-sm text-ink-muted">
-              {/* i18n: precisa de chave — filtro sem resultado */}
-              Nenhuma prova neste estado.
+              {t("director.noneInFilter")}
             </li>
           ) : null}
         </ul>
@@ -357,8 +350,7 @@ function rotuloPendencia(key: string, t: Translator): string {
     case "sweep":
       return t("director.needsSweep");
     default:
-      /* i18n: precisa de chave — "Cadastrar posições de apoio" */
-      return "Cadastrar posições de apoio";
+      return t("director.needsPositions");
   }
 }
 
@@ -370,36 +362,17 @@ function rotuloPendencia(key: string, t: Translator): string {
  * coisas que ele vai precisar fazer, com o esforço de cada uma.
  */
 function EstadoVazio({ t }: { t: Translator }) {
-  /* i18n: precisa de chave — os três passos do estado vazio (título e texto). */
   const passos = [
-    {
-      n: 1,
-      titulo: "Cadastre a prova",
-      texto:
-        "Nome, local, largada e a janela alvo entre o carro de abertura e o de fechamento. Um minuto.",
-    },
-    {
-      n: 2,
-      titulo: "Carregue o percurso",
-      texto:
-        "Suba o GPX que você já tem, ou desenhe o traçado no mapa. É o que transforma posição de GPS em quilômetro de prova.",
-    },
-    {
-      n: 3,
-      titulo: "Cadastre as posições e imprima os códigos",
-      texto:
-        "Cada moto, ambulância e carro de apoio ganha um código de 6 caracteres. O motorista digita no celular dele e pronto — sem instalar nada, sem criar conta.",
-    },
+    { n: 1, titulo: t("director.empty.step1Title"), texto: t("director.empty.step1Body") },
+    { n: 2, titulo: t("director.empty.step2Title"), texto: t("director.empty.step2Body") },
+    { n: 3, titulo: t("director.empty.step3Title"), texto: t("director.empty.step3Body") },
   ];
 
   return (
     <Cartao className="mt-8 p-6 sm:p-8">
       <h2 className="titulo font-semibold text-ink text-2xl">{t("director.noRaces")}</h2>
       <p className="mt-2 max-w-2xl text-sm text-ink-muted">
-        {/* i18n: precisa de chave — explicação dos requisitos de uma prova */}
-        Uma prova fica pronta para ir ao ar quando tem percurso, posições de
-        apoio e as referências de abertura e fechamento marcadas. São três
-        passos:
+        {t("director.empty.intro")}
       </p>
 
       <ol className="mt-6 space-y-4">

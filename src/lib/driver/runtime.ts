@@ -22,6 +22,7 @@ import type {
 } from "@/lib/driver/protocol";
 import { UNBIND_ERROR_CODES } from "@/lib/driver/protocol";
 import type { GeolocationStatus } from "@/lib/driver/geolocation";
+import type { TranslationKey } from "@/lib/i18n/translate";
 import { watchDriverPosition } from "@/lib/driver/geolocation";
 import { OutboxQueue, type OutboxRecord, type QueuedAction } from "@/lib/driver/queue";
 import {
@@ -99,7 +100,7 @@ export interface DriverSnapshot {
   lastSyncAtMs: number | null;
   lastSyncError: string | null;
   gps: GeolocationStatus;
-  gpsMessage: string | null;
+  gpsMessageKey: TranslationKey | null;
   lastFixAtMs: number | null;
   lastFixAccuracyM: number | null;
   wakeLockActive: boolean;
@@ -145,7 +146,7 @@ const INITIAL: DriverSnapshot = {
   lastSyncAtMs: null,
   lastSyncError: null,
   gps: "idle",
-  gpsMessage: null,
+  gpsMessageKey: null,
   lastFixAtMs: null,
   lastFixAccuracyM: null,
   wakeLockActive: false,
@@ -219,7 +220,7 @@ export class DriverRuntime {
 
     this.stopWatch = watchDriverPosition({
       onFix: (fix) => void this.onFix(fix),
-      onStatus: (gps, gpsMessage) => this.patch({ gps, gpsMessage }),
+      onStatus: (gps, gpsMessageKey) => this.patch({ gps, gpsMessageKey }),
     });
 
     this.wakeLock = keepScreenAwake((wakeLockActive) => this.patch({ wakeLockActive }));
