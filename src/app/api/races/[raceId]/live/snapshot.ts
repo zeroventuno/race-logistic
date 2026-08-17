@@ -162,7 +162,7 @@ export async function buildLiveSnapshot(
         .from("races")
         .select(
           "id, name, status, timezone, laps, actual_start, finished_at, scheduled_start, " +
-            "target_gap_minutes, min_gap_minutes, max_gap_minutes",
+            "target_gap_minutes, min_gap_minutes, max_gap_minutes, map_basemap",
         )
         .eq("id", raceId)
         .maybeSingle(),

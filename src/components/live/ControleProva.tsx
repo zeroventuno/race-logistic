@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState, useTransition } from "react";
 
 import { encerrarProva, iniciarProva } from "@/app/(director)/dashboard/[raceId]/ao-vivo/actions";
@@ -61,6 +63,22 @@ export function ControleProva({
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/* A VOLTA PARA A LISTA DE PROVAS.
+          Na tela Ao vivo o cabeçalho de prova não existe — o mapa ocupa a
+          viewport — e eu tinha dito que este cartão carregaria a volta, e não
+          carregava. Sobrava clicar no letreiro, que funciona e ninguém
+          adivinha: logotipo que leva para casa é convenção de site, não de
+          painel de operação. */}
+      <Link
+        href="/dashboard"
+        className="-ml-1 inline-flex min-h-9 items-center gap-1.5 px-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ink-faint transition hover:text-ink"
+      >
+        <span aria-hidden>←</span>
+        {t("director.myRaces")}
+      </Link>
+
+      <span aria-hidden className="h-4 w-px bg-border" />
+
       <span className="flex items-center gap-2 text-sm">
         <span
           aria-hidden
