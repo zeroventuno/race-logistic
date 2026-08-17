@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormat } from "@/lib/i18n/client";
+import { useFormat, useT } from "@/lib/i18n/client";
 
 import {
   POLL_INTERVAL_MS,
@@ -50,6 +50,7 @@ export function SaudeConexao({
   onAtivarSom,
 }: SaudeConexaoProps) {
   const fmt = useFormat();
+  const t = useT();
 
   const desdeSegundos =
     connection.lastPollOkMs === null
@@ -79,17 +80,15 @@ export function SaudeConexao({
                 : "bg-critical"
           } ${health !== "ok" ? "alert-pulse" : ""}`}
         />
-        {/* i18n: precisa de chaves — estados de saúde do painel */}
         {health === "ok"
-          ? "Painel ao vivo"
+          ? t("live.panelOk")
           : health === "degraded"
-            ? "Painel degradado"
-            : "PAINEL SEM CONEXÃO"}
+            ? t("live.panelDegraded")
+            : t("live.panelDown")}
       </span>
 
       <span className="tnum">
-        {/* i18n: precisa de chave — "reconciliado {age}" */}
-        reconciliado {fmt.age(desdeSegundos)}
+        {t("live.reconciled", { age: fmt.age(desdeSegundos) })}
       </span>
 
       <span className="opacity-80">
@@ -104,8 +103,7 @@ export function SaudeConexao({
 
       {health === "down" ? (
         <span className="font-bold">
-          {/* i18n: precisa de chave — o que está na tela não é o presente */}
-          O que está na tela não é o presente. Confirme tudo pelo rádio.
+          {t("live.notPresent")}
         </span>
       ) : health === "degraded" && connection.realtime !== "connected" ? (
         <span>
@@ -127,8 +125,7 @@ export function SaudeConexao({
         disabled={atualizando}
         className="ml-auto border border-current/40 px-2 py-0.5 font-medium hover:bg-current/10 disabled:opacity-50"
       >
-        {/* i18n: precisa de chaves — "atualizar agora" / "atualizando…" */}
-        {atualizando ? "atualizando…" : "atualizar agora"}
+        {atualizando ? t("live.refreshing") : t("live.refreshNow")}
       </button>
 
       {/* Som bloqueado é uma promessa não cumprida: o diretor pode estar
@@ -139,8 +136,7 @@ export function SaudeConexao({
           onClick={onAtivarSom}
           className="border border-warn/60 bg-warn/15 px-2 py-0.5 font-semibold text-warn"
         >
-          {/* i18n: precisa de chave — "som desligado — ativar" */}
-          🔇 som desligado — ativar
+          🔇 {t("live.soundOff")}
         </button>
       ) : (
         <span className="opacity-70" title="Aviso sonoro ativo">

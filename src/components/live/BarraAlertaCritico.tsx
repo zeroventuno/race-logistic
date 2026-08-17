@@ -117,8 +117,9 @@ export function BarraAlertaCritico({
             {t(`alerts.categories.${alerta.category}.label`)}
             {pendentes.length > 1 ? (
               <span className="tnum ml-2 rounded-full bg-surface-0/25 px-2 py-0.5 text-xs">
-                {/* i18n: precisa de chave — "+{n} sem reconhecer" */}+
-                {pendentes.length - 1} sem reconhecer
+                {t("live.moreUnacknowledged", {
+                  count: pendentes.length - 1,
+                })}
               </span>
             ) : null}
           </p>
@@ -196,8 +197,7 @@ export function BarraAlertaCritico({
           onClick={() => onAbrir(alerta)}
           className="shrink-0 text-xs font-semibold underline underline-offset-4"
         >
-          {/* i18n: precisa de chave — "ver no mapa" */}
-          ver no mapa
+          {t("live.viewOnMap")}
         </button>
       </div>
     </div>

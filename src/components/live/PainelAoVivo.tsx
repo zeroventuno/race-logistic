@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useT } from "@/lib/i18n/client";
+
 import { BarraAlertaCritico } from "./BarraAlertaCritico";
 import { ControleProva } from "./ControleProva";
 import { JanelaGap } from "./JanelaGap";
@@ -74,6 +76,7 @@ export function PainelAoVivo({
     gravarHistorico: podeEditar,
   });
 
+  const t = useT();
   const [ordem, setOrdem] = useState<VehicleSort>("prova");
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [focar, setFocar] = useState<{ lng: number; lat: number; token: number } | null>(
@@ -195,9 +198,7 @@ export function PainelAoVivo({
             />
           ) : (
             <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-muted">
-              {/* i18n: precisa de chave — prova sem percurso ativo */}
-              Esta prova não tem percurso ativo. Sem ele não há mapa, não há
-              quilometragem e não há janela abertura ↔ fechamento.
+              {t("live.noRoute")}
             </div>
           )}
         </div>

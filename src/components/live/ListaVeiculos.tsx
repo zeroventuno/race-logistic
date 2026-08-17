@@ -101,8 +101,7 @@ export function ListaVeiculos({
         {semSinal.length > 0 ? (
           <>
             <p className="font-mono sticky top-0 z-10 bg-critical/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-critical backdrop-blur">
-              {/* i18n: precisa de chave — cabeçalho do grupo sem sinal */}
-              Sem sinal ({semSinal.length}) — a posição no mapa é uma lembrança
+              {t("live.noSignalGroup", { count: semSinal.length })}
             </p>
             <ul>
               {semSinal.map((v) => (
@@ -134,8 +133,7 @@ export function ListaVeiculos({
 
         {vehicles.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-ink-muted">
-            {/* i18n: precisa de chave — nenhuma posição cadastrada */}
-            Nenhuma posição cadastrada nesta prova.
+            {t("live.noPositions")}
           </p>
         ) : null}
       </div>
@@ -229,8 +227,9 @@ function LinhaVeiculo({
 
             {laps > 1 ? (
               <span className="tnum text-ink-faint">
-                {/* i18n: precisa de chave — volta atual / volta desconhecida */}
-                {v.lapKnown ? `volta ${v.lap + 1}/${laps}` : "volta ?"}
+                {v.lapKnown
+                  ? t("race.lap", { lap: v.lap + 1, laps })
+                  : t("race.lapUnknown")}
               </span>
             ) : null}
 
@@ -250,17 +249,14 @@ function LinhaVeiculo({
               <Etiqueta tom="warn">{t("positions.notBound")}</Etiqueta>
             ) : null}
             {v.offRoute ? (
-              /* i18n: precisa de chave — "fora do percurso" */
-              <Etiqueta tom="warn">fora do percurso</Etiqueta>
+              <Etiqueta tom="warn">{t("live.offRoute")}</Etiqueta>
             ) : null}
             {vehicleClockSuspect(v) ? (
-              /* i18n: precisa de chave — "relógio do aparelho fora de hora" */
-              <Etiqueta tom="warn">relógio fora de hora</Etiqueta>
+              <Etiqueta tom="warn">{t("live.clockOff")}</Etiqueta>
             ) : null}
             {v.snapDistanceM !== null && v.snapDistanceM > 120 && !v.offRoute ? (
-              /* i18n: precisa de chave — distância até o traçado */
               <Etiqueta tom="neutro">
-                {fmt.distance(v.snapDistanceM)} do traçado
+                {t("live.fromTrack", { distance: fmt.distance(v.snapDistanceM) })}
               </Etiqueta>
             ) : null}
           </span>

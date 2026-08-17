@@ -100,8 +100,7 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
             {fmt.duration(gap.gapSeconds)}
           </p>
           <p className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
-            {/* i18n: precisa de chave — "separação no tempo" */}
-            separação no tempo
+            {t("gap.timeSeparation")}
           </p>
         </div>
 
@@ -110,8 +109,7 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
             {gap.gapM === null ? "—" : fmt.distance(gap.gapM)}
           </p>
           <p className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
-            {/* i18n: precisa de chave — "pela estrada" */}
-            pela estrada
+            {t("gap.alongRoad")}
           </p>
         </div>
 
@@ -148,10 +146,7 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
       <div className="mt-4 space-y-2">
         {gap.clockSuspect ? (
           <Ressalva>
-            {/* i18n: precisa de chave — relógio de aparelho fora de hora */}
-            Relógio de um dos aparelhos de referência está fora de hora em
-            relação ao servidor. Enquanto isso durar, a idade do dado e o
-            cálculo medido não são confiáveis — confirme a posição pelo rádio.
+            {t("gap.clockSuspect")}
           </Ressalva>
         ) : null}
 
@@ -165,10 +160,7 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
 
         {gap.lapsInferred && !gap.historyComplete ? (
           <Ressalva>
-            {/* i18n: precisa de chave — voltas não confirmadas em circuito */}
-            Prova em circuito de {race.laps} voltas: o histórico carregado não
-            alcança a largada, então a contagem de voltas pode estar
-            subestimada e a janela, maior do que aparece.
+            {t("gap.lapsUncertain", { laps: race.laps })}
           </Ressalva>
         ) : null}
 
@@ -194,6 +186,7 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
 }
 
 function SeloMetodo({ gap }: { gap: LiveGapView }) {
+  const t = useT();
   const estilo =
     gap.method === "measured"
       ? "border-ok/50 bg-ok/10 text-ok"
@@ -208,12 +201,11 @@ function SeloMetodo({ gap }: { gap: LiveGapView }) {
       <span aria-hidden>
         {gap.method === "measured" ? "◉" : gap.method === "projected" ? "◌" : "⚠"}
       </span>
-      {/* i18n: precisa de chaves — rótulos curtos do método da janela */}
       {gap.method === "measured"
-        ? "Medido"
+        ? t("gap.methodMeasured")
         : gap.method === "projected"
-          ? "Projetado"
-          : "Sem dado"}
+          ? t("gap.methodProjected")
+          : t("gap.methodNone")}
     </span>
   );
 }
@@ -236,8 +228,7 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
   if (!confiavel) {
     return (
       <span className="inline-flex w-fit items-center border border-warn/45 bg-warn/10 px-2 py-0.5 text-xs text-warn">
-        {/* i18n: precisa de chave — comparação suspensa por dado não confiável */}
-        Comparação com a janela alvo suspensa enquanto o dado não for confiável
+        {t("gap.comparisonSuspended")}
       </span>
     );
   }
@@ -247,8 +238,7 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
       <span
         className={`inline-flex w-fit items-center border px-2 py-0.5 text-xs ${BAND_TOM.no_limits}`}
       >
-        {/* i18n: precisa de chave — prova sem limites de janela definidos */}
-        Sem limites definidos para esta prova
+        {t("gap.noLimits")}
       </span>
     );
   }
@@ -264,18 +254,16 @@ function SeloBanda({ gap, confiavel }: { gap: LiveGapView; confiavel: boolean })
       {gap.band === "over" ? (
         <>
           ↗ {t("gap.overTarget")}
-          {/* i18n: precisa de chave — "esticou demais" */}
-          <span className="font-normal"> · esticou demais</span>
+          <span className="font-normal"> · {t("gap.overTargetDetail")}</span>
         </>
       ) : gap.band === "under" ? (
         <>
           ↘ {t("gap.underTarget")}
-          {/* i18n: precisa de chave — "comprimiu demais" */}
-          <span className="font-normal"> · comprimiu demais</span>
+          <span className="font-normal"> · {t("gap.underTargetDetail")}</span>
         </>
       ) : (
         <>
-          {/* i18n: precisa de chave — "dentro da janela" */}✓ Dentro da janela
+          ✓ {t("gap.withinTarget")}
         </>
       )}
       <span className="tnum font-normal opacity-80">({limites})</span>
@@ -392,8 +380,7 @@ function Extremidade({
       </span>
       {laps > 1 ? (
         <span className="tnum text-xs text-ink-faint">
-          {/* i18n: precisa de chave — "volta {n}/{total}" */}
-          volta {ponto.lap + 1}/{laps}
+          {t("race.lap", { lap: ponto.lap + 1, laps })}
         </span>
       ) : null}
       <span

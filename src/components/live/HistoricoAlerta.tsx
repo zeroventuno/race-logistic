@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { useFormat } from "@/lib/i18n/client";
+import { useFormat, useT } from "@/lib/i18n/client";
 
 import { carregarHistorico, type EventoDeAlerta } from "./acoes";
 
@@ -22,6 +22,7 @@ import { carregarHistorico, type EventoDeAlerta } from "./acoes";
 
 export function HistoricoAlerta({ alertId }: { alertId: string }) {
   const fmt = useFormat();
+  const t = useT();
   const [eventos, setEventos] = useState<EventoDeAlerta[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -50,8 +51,7 @@ export function HistoricoAlerta({ alertId }: { alertId: string }) {
   if (eventos === null) {
     return (
       <p className="mt-2 text-xs text-ink-faint">
-        {/* i18n: precisa de chave — "Carregando histórico…" */}
-        Carregando histórico…
+        {t("live.loadingHistory")}
       </p>
     );
   }
@@ -59,8 +59,7 @@ export function HistoricoAlerta({ alertId }: { alertId: string }) {
   if (eventos.length === 0) {
     return (
       <p className="mt-2 text-xs text-ink-faint">
-        {/* i18n: precisa de chave — "Nenhum evento registrado." */}
-        Nenhum evento registrado.
+        {t("live.noEvents")}
       </p>
     );
   }

@@ -92,14 +92,12 @@ export function ControleProva({
         <span className="font-semibold text-ink">{t(`race.status.${status}`)}</span>
         {status === "live" && actualStart ? (
           <span className="tnum text-xs text-ink-muted">
-            {/* i18n: precisa de chave — "largada às {hora}" */}
-            largada às {fmt.clock(actualStart)}
+            {t("live.startedAt", { time: fmt.clock(actualStart) })}
           </span>
         ) : null}
         {status === "finished" && finishedAt ? (
           <span className="tnum text-xs text-ink-muted">
-            {/* i18n: precisa de chave — "encerrada às {hora}" */}
-            encerrada às {fmt.clock(finishedAt)}
+            {t("live.finishedAt", { time: fmt.clock(finishedAt) })}
           </span>
         ) : null}
       </span>
@@ -113,8 +111,7 @@ export function ControleProva({
               onClick={() => executar(() => iniciarProva(raceId))}
               className="min-h-9 bg-ok px-4 text-sm font-bold text-surface-0 disabled:opacity-50"
             >
-              {/* i18n: precisa de chave — "confirmar largada" */}
-              confirmar largada
+              {t("live.confirmStart")}
             </button>
             <button
               type="button"
@@ -146,8 +143,7 @@ export function ControleProva({
               onClick={() => executar(() => encerrarProva(raceId))}
               className="min-h-9 border border-warn bg-warn/20 px-4 text-sm font-bold text-warn disabled:opacity-50"
             >
-              {/* i18n: precisa de chave — "confirmar encerramento" */}
-              confirmar encerramento
+              {t("live.confirmFinish")}
             </button>
             <button
               type="button"
