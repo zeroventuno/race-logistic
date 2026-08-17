@@ -613,15 +613,19 @@ body:has(.fr-landing) {
  * escura sempre, que é o tom certo — o seletor vive sobre a foto do herói e
  * sobre a barra fumê, nunca sobre papel.
  *
- * O ESPAÇO À DIREITA É PROPOSITAL E GENEROSO. O navegador mede a largura do
- * `<select>` pelo texto ORIGINAL das opções, antes de aplicar
- * `text-transform: uppercase` e o `letter-spacing`. "Português" medido em
- * caixa baixa e desenhado em caixa alta com 0,14em de entreletra não cabe — e
- * o que sobrava na tela era "PORTUGUÊ", sem o S. A folga cobre a diferença e
- * ainda deixa a seta do sistema em paz.
+ * A LARGURA É FIXADA À MÃO, e não deixada para o navegador. Ele dimensiona um
+ * `<select>` pelo texto ORIGINAL das opções, antes de `text-transform` e do
+ * `letter-spacing`, e ainda desenha a seta DENTRO da caixa de conteúdo.
+ * Medido: 109 px de conteúdo, 20 px de seta, 88 px de texto — 0,8 px de
+ * sobra. Passava aqui e cortava no computador do lado, porque a bandeira 🇧🇷
+ * tem largura diferente em cada sistema. O que aparecia era "PORTUGUÊ".
+ *
+ * Com largura mínima, as seis línguas dividem a mesma caixa — que é o que se
+ * quer de um seletor: ele não pula de tamanho ao trocar de idioma.
  */
 .fr-topo__acoes select {
   min-height: 2.25rem;
+  min-width: 11rem;
   border: 1px solid rgb(246 245 242 / 0.22);
   background-color: rgb(12 15 18 / 0.72);
   color: var(--fr-paper);

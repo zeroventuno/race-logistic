@@ -61,7 +61,25 @@ export function SeletorIdioma({
         onChange={(e) => setLocale(e.target.value as Locale)}
         aria-label={nome}
         autoComplete="off"
-        className="min-h-9 border border-border bg-transparent px-2 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-ink-muted transition hover:border-border-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-info"
+        /*
+         * LARGURA MÍNIMA EXPLÍCITA, e não a intrínseca do navegador.
+         *
+         * Um `<select>` se dimensiona sozinho pela opção mais larga, e isso
+         * deveria bastar. Não basta por duas razões que se somam: a caixa é
+         * medida com o texto ORIGINAL, antes de `uppercase` e do `tracking`,
+         * e a seta do sistema é desenhada DENTRO da caixa de conteúdo, não na
+         * margem. Medido aqui: 109 px de conteúdo, 20 px comidos pela seta,
+         * 88 px de texto — sobravam 0,8 px. Passava neste computador e cortava
+         * no do lado, porque a bandeira 🇧🇷 tem largura diferente em cada
+         * sistema (no Windows ela vira duas letras).
+         *
+         * O que aparecia na tela era "PORTUGUÊ", sem o S.
+         *
+         * 11rem cobre a opção mais larga com folga de sobra em qualquer fonte
+         * de emoji, e as seis línguas passam a ter a mesma caixa — que é o que
+         * se quer de um seletor: ele não muda de tamanho ao trocar de idioma.
+         */
+        className="min-h-9 min-w-[11rem] border border-border bg-transparent pl-2 pr-7 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-ink-muted transition hover:border-border-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-info"
       >
         {LOCALES.map((l) => (
           <option key={l} value={l}>
