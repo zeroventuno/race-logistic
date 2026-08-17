@@ -376,7 +376,7 @@ function EstadoVazio({ t }: { t: Translator }) {
       n: 1,
       titulo: "Cadastre a prova",
       texto:
-        "Nome, local, largada e a janela alvo entre o carro de abertura e a vassoura. Um minuto.",
+        "Nome, local, largada e a janela alvo entre o carro de abertura e o de fechamento. Um minuto.",
     },
     {
       n: 2,

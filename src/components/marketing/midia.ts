@@ -113,7 +113,7 @@ export const SLOTS = {
     src: null,
     alt:
       "Painel da direção de prova: mapa do percurso com os veículos de apoio, " +
-      "janela entre abertura e vassoura marcada como medida, e a fila de alertas.",
+      "janela entre abertura e fechamento marcada como medida, e a fila de alertas.",
     maxKB: 220,
     formatos: ["avif", "webp"],
     larguraRef: 1600,

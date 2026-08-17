@@ -27,7 +27,7 @@ export interface ValoresProva {
  *
  * Os limites mínimo e máximo ficam atrás de um "mostrar limites" porque na
  * criação eles quase sempre ficam vazios: o diretor sabe a janela que quer
- * ("meia hora entre abertura e vassoura") muito antes de saber a partir de que
+ * ("meia hora entre abertura e fechamento") muito antes de saber a partir de que
  * ponto ele quer ser avisado. Campos opcionais em destaque fazem o formulário
  * parecer mais longo do que é e atrasam a decisão que importa.
  */
@@ -217,7 +217,7 @@ export function ProvaForm({
           {t("gap.title")}
         </legend>
         <p className="mt-1 text-xs text-ink-faint">
-          Quantos minutos a direção quer entre o carro de abertura e a vassoura.
+          Quantos minutos a direção quer entre o carro de abertura e o de fechamento.
           É a partir daqui que o painel decide se o pelotão esticou ou comprimiu
           demais.
         </p>

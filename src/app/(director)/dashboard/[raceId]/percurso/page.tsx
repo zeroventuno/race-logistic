@@ -51,7 +51,7 @@ export default async function PercursoPage({
           {/* i18n: precisa de chave — explicação de para que serve o percurso */}
           É o traçado que transforma a coordenada de GPS de cada veículo em
           &ldquo;quilômetro 42 da prova&rdquo;. Sem ele não há cálculo de janela
-          entre abertura e vassoura, nem sugestão de apoio mais próximo pela
+          entre abertura e fechamento, nem sugestão de apoio mais próximo pela
           estrada.
         </p>
       </header>

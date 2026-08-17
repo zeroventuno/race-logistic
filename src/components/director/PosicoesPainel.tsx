@@ -17,10 +17,21 @@ import { ROLE_META, type PositionRole, type RacePosition } from "@/lib/types";
 
 const PAPEIS = Object.keys(ROLE_META) as PositionRole[];
 
-/** Os papéis que entram em quase toda prova, na ordem em que se pensa neles. */
+/**
+ * Os papéis que entram em quase toda prova.
+ *
+ * Os três primeiros são a ORDEM DO COMBOIO e vêm juntos porque são os que toda
+ * prova tem: abertura interdita a via, fechamento a devolve ao trânsito, e a
+ * vassoura vem atrás recolhendo quem abandonou, com a rua já reaberta. Depois
+ * vêm os que circulam sem posição fixa.
+ *
+ * A vassoura faltava aqui, e a falta era pior do que parece: ela é o único
+ * papel que toda prova tem e que o diretor precisava caçar no seletor de baixo.
+ */
 const ATALHOS: PositionRole[] = [
   "lead_car",
   "sweep_car",
+  "broom_wagon",
   "moto",
   "ambulance",
   "support_car",
@@ -141,8 +152,10 @@ export function PosicoesPainel({
             {/* i18n: precisa de chave — explicação do código automático e da
                 referência marcada sozinha */}
             Cada posição nasce com um código de vínculo único e um nome que você
-            pode trocar depois. O primeiro carro de abertura e a primeira
-            vassoura já entram marcados como referência.
+            pode trocar depois. O primeiro carro de abertura e o primeiro de
+            fechamento já entram marcados como referência — são eles que
+            definem a janela, porque é a passagem do fechamento que devolve a
+            via ao trânsito. A vassoura vem depois disso e não entra na conta.
           </p>
 
           {erro ? (
@@ -167,8 +180,8 @@ export function PosicoesPainel({
             bateria morrer, sem perder o histórico.
           </p>
           <p className="mt-2 max-w-2xl text-sm text-ink-muted">
-            Comece pelo carro de abertura e pela vassoura: são eles que definem
-            a janela que a direção acompanha.
+            Comece pelo carro de abertura e pelo de fechamento: são eles que
+            definem a janela que a direção acompanha.
           </p>
         </Cartao>
       ) : (
