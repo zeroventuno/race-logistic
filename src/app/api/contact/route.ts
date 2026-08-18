@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { clientContext, sha256Hex } from "@/app/api/driver/_lib/http";
+import { notificarContato } from "@/lib/email/notificar";
 import { getTranslator } from "@/lib/i18n/server";
 import { isLocale } from "@/lib/i18n/config";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -26,9 +27,10 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
  *  3. A ARMADILHA RESPONDE SUCESSO. Dizer "recusado" ensina o robô a tentar de
  *     novo sem o campo; dizer "recebido" e jogar fora encerra a conversa.
  *
- *  4. NADA DE E-MAIL AQUI. Gravar e notificar são duas coisas, e a gravação não
- *     pode falhar porque o serviço de e-mail está fora. O pedido fica na
- *     tabela; a notificação lê de lá, depois.
+ *  4. GRAVAR E AVISAR SÃO DUAS COISAS, nesta ordem. O pedido vai para a tabela
+ *     primeiro; só depois sai o e-mail, e a falha dele não reprova a
+ *     requisição. Um serviço de e-mail fora do ar não pode virar "o formulário
+ *     do site não funciona" para quem estava tentando comprar.
  */
 
 /** Janela e teto do limite por origem. */
@@ -101,12 +103,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  const { error } = await admin.from("contact_requests").insert({
+  const registro = {
     name: dados.name,
     email: dados.email,
     organization: dados.organization || null,
     message: dados.message,
     locale: isLocale(locale) ? locale : "pt-BR",
+  };
+
+  const { error } = await admin.from("contact_requests").insert({
+    ...registro,
     ip_hash: ipHash,
     user_agent: ctx.userAgent.slice(0, 400),
   });
@@ -115,6 +121,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     console.error("[contact] falha ao gravar:", error.message);
     return NextResponse.json({ erro: t("landing.contact.failed") }, { status: 500 });
   }
+
+  // GRAVAR PRIMEIRO, AVISAR DEPOIS — e o aviso não pode reprovar a requisição.
+  //
+  // A ordem é a garantia: quando esta linha roda, o pedido já está no banco e
+  // não se perde mais. Se o serviço de e-mail estiver fora, uma chave tiver
+  // vencido ou a API demorar, quem escreveu continua vendo "recebido", porque é
+  // verdade — a mensagem chegou. O que falhou foi o meu aviso, e isso é
+  // problema meu, não dela.
+  await notificarContato(registro);
 
   return NextResponse.json({ ok: true });
 }
