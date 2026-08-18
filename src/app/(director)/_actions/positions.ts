@@ -95,7 +95,18 @@ export async function adicionarPosicoes(
       const novas = Array.from({ length: parsed.data.quantidade }, (_, i) => ({
         race_id: raceId,
         role: parsed.data.role,
-        label: `${meta.shortLabel} ${jaDoPapel + i + 1}`,
+        // O NOME NASCE NO IDIOMA DE QUEM CADASTRA, e depois é dado — não
+        // tradução. Um diretor italiano cadastrando três motos recebia
+        // "Moto 1..3" em português, porque o nome vinha de `ROLE_META`, que é
+        // constante de código.
+        //
+        // E ele NÃO acompanha troca de idioma depois de criado, de propósito:
+        // este nome vai impresso na folha do briefing e é o que se chama no
+        // rádio. Se ele mudasse junto com a interface, o diretor leria
+        // "Apertura 1" numa tela cuja folha na mão dele diz "Abertura 1" — e
+        // chamaria uma coisa que a equipe não reconhece. Nome de veículo é
+        // combinado entre pessoas, não rótulo de interface.
+        label: `${t(`roles.${parsed.data.role}.short`)} ${jaDoPapel + i + 1}`,
         ordinal: proximoOrdinal + i,
         is_dispatchable: meta.dispatchable,
         is_reference_lead: false,
