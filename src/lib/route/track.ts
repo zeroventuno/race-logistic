@@ -217,17 +217,31 @@ export function buildRouteTrack(raw: RawRoutePoint[]): BuildTrackResult {
     );
   }
 
-  return {
-    track: {
-      points,
-      totalDistanceM: cum,
-      bbox: computeBBox(points),
-      elevationGainM: sawElevation ? elevationGain : null,
-      isLoop,
-      startFinishGapM,
-    },
-    warnings,
+  const track: RouteTrack = {
+    points,
+    totalDistanceM: cum,
+    bbox: computeBBox(points),
+    elevationGainM: sawElevation ? elevationGain : null,
+    isLoop,
+    startFinishGapM,
   };
+
+  // O aviso do fio enrolado vem DEPOIS do de circuito e é mais específico que
+  // ele: quem sobe três voltas desenhadas recebe os dois, e o segundo diz o
+  // que fazer. Deixá-lo aqui, na importação, é o único lugar em que ainda dá
+  // para corrigir sem custo — depois da largada, a quilometragem já saiu no
+  // rádio.
+  const voltasDetectadas = voltasNoTracado(track);
+  if (voltasDetectadas > 1) {
+    warnings.push(
+      `Este arquivo parece conter ${voltasDetectadas} voltas desenhadas como um traçado só. ` +
+        `O sistema espera UMA volta e multiplica pelo número de voltas do cadastro — ` +
+        `se você escrever ${voltasDetectadas} lá, a prova ficará com ${voltasDetectadas * voltasDetectadas} voltas de distância. ` +
+        `Recorte o arquivo para uma volta, ou deixe o campo de voltas em 1.`,
+    );
+  }
+
+  return { track, warnings };
 }
 
 export class RouteTrackError extends Error {
@@ -251,6 +265,83 @@ export function computeBBox(points: RoutePointTuple[]): BBox {
   }
 
   return { minLng, minLat, maxLng, maxLat };
+}
+
+/**
+ * O arquivo já vem com as voltas enroladas?
+ *
+ * O sistema espera que o GPX seja UMA volta e que o número de voltas venha do
+ * cadastro — a distância da prova é o traçado multiplicado por esse número.
+ * Quem exporta o percurso de um relógio depois de reconhecer a prova inteira
+ * traz o fio enrolado: três voltas desenhadas como uma linha só. Se essa
+ * pessoa também escrever 3 no campo de voltas, a prova passa a ter nove.
+ *
+ * E o número errado é o menos grave. O sistema detecta circuito pela largada e
+ * chegada coincidirem — o que continua verdade num fio de três voltas — e passa
+ * a achar que UMA volta tem o comprimento de três. A janela de busca de posição
+ * fica com a escala errada, a mesma curva física aparece três vezes dentro do
+ * que ele chama de uma volta, e a contagem "volta 2/3" vira ficção.
+ *
+ * COMO SE DETECTA: um traçado enrolado N vezes se repete a cada `total / N`
+ * metros. Anda-se pelo fio comparando o ponto em `d` com o ponto em
+ * `d + total/N`; se quase todos coincidirem no chão, o fio deu N voltas.
+ *
+ * Isto NÃO confunde com ida-e-volta, e a razão é geométrica: numa ida-e-volta
+ * o ponto que coincide com `d` é `total - d`, um espelho, não um deslocamento
+ * fixo. O teste de deslocamento constante não casa.
+ *
+ * Devolve o MAIOR N que casa, que é a volta de verdade: num fio de seis voltas
+ * o deslocamento de três voltas também casa, e reportar 2 seria dizer meia
+ * verdade.
+ */
+export function voltasNoTracado(track: RouteTrack): number {
+  const total = track.totalDistanceM;
+
+  // Abaixo disto não há volta que se detecte com confiança, e o custo de um
+  // falso positivo (assustar quem subiu um percurso curto legítimo) é maior
+  // que o do falso negativo.
+  if (total < 2_000 || track.points.length < 20) return 1;
+
+  for (let n = MAX_VOLTAS_DETECTAVEIS; n >= 2; n--) {
+    const voltaM = total / n;
+    if (voltaM < 500) continue;
+    if (fioSeRepeteA(track, voltaM)) return n;
+  }
+
+  return 1;
+}
+
+/** Quantas voltas enroladas vale a pena procurar. Além disso é ruído. */
+const MAX_VOLTAS_DETECTAVEIS = 12;
+
+/** Amostras ao longo de uma volta. O bastante para não casar por acaso. */
+const AMOSTRAS_POR_VOLTA = 48;
+
+/** Dois pontos a menos disto um do outro são o mesmo lugar da estrada. */
+const TOLERANCIA_M = 25;
+
+/**
+ * Fração das amostras que precisa coincidir.
+ *
+ * Não é 100% porque o fio real não fecha perfeito: o GPS oscila, o piloto
+ * abre mais numa curva na segunda volta, e a largada costuma ter um trecho
+ * neutralizado que só existe na primeira. Exigir perfeição faria a detecção
+ * nunca disparar justamente nos arquivos de verdade.
+ */
+const FRACAO_MINIMA = 0.9;
+
+function fioSeRepeteA(track: RouteTrack, voltaM: number): boolean {
+  let casaram = 0;
+
+  for (let i = 0; i < AMOSTRAS_POR_VOLTA; i++) {
+    const d = (voltaM * (i + 0.5)) / AMOSTRAS_POR_VOLTA;
+    const aqui = positionAtOffset(track, d);
+    const depois = positionAtOffset(track, d + voltaM);
+
+    if (haversineMeters(aqui, depois) <= TOLERANCIA_M) casaram++;
+  }
+
+  return casaram / AMOSTRAS_POR_VOLTA >= FRACAO_MINIMA;
 }
 
 /** Posição geográfica a `offsetM` metros da largada, ao longo do percurso. */
