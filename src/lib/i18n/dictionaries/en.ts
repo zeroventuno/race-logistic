@@ -665,8 +665,7 @@ export const en: Dictionary = {
       "The race exists, but the live state could not be read. Reload the page; if it persists, check your connection to the database.",
     noRoute:
       "This race has no active course. Without one there is no map, no distance and no lead ↔ closing car window.",
-    clockNote:
-      "Ages measured against the server clock, not this computer's. Times in the race time zone ({timezone}).",
+    clockNote: "Times by the server clock · race time zone ({timezone})",
     unacknowledged: "{count} alert(s) not acknowledged.",
     moreUnacknowledged: "+{count} not acknowledged",
     viewOnMap: "show on map",

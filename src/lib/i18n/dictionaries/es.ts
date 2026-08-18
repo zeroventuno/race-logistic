@@ -672,8 +672,7 @@ export const es: Dictionary = {
       "La carrera existe, pero no se pudo leer el estado en directo. Recargue la página; si sigue, compruebe su conexión con la base de datos.",
     noRoute:
       "Esta carrera no tiene recorrido activo. Sin él no hay mapa, no hay kilometraje y no hay ventana apertura ↔ cierre.",
-    clockNote:
-      "Las antigüedades se miden con el reloj del servidor, no con el de este ordenador. Horas en la zona horaria de la carrera ({timezone}).",
+    clockNote: "Tiempos según el reloj del servidor · huso de la carrera ({timezone})",
     // "sin recibir" seria lido como "que não chegaram ao sistema" — sentido
     // oposto e alarmante num produto cujo requisito central é que alerta
     // nenhum se perca. "sin atender" só pode significar uma coisa.

@@ -667,8 +667,7 @@ export const it: Dictionary = {
       "La gara esiste, ma lo stato in diretta non è stato letto. Ricarica la pagina; se persiste, controlla la connessione al database.",
     noRoute:
       "Questa gara non ha un percorso attivo. Senza, non c'è mappa, non c'è chilometraggio e non c'è finestra apripista ↔ fine corsa.",
-    clockNote:
-      "Le età sono misurate sull'orologio del server, non su quello di questo computer. Orari nel fuso della gara ({timezone}).",
+    clockNote: "Tempi sull'orologio del server · fuso della gara ({timezone})",
     unacknowledged: "{count} allerta/e non prese in carico.",
     moreUnacknowledged: "+{count} non prese in carico",
     viewOnMap: "vedi sulla mappa",

@@ -673,8 +673,7 @@ export const de: Dictionary = {
       "Das Rennen existiert, aber der Live-Zustand konnte nicht gelesen werden. Laden Sie die Seite neu; hält es an, prüfen Sie Ihre Verbindung zur Datenbank.",
     noRoute:
       "Dieses Rennen hat keine aktive Strecke. Ohne sie gibt es keine Karte, keine Kilometrierung und kein Fenster Führung ↔ Schluss.",
-    clockNote:
-      "Das Datenalter wird gegen die Serveruhr gemessen, nicht gegen die dieses Rechners. Uhrzeiten in der Zeitzone des Rennens ({timezone}).",
+    clockNote: "Zeiten nach der Serveruhr · Zeitzone des Rennens ({timezone})",
     // "nicht zur Kenntnis genommen" é correto e burocrático demais para um
     // rodapé denso lido de relance. "unbestätigt" é curto e preserva a
     // distinção entre ABERTO e NÃO RECONHECIDO, que o sistema trata como

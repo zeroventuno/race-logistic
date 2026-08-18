@@ -287,11 +287,10 @@ export function PainelAoVivo({
         {/* --- Faixa de baixo: referência, nunca decisão ------------------- */}
         <div className="pointer-events-none absolute inset-x-3 bottom-[5.5rem] z-20 flex flex-wrap items-end justify-between gap-2 sm:inset-x-5">
           <p className="vidro pointer-events-auto px-3 py-2 font-mono text-[0.6rem] uppercase leading-relaxed tracking-[0.14em] text-ink-faint">
-            {t("live.clockNote", { timezone: snapshot.race.timezone })} ·
-            Ventuno
+            {t("live.clockNote", { timezone: snapshot.race.timezone })}
             {alertasPendentes > 0 ? (
               <span className="ml-2 font-semibold text-critical">
-                {alertasPendentes} sem reconhecer
+                {t("live.moreUnacknowledged", { count: alertasPendentes })}
               </span>
             ) : null}
           </p>

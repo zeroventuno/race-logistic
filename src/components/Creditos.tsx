@@ -5,9 +5,11 @@
  * autoria é informação permanente, e informação permanente compete com
  * informação que muda. Numa tela de operação, o que muda é o que importa.
  *
- * A tela Ao vivo é a exceção de posição, não de presença — lá não existe
- * rodapé, então o crédito entra na faixa de referência que já está no pé do
- * mapa, junto com a nota do relógio.
+ * A TELA AO VIVO NÃO LEVA CRÉDITO. É a única do sistema que não leva, e a
+ * razão é a mesma que explica o tamanho minúsculo dele em todo o resto: numa
+ * tela de operação, o que não muda compete com o que muda. Ali a faixa do pé
+ * do mapa é a última linha de referência que o diretor tem, e ela precisa
+ * dizer de quem é o relógio — não de quem é o software.
  */
 
 "use client";

@@ -682,8 +682,7 @@ export const ptBR = {
       "A prova existe, mas o estado ao vivo não pôde ser lido. Recarregue a página; se continuar, confira sua conexão com o banco.",
     noRoute:
       "Esta prova não tem percurso ativo. Sem ele não há mapa, não há quilometragem e não há janela abertura ↔ fechamento.",
-    clockNote:
-      "Idades medidas contra o relógio do servidor, não contra o deste computador. Horários no fuso da prova ({timezone}).",
+    clockNote: "Tempos pelo relógio do servidor · fuso da prova ({timezone})",
     unacknowledged: "{count} alerta(s) sem reconhecer.",
     moreUnacknowledged: "+{count} sem reconhecer",
     viewOnMap: "ver no mapa",

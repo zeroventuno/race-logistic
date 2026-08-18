@@ -673,8 +673,7 @@ export const fr: Dictionary = {
       "La course existe, mais l'état en direct n'a pas pu être lu. Rechargez la page ; si cela persiste, vérifiez votre connexion à la base.",
     noRoute:
       "Cette course n'a pas de parcours actif. Sans lui, pas de carte, pas de kilométrage et pas de fenêtre ouvreuse ↔ fin de course.",
-    clockNote:
-      "Les âges sont mesurés sur l'horloge du serveur, pas sur celle de cet ordinateur. Heures dans le fuseau de la course ({timezone}).",
+    clockNote: "Temps à l'horloge du serveur · fuseau de la course ({timezone})",
     unacknowledged: "{count} alerte(s) non prise(s) en compte.",
     moreUnacknowledged: "+{count} non prises en compte",
     viewOnMap: "voir sur la carte",
