@@ -35,6 +35,7 @@
  * permite testá-lo com geometria conhecida em vez de com um banco de mentira.
  */
 
+import type { Clausula } from "@/lib/i18n/frase";
 import { haversineMeters, type LatLng } from "@/lib/geo/distance";
 import {
   ROLE_META,
@@ -189,7 +190,14 @@ export interface NearestSuggestion {
   etaSeconds: number | null;
   /** O veículo já passou pelo ponto do alerta? `null` sem dado de rota. */
   isAhead: boolean | null;
-  reason: string;
+  /**
+   * Por que este veículo, em pedaços.
+   *
+   * Não é frase pronta: esta função roda no servidor, no instante do alerta, e
+   * o resultado é GRAVADO. Quem lê depois — a direção no painel, o motorista
+   * acionado no celular — pode estar em outro idioma. Ver `lib/i18n/frase`.
+   */
+  reason: Clausula[];
   method: NearestMethod;
   signal: SignalHealth;
   /** A ETA veio de velocidade medida ou de velocidade nominal? */
@@ -206,7 +214,7 @@ export interface NearestSuggestion {
 export interface NearestResult {
   suggestions: NearestSuggestion[];
   /** Por que a lista ficou como ficou — vai para a auditoria do alerta. */
-  note: string;
+  note: Clausula[];
 }
 
 interface Scored extends NearestSuggestion {
@@ -226,7 +234,7 @@ export function computeNearestSupport(input: NearestInput): NearestResult {
   if (!originPoint && origin.routeOffsetM == null) {
     return {
       suggestions: [],
-      note: "Sem posição de origem do alerta: nenhuma sugestão calculável.",
+      note: [{ k: "alerts.why.noOrigin" }],
     };
   }
 
@@ -405,44 +413,59 @@ interface ReasonInput {
   uncertain: boolean;
 }
 
-function buildReason(r: ReasonInput): string {
-  const parts: string[] = [];
+function buildReason(r: ReasonInput): Clausula[] {
+  const parts: Clausula[] = [];
 
   if (r.uncertain) {
-    parts.push(
-      "POSIÇÃO INCERTA: a âncora no percurso foi escolhida por desempate — confirme por rádio antes de contar com esta distância",
-    );
+    parts.push({ k: "alerts.why.uncertainAnchor" });
   }
 
+  // A distância vai em METROS CRUS, e não formatada. Quem formata é o leitor,
+  // com o `Intl` do idioma dele — o que de quebra conserta um defeito antigo
+  // anotado logo abaixo: a frase saía com ponto decimal enquanto a janela ao
+  // lado saía com vírgula, na mesma tela.
   if (r.method === "route" && r.routeDistanceM != null) {
-    parts.push(
-      r.isAhead
-        ? `${formatDistance(r.routeDistanceM)} à frente do alerta (precisa retornar)`
-        : `${formatDistance(r.routeDistanceM)} atrás do alerta, no sentido da prova`,
-    );
+    parts.push({
+      k: r.isAhead ? "alerts.why.ahead" : "alerts.why.behind",
+      v: { distance: { metros: r.routeDistanceM } },
+    });
   } else {
-    parts.push(
-      `${formatDistance(r.straightDistanceM)} em linha reta — sem posição na rota, distância pela estrada é maior`,
-    );
+    parts.push({
+      k: "alerts.why.straightOnly",
+      v: { distance: { metros: r.straightDistanceM } },
+    });
   }
 
   parts.push(
     r.measuredSpeed != null
-      ? `velocidade média medida ${(r.measuredSpeed * 3.6).toFixed(0)} km/h`
-      : `ETA estimada por velocidade nominal (${(NOMINAL_SPEED_MPS[r.role] * 3.6).toFixed(0)} km/h): sem deslocamento recente medido`,
+      ? {
+          k: "alerts.why.speedMeasured",
+          v: { speed: (r.measuredSpeed * 3.6).toFixed(0) },
+        }
+      : {
+          k: "alerts.why.speedNominal",
+          v: { speed: (NOMINAL_SPEED_MPS[r.role] * 3.6).toFixed(0) },
+        },
   );
 
   if (r.signal === "stale" || r.signal === "delayed") {
-    parts.push(`última posição há ${Math.round(r.ageSeconds ?? 0)} s`);
+    parts.push({
+      k: "alerts.why.lastSeen",
+      v: { seconds: Math.round(r.ageSeconds ?? 0) },
+    });
   }
 
   if (!r.handles) {
-    parts.push(
-      `${ROLE_META[r.role].shortLabel} não é a especialidade para "${r.category}" — sugerido por proximidade`,
-    );
+    parts.push({
+      k: "alerts.why.offSpecialty",
+      v: {
+        role: { chave: `roles.${r.role}.short` },
+        category: { chave: `alerts.categories.${r.category}.short` },
+      },
+    });
   }
 
-  return parts.join(" · ");
+  return parts;
 }
 
 interface NoteInput {
@@ -454,76 +477,76 @@ interface NoteInput {
   category: AlertCategory;
 }
 
-function buildNote(input: NoteInput): string {
+function buildNote(input: NoteInput): Clausula[] {
   const { suggestions, ignoredNoSignal, ignoredRole, ignoredBusy, category } = input;
 
   if (suggestions.length === 0) {
-    const reasons: string[] = [];
-    if (ignoredNoSignal > 0) reasons.push(`${ignoredNoSignal} sem sinal`);
-    if (ignoredBusy > 0) reasons.push(`${ignoredBusy} já acionado(s) para outro alerta`);
-
-    if (reasons.length > 0) {
-      return `Nenhum apoio sugerido: ${reasons.join(", ")}.`;
+    const parts: Clausula[] = [];
+    if (ignoredNoSignal > 0) {
+      parts.push({ k: "alerts.why.ignoredNoSignal", v: { count: ignoredNoSignal } });
     }
-    return "Nenhum veículo despachável cadastrado nesta prova.";
+    if (ignoredBusy > 0) {
+      parts.push({ k: "alerts.why.ignoredBusy", v: { count: ignoredBusy } });
+    }
+
+    // Sem candidato E sem motivo é outra coisa: ninguém foi ignorado porque
+    // não havia ninguém para ignorar. A direção precisa distinguir "todos
+    // indisponíveis agora" de "esta prova nunca teve apoio cadastrado".
+    return parts.length > 0
+      ? [{ k: "alerts.why.noneSuggested" }, ...parts]
+      : [{ k: "alerts.why.noneDispatchable" }];
   }
 
-  const parts = [`${suggestions.length} sugestão(ões) para categoria "${category}".`];
+  const parts: Clausula[] = [
+    {
+      k: "alerts.why.count",
+      v: {
+        count: suggestions.length,
+        category: { chave: `alerts.categories.${category}.short` },
+      },
+    },
+  ];
 
   if (input.uncertainCount > 0) {
-    parts.push(
-      `${input.uncertainCount} candidato(s) com âncora ambígua — distância não confiável.`,
-    );
+    parts.push({
+      k: "alerts.why.uncertainCount",
+      v: { count: input.uncertainCount },
+    });
   }
   if (ignoredBusy > 0) {
-    parts.push(`${ignoredBusy} já acionado(s) para outro alerta.`);
+    parts.push({ k: "alerts.why.ignoredBusy", v: { count: ignoredBusy } });
   }
 
   // Escalonamento tem que gritar. Um alerta médico atendido por uma moto é uma
   // decisão consciente do sistema, e quem lê o histórico depois precisa ver que
   // não havia ambulância disponível — não concluir que o cálculo errou.
   if (suggestions[0]?.offSpecialty) {
-    parts.push(
-      `ESCALONADO: nenhum veículo da especialidade disponível; acionado ${ROLE_META[suggestions[0].role].shortLabel}.`,
-    );
+    parts.push({
+      k: "alerts.why.escalated",
+      v: { role: { chave: `roles.${suggestions[0].role}.short` } },
+    });
   }
 
-  if (ignoredNoSignal > 0) parts.push(`${ignoredNoSignal} ignorado(s) por sinal perdido.`);
-  if (ignoredRole > 0) parts.push(`${ignoredRole} não despachável(is).`);
+  if (ignoredNoSignal > 0) {
+    parts.push({ k: "alerts.why.ignoredNoSignal", v: { count: ignoredNoSignal } });
+  }
+  if (ignoredRole > 0) {
+    parts.push({ k: "alerts.why.ignoredRole", v: { count: ignoredRole } });
+  }
   if (suggestions.every((s) => s.method === "straight_fallback")) {
-    parts.push("Todas em linha reta: sem posição na rota para comparar.");
+    parts.push({ k: "alerts.why.allStraight" });
   }
-  return parts.join(" ");
+
+  return parts;
 }
 
-/**
- * Distância na justificativa do acionamento.
+/*
+ * A FORMATAÇÃO DA DISTÂNCIA SAIU DAQUI, e essa era a pendência anotada neste
+ * lugar: o texto usava `toFixed`, que sempre escreve ponto decimal, e o painel
+ * mostrava "4,00 km" na janela abertura↔fechamento e "2.10 km" na frase ao
+ * lado. Dois separadores decimais na mesma tela, lida sob pressão, fazem o olho
+ * tropeçar e duvidar do número.
  *
- * `toFixed` sempre usa ponto decimal, independente do idioma — então a mesma
- * tela mostrava "4,00 km" na janela abertura↔fechamento e "2.10 km" aqui, lado
- * a lado. Num painel lido sob pressão, dois separadores decimais diferentes na
- * mesma frase fazem o olho tropeçar e duvidar do número.
- *
- * O fuso e o idioma da prova não chegam até aqui (esta função roda no servidor,
- * no instante do alerta, e o texto é congelado em `dispatch_reason`), então o
- * formato segue o padrão europeu que atende cinco dos seis mercados. A troca
- * completa por idioma acontece quando `dispatch_reason` deixar de ser texto
- * pronto e passar a ser código + parâmetros — está anotado como pendência.
+ * A cláusula agora carrega os metros crus e quem formata é o leitor, com o
+ * `Intl` do idioma dele. O defeito não foi consertado — deixou de existir.
  */
-const DISTANCE_FORMAT = new Intl.NumberFormat("pt-BR", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const DISTANCE_FORMAT_LONG = new Intl.NumberFormat("pt-BR", {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
-
-function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  const km = meters / 1000;
-  return km >= 10
-    ? `${DISTANCE_FORMAT_LONG.format(km)} km`
-    : `${DISTANCE_FORMAT.format(km)} km`;
-}

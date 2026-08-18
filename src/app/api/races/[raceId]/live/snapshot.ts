@@ -68,7 +68,7 @@ const ALERT_COLUMNS =
   // próximo comparava dois offsets locais, oferecendo como candidato nº 1 uma
   // moto que estava "a 0,5 km" e na verdade estava uma volta inteira atrás.
   "absolute_offset_m, lap, route_offset_confidence, route_offset_ambiguous, " +
-  "raised_by_position_id, dispatched_position_id, dispatch_mode, dispatch_reason, " +
+  "raised_by_position_id, dispatched_position_id, dispatch_mode, dispatch_reason, dispatch_reason_parts, " +
   "dispatched_at, dispatch_acknowledged_at, dispatch_declined_at, dispatch_decline_reason, on_scene_at";
 
 interface PositionRow {
@@ -130,6 +130,7 @@ interface AlertRow {
   dispatched_position_id: string | null;
   dispatch_mode: "auto" | "manual" | null;
   dispatch_reason: string | null;
+  dispatch_reason_parts: unknown;
   dispatched_at: string | null;
   dispatch_acknowledged_at: string | null;
   dispatch_declined_at: string | null;
@@ -471,7 +472,7 @@ export async function buildLiveSnapshot(
       : supabase
           .from("alert_suggestions")
           .select(
-            "alert_id, position_id, rank, route_distance_m, straight_distance_m, eta_seconds, is_ahead, reason",
+            "alert_id, position_id, rank, route_distance_m, straight_distance_m, eta_seconds, is_ahead, reason, reason_parts",
           )
           .in("alert_id", alertIds)
           .order("rank", { ascending: true }),
@@ -506,6 +507,7 @@ export async function buildLiveSnapshot(
       etaSeconds: s.eta_seconds == null ? null : Number(s.eta_seconds),
       isAhead: s.is_ahead == null ? null : Boolean(s.is_ahead),
       reason: (s.reason as string | null) ?? null,
+      reasonParts: s.reason_parts,
       signal: signalHealth(ageSeconds),
       ageSeconds,
     });
@@ -571,6 +573,7 @@ export async function buildLiveSnapshot(
             role: dispatched?.role ?? "other",
             mode: a.dispatch_mode,
             reason: a.dispatch_reason,
+            reasonParts: a.dispatch_reason_parts,
             dispatchedAt: a.dispatched_at,
             acknowledgedAt: a.dispatch_acknowledged_at,
             declinedAt: a.dispatch_declined_at,

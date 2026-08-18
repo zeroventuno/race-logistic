@@ -128,6 +128,7 @@ interface AlertRow {
   dispatched_position_id: string | null;
   dispatch_mode: "auto" | "manual" | null;
   dispatch_reason: string | null;
+  dispatch_reason_parts: unknown;
   dispatched_at: string | null;
   dispatch_acknowledged_at: string | null;
   dispatch_declined_at: string | null;
@@ -243,6 +244,7 @@ export async function GET(request: Request): Promise<NextResponse> {
             role: dispatched?.role ?? "other",
             mode: a.dispatch_mode,
             reason: a.dispatch_reason,
+            reasonParts: a.dispatch_reason_parts,
             dispatchedAt: a.dispatched_at,
             acknowledgedAt: a.dispatch_acknowledged_at,
             declinedAt: a.dispatch_declined_at,
@@ -319,7 +321,7 @@ const ALERT_COLUMNS =
   "id, client_alert_id, category, status, created_at, received_at, note, lat, lng, " +
   "route_offset_m, absolute_offset_m, route_offset_ambiguous, dispatch_attempts, " +
   "dispatch_retry_after, proximity_radius_m, raised_by_position_id, dispatched_position_id, " +
-  "dispatch_mode, dispatch_reason, dispatched_at, dispatch_acknowledged_at, " +
+  "dispatch_mode, dispatch_reason, dispatch_reason_parts, dispatched_at, dispatch_acknowledged_at, " +
   "dispatch_declined_at, on_scene_at, acknowledged_at, resolved_at";
 
 function mergeAlerts(active: AlertRow[], own: AlertRow[]): AlertRow[] {

@@ -17,6 +17,18 @@ import { buildRouteTrack, positionAtOffset, RouteIndex } from "@/lib/route/track
 import type { ClientAlert, ClientPing, PositionRole } from "@/lib/types";
 
 /**
+ * As chaves de uma justificativa.
+ *
+ * A frase é guardada em pedaços para poder ser montada no idioma de quem lê
+ * (ver `lib/i18n/frase`), então o que um teste deve afirmar é a CHAVE: ela é a
+ * decisão. Afirmar o texto protegeria a grafia, não o comportamento.
+ */
+function chaves(clausulas: { k: string }[] | undefined): string[] {
+  return (clausulas ?? []).map((c) => c.k);
+}
+
+
+/**
  * Regressões da revisão adversarial.
  *
  * Cada bloco aqui reproduz uma falha que foi MEDIDA contra o sistema vivo e que
@@ -224,7 +236,7 @@ describe("crítico 2: confiança e ambiguidade da âncora", () => {
     expect(suspeita?.positionUncertain).toBe(true);
     // E a distância dela NÃO é apresentada como distância pela rota.
     expect(suspeita?.routeDistanceM).toBeNull();
-    expect(suspeita?.reason).toContain("POSIÇÃO INCERTA");
+    expect(chaves(suspeita?.reason)).toContain("alerts.why.uncertainAnchor");
   });
 
   it("origem ambígua contamina toda a comparação", () => {
@@ -436,7 +448,7 @@ describe("crítico 4: veículo já acionado não é acionado de novo", () => {
     });
 
     expect(result.suggestions).toHaveLength(0);
-    expect(result.note).toContain("já acionado");
+    expect(chaves(result.note)).toContain("alerts.why.ignoredBusy");
   });
 });
 

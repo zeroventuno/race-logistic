@@ -466,6 +466,8 @@ function aplicarAlerta(
           role: dispatched?.role ?? existente?.dispatch?.role ?? "other",
           mode: (linha.dispatch_mode as "auto" | "manual" | null) ?? null,
           reason: textoOuNulo(linha.dispatch_reason),
+          reasonParts:
+            linha.dispatch_reason_parts ?? existente?.dispatch?.reasonParts ?? null,
           dispatchedAt: textoOuNulo(linha.dispatched_at),
           acknowledgedAt: textoOuNulo(linha.dispatch_acknowledged_at),
           declinedAt: textoOuNulo(linha.dispatch_declined_at),

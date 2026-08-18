@@ -1,3 +1,5 @@
+import { montarFrase, type Clausula } from "@/lib/i18n/frase";
+import { formatDistance } from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
 import type { Translator } from "@/lib/i18n/translate";
 import "server-only";
@@ -42,14 +44,15 @@ export interface DispatchTarget {
   positionId: string;
   label: string;
   role: PositionRole;
-  reason: string;
+  /** Em pedaços: quem lê pode estar em outro idioma. Ver `lib/i18n/frase`. */
+  reason: Clausula[];
   etaSeconds: number | null;
 }
 
 export interface DispatchOutcome {
   dispatched: DispatchTarget | null;
   suggestions: NearestSuggestion[];
-  note: string;
+  note: Clausula[];
 }
 
 interface StateEmbed {
@@ -166,7 +169,11 @@ export interface AutoDispatchParams {
  * seguir em frente com o alerta gravado.
  */
 export async function autoDispatch(params: AutoDispatchParams): Promise<DispatchOutcome> {
-  const { t } = await getTranslator();
+  const { locale, t } = await getTranslator();
+  // O formatador do idioma da requisição. Só serve à cópia CONGELADA em texto —
+  // a versão estruturada continua carregando os metros crus, e quem abrir o
+  // painel formata com o `Intl` da língua dele.
+  const fmt = { distance: (m: number | null) => formatDistance(m, locale) };
   const admin = supabaseAdmin();
 
   const positions = params.positions ?? (await loadPositions(params.raceId));
@@ -204,7 +211,8 @@ export async function autoDispatch(params: AutoDispatchParams): Promise<Dispatch
           straight_distance_m: s.straightDistanceM,
           eta_seconds: s.etaSeconds,
           is_ahead: s.isAhead,
-          reason: s.reason,
+          reason: montarFrase(s.reason, t, fmt),
+          reason_parts: s.reason,
         })),
         { onConflict: 'alert_id,position_id', ignoreDuplicates: true },
       );
@@ -228,7 +236,15 @@ export async function autoDispatch(params: AutoDispatchParams): Promise<Dispatch
       // motivo de um acionamento que deu certo antes.
       const { error: notaErro } = await admin
         .from('alerts')
-        .update({ dispatch_reason: result.note })
+        .update({
+          // As DUAS colunas, e cada uma serve a um leitor diferente. A
+          // estruturada é montada no idioma de quem abrir o painel; a de texto
+          // congela a frase como ela foi decidida, que é o que uma federação
+          // vai querer ler dois anos depois sem o dicionário da aplicação na
+          // mão.
+          dispatch_reason: montarFrase(result.note, t, fmt, ' '),
+          dispatch_reason_parts: result.note,
+        })
         .eq('id', params.alertId)
         .is('dispatched_position_id', null);
 
@@ -252,7 +268,8 @@ export async function autoDispatch(params: AutoDispatchParams): Promise<Dispatch
         dispatched_position_id: top.positionId,
         dispatched_at: new Date().toISOString(),
         dispatch_mode: 'auto',
-        dispatch_reason: reason,
+        dispatch_reason: montarFrase(reason, t, fmt),
+        dispatch_reason_parts: reason,
         status: 'dispatched',
         // Um acionamento novo começa limpo: a recusa anterior vive em
         // `alert_events`, que é a trilha que ninguém sobrescreve.
@@ -305,7 +322,7 @@ export async function autoDispatch(params: AutoDispatchParams): Promise<Dispatch
   return {
     dispatched: null,
     suggestions: [],
-    note: 'Todos os candidatos foram tomados por outros alertas durante o acionamento.',
+    note: [{ k: 'alerts.why.takenMeanwhile' }],
   };
 }
 
@@ -337,12 +354,17 @@ export async function scheduleDispatchRetry(
 }
 
 /** Texto que o diretor lê para entender (e contestar) a escolha do sistema. */
-function describeDispatch(s: NearestSuggestion, t: Translator): string {
-  const eta =
+function describeDispatch(s: NearestSuggestion, t: Translator): Clausula[] {
+  return [
+    { k: "alerts.why.target", v: { position: s.label } },
+    ...s.reason,
     s.etaSeconds == null
-      ? t("route.etaUnknown")
-      : `~${Math.max(1, Math.round(s.etaSeconds / 60))} min`;
-  return `${s.label} — ${s.reason} · ${eta}`;
+      ? { k: "route.etaUnknown" }
+      : {
+          k: "alerts.why.eta",
+          v: { minutes: Math.max(1, Math.round(s.etaSeconds / 60)) },
+        },
+  ];
 }
 
 /** Auditoria. Nunca lança: um evento perdido não pode derrubar um alerta. */

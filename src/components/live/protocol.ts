@@ -181,7 +181,10 @@ export interface LiveAlertSuggestionView {
   etaSeconds: number | null;
   isAhead: boolean | null;
   /** Por que o sistema colocou este veículo nesta posição da lista. */
+  /** A frase congelada, na língua em que foi decidida. Reserva. */
   reason: string | null;
+  /** A mesma frase em pedaços, montada na língua de quem abriu o painel. */
+  reasonParts: unknown;
   /** Saúde do sinal AGORA — a sugestão é do momento do alerta, o sinal não. */
   signal: SignalHealth;
   ageSeconds: number | null;
@@ -192,7 +195,10 @@ export interface LiveAlertDispatchView {
   label: string;
   role: PositionRole;
   mode: "auto" | "manual" | null;
+  /** A frase congelada, na língua em que foi decidida. Reserva. */
   reason: string | null;
+  /** A mesma frase em pedaços, montada na língua de quem abriu o painel. */
+  reasonParts: unknown;
   dispatchedAt: string | null;
   acknowledgedAt: string | null;
   declinedAt: string | null;

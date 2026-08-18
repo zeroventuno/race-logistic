@@ -5,6 +5,7 @@ import { useMemo, useState, useTransition } from "react";
 import { AlertIcon } from "@/components/icons/alerta";
 import { VehicleIcon } from "@/components/icons/vehicle";
 import { useFormat, useI18n, useT } from "@/lib/i18n/client";
+import { fraseOuTexto } from "@/lib/i18n/frase";
 import { LOCALE_META } from "@/lib/i18n/config";
 import { ROLE_META, SIGNAL_META } from "@/lib/types";
 
@@ -188,6 +189,14 @@ function CartaoAlerta({
   const gritando = alertNeedsAttention(alerta);
   const semNinguem = alertHasNobodyGoing(alerta);
   const estagio = dispatchStage(alerta);
+
+  // A justificativa do acionamento vem do banco em pedaços e e montada AQUI,
+  // no idioma de quem abriu o painel — que pode nao ser o de quem reportou o
+  // alerta nem o de quem foi acionado. O texto congelado e a reserva para os
+  // alertas gravados antes disso e para o acionamento feito a mao.
+  const motivoDoAcionamento = alerta.dispatch
+    ? fraseOuTexto(alerta.dispatch.reasonParts, alerta.dispatch.reason, t, fmt)
+    : null;
   const idade = serverAgeSeconds(alerta.receivedAt, nowMs);
 
   const executar = (acao: () => Promise<ResultadoAcao>) => {
@@ -333,8 +342,8 @@ function CartaoAlerta({
           </p>
         ) : null}
 
-        {alerta.dispatch?.reason ? (
-          <p className="mt-1 text-xs text-ink-faint">{alerta.dispatch.reason}</p>
+        {motivoDoAcionamento ? (
+          <p className="mt-1 text-xs text-ink-faint">{motivoDoAcionamento}</p>
         ) : null}
       </div>
 
@@ -597,6 +606,9 @@ function apoiosAlternativos(
                   maximumFractionDigits: 1,
                 }).format(distancia / 1000)} km`,
               }),
+        // Esta lista e montada no navegador, ja no idioma do leitor: nao ha
+        // frase congelada para reservar.
+        reasonParts: null,
         signal: vehicleSignal(v, nowMs),
         ageSeconds: serverAgeSeconds(v.receivedAt, nowMs),
       } satisfies LiveAlertSuggestionView;

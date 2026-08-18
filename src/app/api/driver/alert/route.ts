@@ -602,7 +602,7 @@ async function ackFor(alert: AlertRow, deduplicated: boolean): Promise<DriverAle
           positionId: dispatched.positionId,
           label: dispatched.label,
           role: dispatched.role,
-          reason: alert.dispatch_reason ?? "",
+          reason: [],
           etaSeconds: dispatched.etaSeconds,
         }
       : null,

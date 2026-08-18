@@ -8,6 +8,8 @@
  * pelo bundle do celular, então nada de `server-only` nem de acesso a banco.
  */
 
+import type { Clausula } from "@/lib/i18n/frase";
+
 import type { GapResult } from "@/lib/route/gap";
 import type {
   AlertAckResponse,
@@ -131,7 +133,15 @@ export interface AlertDispatchView {
   label: string;
   role: PositionRole;
   mode: "auto" | "manual" | null;
+  /**
+   * A justificativa como foi CONGELADA no banco, na língua em que foi
+   * decidida. Serve de reserva para os alertas gravados antes de a frase
+   * passar a ser guardada em pedaços, e para o acionamento feito à mão pela
+   * direção, que é prosa de gente.
+   */
   reason: string | null;
+  /** A mesma frase em pedaços, para montar na língua deste aparelho. */
+  reasonParts: unknown;
   dispatchedAt: string | null;
   acknowledgedAt: string | null;
   declinedAt: string | null;
@@ -199,7 +209,8 @@ export interface DriverAlertAck extends Omit<AlertAckResponse, "status"> {
     positionId: string;
     label: string;
     role: PositionRole;
-    reason: string;
+    /** Em pedaços: este aparelho monta a frase na língua dele. */
+    reason: Clausula[];
     etaSeconds: number | null;
   } | null;
   /**

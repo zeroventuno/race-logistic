@@ -5,6 +5,18 @@ import { destinationPoint } from "@/lib/geo/distance";
 import { SIGNAL_THRESHOLDS_S, type PositionRole } from "@/lib/types";
 
 /**
+ * As chaves de uma justificativa.
+ *
+ * A frase é guardada em pedaços para poder ser montada no idioma de quem lê
+ * (ver `lib/i18n/frase`), então o que um teste deve afirmar é a CHAVE: ela é a
+ * decisão. Afirmar o texto protegeria a grafia, não o comportamento.
+ */
+function chaves(clausulas: { k: string }[] | undefined): string[] {
+  return (clausulas ?? []).map((c) => c.k);
+}
+
+
+/**
  * Testes do acionamento automático.
  *
  * A geometria é construída à mão para que a resposta certa seja verificável sem
@@ -77,7 +89,7 @@ describe("computeNearestSupport", () => {
     expect(result.suggestions).toHaveLength(1);
     expect(result.suggestions[0]?.positionId).toBe("moto");
     expect(result.suggestions[0]?.offSpecialty).toBe(true);
-    expect(result.note).toContain("ESCALONADO");
+    expect(chaves(result.note)).toContain("alerts.why.escalated");
   });
 
   it("prefere quem está atrás: quem já passou precisa retornar", () => {
@@ -148,7 +160,7 @@ describe("computeNearestSupport", () => {
     });
 
     expect(result.suggestions).toHaveLength(0);
-    expect(result.note).toContain("sem sinal");
+    expect(chaves(result.note)).toContain("alerts.why.ignoredNoSignal");
   });
 
   it("aceita veículo apenas atrasado, marcando a idade do dado na justificativa", () => {
@@ -167,7 +179,7 @@ describe("computeNearestSupport", () => {
     });
 
     expect(result.suggestions).toHaveLength(1);
-    expect(result.suggestions[0]?.reason).toContain("última posição há");
+    expect(chaves(result.suggestions[0]?.reason)).toContain("alerts.why.lastSeen");
   });
 
   it("cai para linha reta quando não há offset, e marca isso", () => {
@@ -195,8 +207,8 @@ describe("computeNearestSupport", () => {
     expect(result.suggestions[0]?.method).toBe("straight_fallback");
     expect(result.suggestions[0]?.routeDistanceM).toBeNull();
     expect(result.suggestions[0]?.isAhead).toBeNull();
-    expect(result.suggestions[0]?.reason).toContain("linha reta");
-    expect(result.note).toContain("linha reta");
+    expect(chaves(result.suggestions[0]?.reason)).toContain("alerts.why.straightOnly");
+    expect(chaves(result.note)).toContain("alerts.why.allStraight");
   });
 
   it("nunca sugere quem não é despachável nem quem disparou o alerta", () => {
@@ -259,7 +271,7 @@ describe("computeNearestSupport", () => {
     });
 
     expect(result.suggestions).toHaveLength(0);
-    expect(result.note).toContain("Sem posição de origem");
+    expect(chaves(result.note)).toContain("alerts.why.noOrigin");
   });
 
   it("estima ETA por velocidade nominal quando o veículo está parado", () => {
@@ -273,7 +285,7 @@ describe("computeNearestSupport", () => {
     });
 
     expect(result.suggestions[0]?.etaEstimated).toBe(true);
-    expect(result.suggestions[0]?.reason).toContain("velocidade nominal");
+    expect(chaves(result.suggestions[0]?.reason)).toContain("alerts.why.speedNominal");
     // 1000 m / 10 m/s nominais do mecânico = 100 s.
     expect(result.suggestions[0]?.etaSeconds).toBe(100);
   });

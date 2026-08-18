@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { AlertIcon } from "@/components/icons/alerta";
-import { useT } from "@/lib/i18n/client";
+import { useFormat, useT } from "@/lib/i18n/client";
+import { fraseOuTexto } from "@/lib/i18n/frase";
 import type { DriverAlertView } from "@/lib/driver/protocol";
 import type { DriverSnapshot } from "@/lib/driver/runtime";
 import { ALERT_CATEGORY_META, type AlertCategory } from "@/lib/types";
@@ -169,7 +170,8 @@ interface Line {
 
 function MyAlerts({ snapshot }: { snapshot: DriverSnapshot }) {
   const t = useT();
-  const lines = buildLines(snapshot, t);
+  const fmt = useFormat();
+  const lines = buildLines(snapshot, t, fmt);
 
   if (lines.length === 0) return null;
 
@@ -213,7 +215,11 @@ type Translate = ReturnType<typeof useT>;
  * sinal caiu logo depois. Sem ela, a linha SUMIA da tela — o motorista não via
  * "na fila", não via "recebido", não via nada.
  */
-function buildLines(snapshot: DriverSnapshot, t: Translate): Line[] {
+function buildLines(
+  snapshot: DriverSnapshot,
+  t: Translate,
+  fmt: { distance: (m: number | null) => string },
+): Line[] {
   const lines = new Map<string, Line>();
 
   for (const ack of snapshot.ackedAlerts) {
@@ -237,7 +243,7 @@ function buildLines(snapshot: DriverSnapshot, t: Translate): Line[] {
       key: alert.alertId,
       category: alert.category,
       createdAt: alert.createdAt,
-      ...describeOwnAlert(alert, t),
+      ...describeOwnAlert(alert, t, fmt),
     });
   }
 
@@ -265,6 +271,7 @@ function buildLines(snapshot: DriverSnapshot, t: Translate): Line[] {
 function describeOwnAlert(
   alert: DriverAlertView,
   t: Translate,
+  fmt: { distance: (m: number | null) => string },
 ): Pick<Line, "label" | "tone" | "detail"> {
   const who = alert.dispatch?.label ?? "";
 
@@ -284,7 +291,12 @@ function describeOwnAlert(
     return {
       label: t("alerts.dispatch.enRoute", { position: who }),
       tone: "delivered",
-      detail: alert.dispatch.reason,
+      detail: fraseOuTexto(
+        alert.dispatch.reasonParts,
+        alert.dispatch.reason,
+        t,
+        fmt,
+      ),
     };
   }
 
@@ -292,7 +304,12 @@ function describeOwnAlert(
     return {
       label: t("alerts.dispatch.called", { position: who }),
       tone: "delivered",
-      detail: alert.dispatch.reason,
+      detail: fraseOuTexto(
+        alert.dispatch.reasonParts,
+        alert.dispatch.reason,
+        t,
+        fmt,
+      ),
     };
   }
 
