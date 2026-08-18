@@ -1468,12 +1468,188 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
   gap: 2rem;
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 60rem) {
+  /*
+   * Duas colunas, e o contato é a maior.
+   *
+   * Eram três de peso quase igual — marca, idiomas, links. Uma delas repetia a
+   * seção logo acima e as outras duas dividiam a atenção com nada em disputa.
+   * Agora há uma coisa para fazer neste rodapé, e ela ocupa o lado por onde o
+   * olho ocidental desce.
+   */
   .fr-rodape__grade {
-    grid-template-columns: 1.2fr 1fr 1fr;
-    gap: 3rem;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 4rem;
     align-items: start;
   }
+}
+
+.fr-rodape__contato,
+.fr-rodape__marca {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.fr-rodape__titulo {
+  color: var(--fr-paper);
+  margin: 0;
+}
+
+.fr-rodape__idiomas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+}
+
+.fr-rodape__nota {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: rgb(246 245 242 / 0.5);
+  max-width: 34ch;
+  margin: 0;
+}
+
+.fr-rodape__ou {
+  font-size: 0.875rem;
+  color: rgb(246 245 242 / 0.62);
+  margin: 0;
+}
+
+.fr-rodape__email {
+  color: var(--fr-paper);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgb(246 245 242 / 0.35);
+  transition: text-decoration-color var(--fr-dur-ui) var(--fr-ease);
+}
+
+.fr-rodape__email:hover {
+  text-decoration-color: var(--fr-rouge);
+}
+
+/* --------------------------------------------------------------------- *
+   Formulário de contato
+ * --------------------------------------------------------------------- */
+
+.fr-contato {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.fr-contato__linha {
+  display: grid;
+  gap: 0.875rem;
+}
+
+@media (min-width: 30rem) {
+  .fr-contato__linha {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fr-contato__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.fr-contato__opcional {
+  text-transform: none;
+  letter-spacing: 0;
+  color: rgb(246 245 242 / 0.34);
+}
+
+/* Campo escuro sobre fundo escuro, com o fio de 1px do sistema. O foco é
+   rouge porque é a única cor de destaque desta página — e aqui não há estado
+   operacional para ela confundir. */
+.fr-contato input,
+.fr-contato textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  background: rgb(246 245 242 / 0.04);
+  border: 1px solid rgb(246 245 242 / 0.16);
+  border-radius: var(--fr-radius);
+  color: var(--fr-paper);
+  font-family: var(--fr-sans);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  transition:
+    border-color var(--fr-dur-ui) var(--fr-ease),
+    background var(--fr-dur-ui) var(--fr-ease);
+}
+
+.fr-contato textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.fr-contato input::placeholder,
+.fr-contato textarea::placeholder {
+  color: rgb(246 245 242 / 0.3);
+}
+
+.fr-contato input:hover,
+.fr-contato textarea:hover {
+  border-color: rgb(246 245 242 / 0.28);
+}
+
+.fr-contato input:focus-visible,
+.fr-contato textarea:focus-visible {
+  outline: none;
+  border-color: var(--fr-rouge);
+  background: rgb(246 245 242 / 0.07);
+}
+
+/* A armadilha para robô. Fora da tela, mas NÃO com `display: none` nem
+   `hidden`: alguns robôs pulam o que está assim declarado, e o campo perde a
+   função justamente com quem ele deveria pegar. */
+.fr-contato__armadilha {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.fr-contato__erro {
+  font-size: 0.875rem;
+  color: #ff9d92;
+  margin: 0;
+}
+
+.fr-contato__erro .fr-contato__email {
+  color: #ff9d92;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fr-contato button[type="submit"] {
+  align-self: start;
+}
+
+.fr-contato__ok {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 1.125rem 1.25rem;
+  border: 1px solid rgb(166 229 26 / 0.35);
+  background: rgb(166 229 26 / 0.08);
+}
+
+.fr-contato__ok-titulo {
+  font-family: var(--fr-wordmark);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fr-paper);
+  margin: 0;
 }
 
 .fr-idiomas {

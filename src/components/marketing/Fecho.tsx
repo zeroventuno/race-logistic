@@ -11,7 +11,6 @@
 
 import Link from "next/link";
 
-import { ChipTrakr } from "@/components/marketing/marca";
 import { Secao } from "@/components/marketing/Secao";
 import type { Translator } from "@/lib/i18n/translate";
 
@@ -33,13 +32,6 @@ export function Fecho({ t }: { t: Translator }) {
           </h2>
           <p className="fr-lead" style={{ marginTop: "1rem" }}>
             {t("landing.close.lead")}
-          </p>
-          <p className="fr-body" style={{ marginTop: "1.5rem" }}>
-            <ChipTrakr />
-            <br />
-            <span style={{ display: "inline-block", marginTop: "0.75rem" }}>
-              {t("landing.close.trakr")}
-            </span>
           </p>
         </div>
 
