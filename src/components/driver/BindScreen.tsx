@@ -31,6 +31,13 @@ import type { TranslationKey } from "@/lib/i18n/translate";
  *  - A MENSAGEM DE ERRO VEM DO CÓDIGO, NÃO DO TEXTO DO SERVIDOR. O servidor
  *    responde em português; o motorista pode ser alemão. O `DriverErrorCode` é
  *    o contrato estável, e é ele que vira texto traduzido aqui.
+ *
+ *  - O QR DA FOLHA CHEGA AQUI. Quem escaneia o código impresso cai nesta tela
+ *    com `?c=ABC123`, e o campo já vem preenchido. Não vincula sozinho, e isso
+ *    é deliberado: o motorista precisa ver QUAL posição ele está prestes a
+ *    assumir antes de assumir. Escanear o QR do carro errado numa folha com
+ *    doze deles é o erro mais fácil de cometer, e o mais chato de desfazer no
+ *    meio de uma prova.
  */
 
 /** Mesmo alfabeto Crockford Base32 de `bind-code.ts`, para filtrar a digitação. */
@@ -57,6 +64,30 @@ export function BindScreen({ onBound, revokedMessage }: BindScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * O CÓDIGO QUE VEIO DO QR, E POR QUE ELE SAI DA BARRA DE ENDEREÇO.
+   *
+   * Ler o parâmetro é a parte fácil. Apagá-lo em seguida é a que importa: um
+   * código de vínculo na URL fica no histórico do navegador do motorista, é
+   * oferecido pelo autocompletar depois, e vaza no cabeçalho de referência
+   * para qualquer coisa que a página venha a carregar. O código dá controle
+   * sobre a posição de um veículo numa prova; ele não pode ficar pendurado na
+   * barra de endereço depois de cumprir a função.
+   *
+   * `replaceState` e não `pushState`: o botão de voltar não pode trazer o
+   * código de volta.
+   */
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const doQr = url.searchParams.get("c");
+    if (!doQr) return;
+
+    setCode(normalizeTyping(doQr));
+
+    url.searchParams.delete("c");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, []);
 
   useEffect(() => {
     if (retryAfter == null || retryAfter <= 0) return;

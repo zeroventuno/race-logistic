@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BotaoImprimir } from "@/components/director/BotaoImprimir";
 import { Aviso } from "@/components/director/ui";
 import { VehicleIcon } from "@/components/icons/vehicle";
+import { enderecoDeVinculo, qrSvg } from "@/lib/codes/qr";
 import { formatBindCode } from "@/lib/codes/bind-code";
 import { formatDateTime } from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
@@ -40,6 +41,25 @@ export default async function CodigosPage({
     (p) => p.bind_code_revoked_at === null && p.bind_code !== "",
   );
   const revogadas = positions.length - validas.length;
+
+  // OS QR SÃO GERADOS AQUI, no servidor, e não no navegador.
+  //
+  // Esta página é feita para sair na impressora, e o que importa é o que o
+  // papel recebe. Gerar no cliente colocaria uma dependência de JavaScript
+  // entre o diretor e a folha — e "imprimir" costuma ser a última coisa que
+  // alguém faz numa véspera de prova, às vezes de um computador emprestado da
+  // federação. Em paralelo porque são até algumas dezenas e cada um é
+  // independente.
+  const qrPorPosicao = new Map<string, string>();
+  if (enderecoApp) {
+    const gerados = await Promise.all(
+      validas.map(async (p) => [
+        p.id as string,
+        await qrSvg(enderecoDeVinculo(enderecoApp, p.bind_code as string)),
+      ] as const),
+    );
+    for (const [id, svg] of gerados) if (svg) qrPorPosicao.set(id, svg);
+  }
 
   const agora = Date.now();
   const expiradas = validas.filter(
@@ -152,9 +172,24 @@ export default async function CodigosPage({
                   </p>
                 </div>
 
-                <p className="codigo tnum mt-3 text-center font-mono text-4xl font-bold tracking-[0.15em] text-ink">
-                  {formatBindCode(p.bind_code)}
-                </p>
+                <div className="cartao-codigo mt-3 flex items-center gap-3">
+                  {qrPorPosicao.has(p.id) ? (
+                    <div
+                      className="qr h-24 w-24 shrink-0 bg-white p-1"
+                      aria-hidden="true"
+                      dangerouslySetInnerHTML={{ __html: qrPorPosicao.get(p.id)! }}
+                    />
+                  ) : null}
+
+                  {/* O CÓDIGO DIGITÁVEL NÃO ENCOLHEU. Ele continua sendo o
+                      caminho que funciona com câmera quebrada, lente suja,
+                      celular velho ou motorista que nunca escaneou nada — e
+                      é ele que alguém lê em voz alta pelo rádio quando o
+                      vínculo precisa ser refeito no meio da prova. */}
+                  <p className="codigo tnum flex-1 text-center font-mono text-4xl font-bold tracking-[0.15em] text-ink">
+                    {formatBindCode(p.bind_code)}
+                  </p>
+                </div>
 
                 <p className="mt-3 text-xs text-ink-muted">
                   {enderecoMotorista || t("positions.printUrlMissing")}
@@ -211,5 +246,32 @@ const ESTILO_IMPRESSAO = `
   }
 
   .codigo { letter-spacing: 0.18em; }
+
+  /* O QR NO PAPEL.
+     28mm é o tamanho em que um celular comum lê à distância de leitura
+     natural — de pé, com a folha na mão. Menor que isso obriga a aproximar,
+     e aproximar no escuro de um estacionamento às seis da manhã é onde a
+     leitura falha. O branco e forcado porque a regra de fundo
+     transparente ali em cima, que existe para nao gastar tinta, apagaria
+     justamente o fundo que o QR precisa ter. */
+  .qr {
+    width: 28mm;
+    height: 28mm;
+    background: #ffffff !important;
+    break-inside: avoid;
+  }
+
+  .qr svg { width: 100%; height: 100%; display: block; }
+
+  .cartao-codigo {
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+  }
+
+  .cartao-codigo .codigo {
+    flex: 1;
+    margin: 0;
+  }
 }
 `;
