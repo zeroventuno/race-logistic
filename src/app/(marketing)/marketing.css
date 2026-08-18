@@ -362,6 +362,21 @@ body:has(.fr-landing) {
    peso visual junto com a cor, em vez de cor e peso competirem.
    --------------------------------------------------------------------------- */
 .fr-assinatura__nome {
+  /*
+   * A ENTRELETRA DA MARCA, num lugar só.
+   *
+   * A versão de uma linha usava 0,34em e a de duas linhas usava zero — FLAMME
+   * saía com as letras encostadas. Não era escolha: a distribuição por
+   * `space-between` estica a palavra mais curta até a mais larga, e a mais
+   * larga fica com o que sobrar, que era nada. O bloco inteiro media 39 px ao
+   * lado de uma bandeirola de 34, e a bandeirola parecia pesada demais porque
+   * ELA ESTAVA quase do tamanho do nome.
+   *
+   * Como variável para que o herói continue podendo afrouxar menos: ali o
+   * letreiro é grande, e letra grande pede menos ar que letra pequena.
+   */
+  --fr-marca-tracking: 0.34em;
+
   font-family: var(--fr-wordmark);
   font-size: 0.9375rem;
   line-height: 1.06;
@@ -377,10 +392,16 @@ body:has(.fr-landing) {
 .fr-assinatura__palavra {
   display: flex;
   justify-content: space-between;
-  /* Nenhuma entreletra aqui: quem distribui é o `space-between`. Somar
-     `letter-spacing` acrescentaria um espaço fantasma DEPOIS da última letra,
-     e as duas linhas deixariam de terminar no mesmo ponto. */
-  letter-spacing: 0;
+
+  /* A entreletra entra AQUI, e não no pai: cada letra é um item flex, e um
+     `letter-spacing` herdado pelo contêiner não atravessa até elas. Era por
+     isso que o 0,2em declarado no herói nunca aparecia na tela.
+
+     O espaço fantasma depois da última letra é real — e é o que a margem
+     negativa cancela. Sem ela as duas linhas deixariam de terminar no mesmo
+     ponto, que é a única coisa que segura este letreiro em pé. */
+  letter-spacing: var(--fr-marca-tracking);
+  margin-right: calc(-1 * var(--fr-marca-tracking));
 }
 
 .fr-assinatura__flamme {
@@ -1016,7 +1037,9 @@ body:has(.fr-landing) {
 
 .fr-hero__marca .fr-assinatura__nome {
   font-size: clamp(1rem, 3.4vw, 1.5rem);
-  letter-spacing: 0.2em;
+  /* Menos ar que no rodapé, de propósito: aqui o letreiro chega a 1,5rem, e
+     entreletra que respira num corpo de 15 px vira buraco num de 24. */
+  --fr-marca-tracking: 0.2em;
 }
 
 .fr-hero[data-marca] .fr-hero__marca {
