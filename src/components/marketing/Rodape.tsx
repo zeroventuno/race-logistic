@@ -30,6 +30,46 @@ import type { Translator } from "@/lib/i18n/translate";
 export function Rodape({ t }: { t: Translator }) {
   return (
     <footer className="fr-rodape">
+      {/*
+       * A ESTRADA REABRINDO, que é a última coisa que a página mostra.
+       *
+       * A página abre de dentro da moto de abertura, POV de quem dirige a
+       * prova, e fecha atrás do carro de fechamento indo embora. Não é
+       * simetria bonita: a passagem do fechamento é o que devolve a via ao
+       * trânsito, e é exatamente isso que este sistema existe para medir. O
+       * arco visual é o arco do produto.
+       *
+       * DECORATIVA, e por isso `alt` vazio. Quem usa leitor de tela perde
+       * atmosfera, não informação — tudo que a imagem diz já está escrito ao
+       * lado. Descrevê-la seria acrescentar um parágrafo de fotografia no
+       * meio de um formulário de contato.
+       */}
+      <div className="fr-rodape__estrada" aria-hidden="true">
+        <picture>
+          <source
+            type="image/avif"
+            sizes="(min-width: 60rem) 55vw, 100vw"
+            srcSet="/marketing/reabre-900.avif 900w, /marketing/reabre-1536.avif 1536w"
+          />
+          <source
+            type="image/webp"
+            sizes="(min-width: 60rem) 55vw, 100vw"
+            srcSet="/marketing/reabre-900.webp 900w, /marketing/reabre-1536.webp 1536w"
+          />
+          <img
+            src="/marketing/reabre-1536.webp"
+            alt=""
+            width={1536}
+            height={1024}
+            // Está abaixo da dobra por definição: quem chega no rodapé rolou a
+            // página inteira, e carregá-la antes disso rouba banda da primeira
+            // tela num celular no estacionamento do evento.
+            loading="lazy"
+            decoding="async"
+          />
+        </picture>
+      </div>
+
       <div className="fr-shell fr-rodape__grade">
         <div className="fr-rodape__contato">
           <span className="fr-eyebrow">{t("landing.contact.eyebrow")}</span>
