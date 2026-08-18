@@ -944,6 +944,7 @@ export const en: Dictionary = {
       messageTooLong: "Message too long (4000 characters maximum).",
     },
     footer: {
+      marker: "Road reopened",
       tagline: "Live race control for road cycling.",
       languages: "Six languages, a single link",
       languagesNote: "The same address and the same QR give each device the interface in its own language — with race control managing nothing.",

@@ -962,6 +962,7 @@ export const ptBR = {
       messageTooLong: "Mensagem muito longa (máximo 4000 caracteres).",
     },
     footer: {
+      marker: "Via reaberta",
       tagline: "Direção de prova ao vivo para ciclismo de estrada.",
       languages: "Seis idiomas, um único link",
       languagesNote: "O mesmo endereço e o mesmo QR entregam a interface na língua de cada aparelho — sem a direção gerenciar nada.",

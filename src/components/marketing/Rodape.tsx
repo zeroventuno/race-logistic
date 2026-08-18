@@ -29,7 +29,18 @@ import type { Translator } from "@/lib/i18n/translate";
  */
 export function Rodape({ t }: { t: Translator }) {
   return (
-    <footer className="fr-rodape">
+    <footer
+      className="fr-rodape"
+      /*
+       * O ÚLTIMO CAPÍTULO DO ROAD BOOK.
+       *
+       * A placa fixa no canto da tela lê este atributo de qualquer elemento
+       * que o declare — não só das seções. Sem ele, quem chega ao rodapé
+       * continua vendo "KM 148 — FLAMME ROUGE" no canto, que é onde ele
+       * estava um instante atrás.
+       */
+      data-capitulo={`KM 149 — ${t("landing.footer.marker").toUpperCase()}`}
+    >
       {/*
        * A ESTRADA REABRINDO, que é a última coisa que a página mostra.
        *
@@ -68,6 +79,27 @@ export function Rodape({ t }: { t: Translator }) {
             decoding="async"
           />
         </picture>
+      </div>
+
+      <div className="fr-shell">
+        {/*
+         * KM 149. A página é lida como um road book, de KM 000 na largada até
+         * o flamme rouge no KM 148 — e faltava a linha depois da chegada.
+         *
+         * "Via reaberta" não é frase de efeito: é o estado final que este
+         * sistema existe para produzir. A prova passou, o carro de fechamento
+         * passou, a estrada voltou a ser estrada. É a mesma coisa que a foto
+         * atrás diz sem palavra nenhuma.
+         *
+         * A placa fica NEUTRA, e não em rouge. O rouge é do flamme rouge, uma
+         * seção acima; duas placas vermelhas seguidas gastariam a única que
+         * precisava ter peso.
+         */}
+        <div className="fr-marco fr-rodape__marco">
+          <span className="fr-marco__km">KM 149</span>
+          <span className="fr-marco__label">{t("landing.footer.marker")}</span>
+          <span className="fr-marco__rule" aria-hidden="true" />
+        </div>
       </div>
 
       <div className="fr-shell fr-rodape__grade">

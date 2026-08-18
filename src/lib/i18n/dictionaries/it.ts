@@ -949,6 +949,7 @@ export const it: Dictionary = {
       messageTooLong: "Messaggio troppo lungo (massimo 4000 caratteri).",
     },
     footer: {
+      marker: "Strada riaperta",
       tagline: "Direzione gara in tempo reale per il ciclismo su strada.",
       languages: "Sei lingue, un solo link",
       languagesNote: "Lo stesso indirizzo e lo stesso QR danno a ogni dispositivo l'interfaccia nella sua lingua — senza che la direzione gestisca nulla.",

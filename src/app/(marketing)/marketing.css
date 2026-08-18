@@ -1444,6 +1444,29 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
   isolation: isolate;
 }
 
+/* O marco de KM 149 no rodape. As regras de `.fr-section--dark` nao chegam
+   aqui porque o rodape nao e uma secao — ele e o depois delas. */
+.fr-rodape .fr-marco__km {
+  background: var(--fr-paper);
+  color: var(--fr-night);
+}
+
+.fr-rodape .fr-marco__label {
+  color: rgb(246 245 242 / 0.52);
+}
+
+.fr-rodape .fr-marco__rule {
+  background: repeating-linear-gradient(
+    90deg,
+    rgb(246 245 242 / 0.28) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+.fr-rodape__marco {
+  margin-bottom: 2.5rem;
+}
+
 /* --------------------------------------------------------------------- *
    A estrada reabrindo
  * --------------------------------------------------------------------- */

@@ -960,6 +960,7 @@ export const de: Dictionary = {
       messageTooLong: "Nachricht zu lang (höchstens 4000 Zeichen).",
     },
     footer: {
+      marker: "Straße wieder offen",
       tagline: "Rennleitung in Echtzeit für den Straßenradsport.",
       languages: "Sechs Sprachen, ein einziger Link",
       languagesNote: "Dieselbe Adresse und derselbe QR-Code geben jedem Gerät die Oberfläche in seiner Sprache — ohne dass die Rennleitung etwas verwalten muss.",

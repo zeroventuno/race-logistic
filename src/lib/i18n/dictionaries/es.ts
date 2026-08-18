@@ -957,6 +957,7 @@ export const es: Dictionary = {
       messageTooLong: "Mensaje demasiado largo (máximo 4000 caracteres).",
     },
     footer: {
+      marker: "Vía reabierta",
       tagline: "Dirección de carrera en directo para ciclismo en carretera.",
       languages: "Seis idiomas, un único enlace",
       languagesNote: "La misma dirección y el mismo QR dan a cada dispositivo la interfaz en su idioma — sin que la dirección gestione nada.",
