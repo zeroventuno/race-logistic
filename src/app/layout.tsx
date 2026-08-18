@@ -11,7 +11,21 @@ export async function generateMetadata(): Promise<Metadata> {
   return { ...METADATA_BASE, title: t("landing.meta.title"), description: t("landing.meta.description") };
 }
 
+/**
+ * O endereço absoluto do site, para o Open Graph e o canônico.
+ *
+ * Sem `metadataBase`, o Next resolve as URLs de compartilhamento contra
+ * `localhost` e avisa no build — o resultado é um link colado num grupo de
+ * mensagem que não mostra nem imagem nem título. Vem da variável de ambiente
+ * e não escrito à mão, para que a pré-visualização da Vercel aponte para si
+ * mesma em vez de para produção.
+ */
+const ENDERECO_BASE =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+
 const METADATA_BASE: Metadata = {
+  ...(ENDERECO_BASE ? { metadataBase: new URL(ENDERECO_BASE) } : {}),
   manifest: "/manifest.webmanifest",
   // SVG primeiro: a bandeirola é geometria sólida e fica nítida em qualquer
   // densidade de tela. O PNG de 32 px é a rede para navegadores que ainda não
