@@ -36,7 +36,7 @@ const CHAVE_FILTRO: Record<Filtro, TranslationKey> = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; confirmado?: string }>;
+  searchParams: Promise<{ estado?: string; confirmado?: string; senha?: string }>;
 }) {
   const { supabase } = await requireUser();
   const { locale, t } = await getTranslator();
@@ -145,6 +145,7 @@ export default async function DashboardPage({
   const params = await searchParams;
   const pedido = params.estado;
   const confirmado = params.confirmado === "1";
+  const senhaTrocada = params.senha === "1";
   const filtro: Filtro = FILTROS.includes(pedido as Filtro)
     ? (pedido as Filtro)
     : "todas";
@@ -172,6 +173,12 @@ export default async function DashboardPage({
       {confirmado ? (
         <Aviso tone="ok" titulo={t("auth.confirmedTitle")} className="mb-8">
           {t("auth.confirmed")}
+        </Aviso>
+      ) : null}
+
+      {senhaTrocada ? (
+        <Aviso tone="ok" className="mb-8">
+          {t("auth.passwordChanged")}
         </Aviso>
       ) : null}
 

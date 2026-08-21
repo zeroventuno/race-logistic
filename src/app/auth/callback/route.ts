@@ -42,17 +42,25 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
    * aberto, útil para phishing em cima de um domínio confiável.
    */
   const pedido = searchParams.get("next");
-  const destino =
-    pedido && pedido.startsWith("/") && !pedido.startsWith("//")
-      ? pedido
-      : "/dashboard";
+  const interno =
+    Boolean(pedido) && pedido!.startsWith("/") && !pedido!.startsWith("//");
+  const destino = interno ? pedido! : "/dashboard";
+
+  /*
+   * O aviso de "confirmado" só vale para o destino PADRÃO.
+   *
+   * Quem chega com `next` está no meio de outra tarefa — a recuperação de
+   * senha manda para `/conta/senha` — e anunciar "conta confirmada" ali
+   * responderia uma pergunta que ninguém fez, antes da que importa.
+   */
+  const paraOnde = interno ? destino : `${destino}?confirmado=1`;
 
   const supabase = await supabaseServer();
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${destino}?confirmado=1`);
+      return NextResponse.redirect(`${origin}${paraOnde}`);
     }
     console.warn("[auth/callback] troca de código falhou:", error.message);
   } else if (tokenHash && type) {
@@ -61,7 +69,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       token_hash: tokenHash,
     });
     if (!error) {
-      return NextResponse.redirect(`${origin}${destino}?confirmado=1`);
+      return NextResponse.redirect(`${origin}${paraOnde}`);
     }
     console.warn("[auth/callback] verificação falhou:", error.message);
   }

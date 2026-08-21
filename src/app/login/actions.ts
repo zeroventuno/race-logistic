@@ -253,3 +253,47 @@ async function enderecoDoSite(): Promise<string> {
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "")
   );
 }
+
+/**
+ * Pede o link de recuperação de senha.
+ *
+ * A RESPOSTA É A MESMA PARA E-MAIL QUE EXISTE E PARA E-MAIL QUE NÃO EXISTE, e
+ * isso não é descuido de mensagem: responder "não há conta com esse endereço"
+ * transforma esta tela num verificador de cadastro. Qualquer pessoa poderia
+ * descobrir quais organizadores usam o sistema testando endereços, um por um.
+ * O `resetPasswordForEmail` do Supabase já não distingue os dois casos; o
+ * texto acompanha.
+ *
+ * O destino passa pelo `/auth/callback` com `next`, e não direto para a tela
+ * de senha: é o callback que troca o código por sessão. Sem essa parada a
+ * pessoa chegaria na tela de nova senha sem estar autenticada, e o
+ * `updateUser` recusaria.
+ */
+export async function pedirRecuperacao(
+  _estado: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const { t } = await getTranslator();
+
+  const email = String(formData.get("email") ?? "").trim();
+
+  const parsed = z
+    .string()
+    .min(1, t("auth.emailRequired"))
+    .email(t("auth.emailInvalid"))
+    .safeParse(email);
+
+  if (!parsed.success) {
+    return { campos: { email: parsed.error.issues[0]?.message } };
+  }
+
+  const supabase = await supabaseServer();
+
+  await supabase.auth.resetPasswordForEmail(parsed.data, {
+    redirectTo: `${await enderecoDoSite()}/auth/callback?next=/conta/senha`,
+  });
+
+  // Nem o erro é reportado: uma falha de envio distinguível de um sucesso
+  // devolve o oráculo pela porta dos fundos.
+  return { aviso: t("auth.recoverSent", { email: parsed.data }) };
+}

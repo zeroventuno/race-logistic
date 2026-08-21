@@ -7,6 +7,9 @@ import type { AuthState } from "@/app/login/actions";
 import { Aviso, Botao, Campo, entradaClasse } from "@/components/director/ui";
 import { useT } from "@/lib/i18n/client";
 
+/** As quatro telas que este formulário atende. */
+export type ModoAuth = "login" | "cadastro" | "recuperar" | "nova-senha";
+
 /**
  * Formulário de entrada e de cadastro.
  *
@@ -21,7 +24,7 @@ export function AuthForm({
   acao,
   estadoInicial,
 }: {
-  modo: "login" | "cadastro";
+  modo: ModoAuth;
   acao: (estado: AuthState, formData: FormData) => Promise<AuthState>;
   /**
    * Mensagem já presente na primeira renderização.
@@ -41,6 +44,35 @@ export function AuthForm({
 
   const ehCadastro = modo === "cadastro";
 
+  /*
+   * QUATRO TELAS, UMA MATRIZ.
+   *
+   * Recuperar acesso e definir senha nova são subconjuntos do que já estava
+   * aqui — e o motivo de não os separar é o mesmo da nota acima: um formulário
+   * de autenticação em arquivo próprio é um formulário que não recebe a
+   * próxima correção de acessibilidade. Erro por campo, `aria`, autocomplete e
+   * estado pendente valem para os quatro de graça.
+   */
+  const mostra = {
+    nome: modo === "cadastro",
+    email: modo === "cadastro" || modo === "login" || modo === "recuperar",
+    senha: modo === "cadastro" || modo === "login" || modo === "nova-senha",
+    confirmacao: modo === "cadastro" || modo === "nova-senha",
+    // O rodapé de "já tem conta / primeira vez" não faz sentido para quem
+    // chegou por um link de e-mail: a pessoa não está escolhendo entre entrar
+    // e cadastrar, está no meio de uma tarefa.
+    rodape: modo === "cadastro" || modo === "login",
+  };
+
+  const rotuloBotao =
+    modo === "cadastro"
+      ? t("auth.signUp")
+      : modo === "login"
+        ? t("auth.signIn")
+        : modo === "recuperar"
+          ? t("auth.recoverSubmit")
+          : t("auth.newPasswordSubmit");
+
   return (
     <form action={submeter} className="space-y-5" noValidate>
       {estado.erro ? (
@@ -55,7 +87,7 @@ export function AuthForm({
         </Aviso>
       ) : null}
 
-      {ehCadastro ? (
+      {mostra.nome ? (
         <Campo
           label={t("auth.name")}
           htmlFor="nome"
@@ -95,6 +127,7 @@ export function AuthForm({
         />
       </Campo>
 
+      {mostra.senha ? (
       <Campo
         label={t("auth.password")}
         htmlFor="senha"
@@ -106,12 +139,15 @@ export function AuthForm({
           id="senha"
           name="senha"
           type="password"
-          autoComplete={ehCadastro ? "new-password" : "current-password"}
+          autoComplete={
+            modo === "login" ? "current-password" : "new-password"
+          }
           className={entradaClasse(estado.campos?.senha)}
         />
       </Campo>
+      ) : null}
 
-      {ehCadastro ? (
+      {mostra.confirmacao ? (
         <Campo label={t("auth.passwordRepeat")} htmlFor="confirmacao" obrigatorio>
           <input
             id="confirmacao"
@@ -130,13 +166,24 @@ export function AuthForm({
         className="w-full"
         disabled={pendente}
       >
-        {pendente
-          ? t("auth.submitting")
-          : ehCadastro
-            ? t("auth.signUp")
-            : t("auth.signIn")}
+        {pendente ? t("auth.submitting") : rotuloBotao}
       </Botao>
 
+      {/* O caminho de saída para quem não lembra a senha. Fica só no login:
+          em cadastro não há senha a esquecer, e nas outras duas a pessoa já
+          está nesse caminho. */}
+      {modo === "login" ? (
+        <p className="text-center text-sm">
+          <Link
+            href="/recuperar"
+            className="text-ink-muted underline underline-offset-4 hover:text-ink"
+          >
+            {t("auth.forgotLink")}
+          </Link>
+        </p>
+      ) : null}
+
+      {mostra.rodape ? (
       <p className="text-center text-sm text-ink-muted">
         {ehCadastro ? (
           <>
@@ -160,6 +207,7 @@ export function AuthForm({
           </>
         )}
       </p>
+      ) : null}
     </form>
   );
 }

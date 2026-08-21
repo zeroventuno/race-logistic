@@ -1,8 +1,9 @@
 import Link from "next/link";
 
+import type { ModoAuth } from "@/components/director/AuthForm";
 import { Creditos } from "@/components/Creditos";
 import { I18nProvider } from "@/lib/i18n/client";
-import { createTranslator } from "@/lib/i18n/translate";
+import { createTranslator, type TranslationKey } from "@/lib/i18n/translate";
 import { DEFAULT_TIMEZONE } from "@/app/(director)/_lib/timezone";
 import type { Locale } from "@/lib/i18n/config";
 import { Letreiro } from "@/components/Letreiro";
@@ -31,8 +32,8 @@ import type { Tema } from "@/lib/tema";
  */
 
 export interface PortaDaDirecaoProps {
-  /** Entrar ou criar conta. Decide o título e a frase de apoio. */
-  modo: "login" | "cadastro";
+  /** Qual das quatro telas de conta. Decide o título e a frase de apoio. */
+  modo: ModoAuth;
   tema: Tema;
   /**
    * Idioma negociado no servidor.
@@ -59,6 +60,25 @@ export function PortaDaDirecao({
   // Construir o tradutor a partir dele evita passar a mesma coisa duas vezes.
   const t = createTranslator(locale);
   const ehCadastro = modo === "cadastro";
+
+  /*
+   * Título e apoio por modo, num mapa em vez de ternário aninhado.
+   *
+   * Com dois modos o ternário cabia; com quatro ele vira uma linha que ninguém
+   * lê e onde um modo novo se esquece de aparecer.
+   */
+  const CABECALHO: Record<ModoAuth, { titulo: TranslationKey; apoio: TranslationKey }> = {
+    login: { titulo: "auth.loginTitle", apoio: "auth.loginSubtitle" },
+    cadastro: { titulo: "auth.signUpLink", apoio: "auth.signupSubtitle" },
+    recuperar: { titulo: "auth.recoverTitle", apoio: "auth.recoverSubtitle" },
+    "nova-senha": {
+      titulo: "auth.newPasswordTitle",
+      apoio: "auth.newPasswordSubtitle",
+    },
+  };
+  // `Record` sobre uma união fechada é total, mas `noUncheckedIndexedAccess`
+  // não sabe disso ao indexar por variável. O login é o padrão razoável.
+  const cabecalho = CABECALHO[modo] ?? CABECALHO.login;
 
   return (
     <I18nProvider locale={locale} timeZone={DEFAULT_TIMEZONE}>
@@ -132,10 +152,10 @@ export function PortaDaDirecao({
           </div>
 
           <h1 className="titulo mt-7 text-[2.75rem] font-bold leading-[1.02] text-ink">
-            {ehCadastro ? t("auth.signUpLink") : t("auth.loginTitle")}
+            {t(cabecalho.titulo)}
           </h1>
           <p className="mt-3 max-w-[21rem] text-[0.96875rem] leading-relaxed text-ink-muted">
-            {ehCadastro ? t("auth.signupSubtitle") : t("auth.loginSubtitle")}
+            {t(cabecalho.apoio)}
           </p>
 
           <div className="mt-8">{children}</div>

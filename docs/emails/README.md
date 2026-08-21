@@ -8,28 +8,23 @@ recriado.
 
 ## O que existe
 
-| arquivo | template do painel | usado? |
+| arquivo | template do painel | assunto |
 |---|---|---|
-| `confirm-signup.html` | Confirm signup | **sim**, é o único fluxo de e-mail de auth do produto |
-
-Assunto: `Confirm your Flamme Rouge account`
+| `confirm-signup.html` | Confirm signup | `Confirm your Flamme Rouge account` |
+| `reset-password.html` | Reset password | `Reset your Flamme Rouge password` |
 
 ## O que NÃO existe, e por quê
 
-O Supabase oferece seis templates. Cinco estão sem uso porque o produto não
+O Supabase oferece seis templates. Quatro estão sem uso porque o produto não
 tem os fluxos correspondentes — conferido no código, não suposto:
 
-- **Reset password** — não há `resetPasswordForEmail` em lugar nenhum.
-  **Este é um buraco real**, não uma decisão: um diretor que esquece a senha
-  na manhã da prova não tem como entrar. Quando o fluxo for construído, o
-  template vem junto.
 - **Magic link** — o produto entra com e-mail e senha.
 - **Invite user** — o cadastro é aberto hoje, e vai fechar por código de
   acesso, não por convite do Supabase.
 - **Change email address** — não há tela para trocar e-mail.
 - **Reauthentication** — não há operação que exija reautenticar.
 
-Escrever esses cinco agora seria redigir texto para função inexistente.
+Escrever esses quatro agora seria redigir texto para função inexistente.
 
 ## Idioma
 
