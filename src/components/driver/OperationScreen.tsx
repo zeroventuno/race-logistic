@@ -413,20 +413,38 @@ function GapStrip({ gap }: { gap: GapResult }) {
               : t("gap.noHistory", { distance: fmt.distance(gap.gapM) });
 
   return (
+    /*
+     * QUEM ENCOLHE É A GLOSA, NUNCA O NÚMERO.
+     *
+     * A intenção sempre foi essa — só o detalhe tinha `truncate`. Mas sem
+     * `shrink-0` o flex apertava os números primeiro, e "45 mins" e "21,1 km"
+     * quebravam no meio numa tela de celular. A janela é o dado mais
+     * importante desta tela; vê-la partida em duas linhas enquanto sobra uma
+     * frase explicativa cortada é a troca errada.
+     *
+     * `min-w-0` no detalhe porque `truncate` não faz nada num filho de flex
+     * que se recusa a encolher abaixo do próprio conteúdo.
+     */
     <div className="flex items-baseline gap-2 border-b border-border bg-surface-1 px-3 py-1.5">
-      <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
+      <span className="shrink-0 whitespace-nowrap font-mono text-[0.65rem] uppercase tracking-[0.2em] text-ink-faint">
         {t("gap.short")}
       </span>
-      <span className="tnum text-lg font-semibold text-ink">
+      <span className="tnum shrink-0 whitespace-nowrap text-lg font-semibold text-ink">
         {fmt.duration(gap.gapSeconds)}
       </span>
-      <span className="tnum text-xs text-ink-muted">{fmt.distance(gap.gapM)}</span>
+      <span className="tnum shrink-0 whitespace-nowrap text-xs text-ink-muted">
+        {fmt.distance(gap.gapM)}
+      </span>
       {gap.stale ? (
-        <span className="ml-auto text-xs text-warn">
+        // O aviso de dado velho NÃO trunca: é a única coisa aqui que muda o
+        // que o motorista deve fazer, e meia frase de alerta não serve.
+        <span className="ml-auto shrink-0 whitespace-nowrap text-xs text-warn">
           {t("gap.stale", { age: fmt.age(gap.dataAgeSeconds) })}
         </span>
       ) : (
-        <span className="ml-auto truncate text-xs text-ink-faint">{detail}</span>
+        <span className="ml-auto min-w-0 truncate text-xs text-ink-faint">
+          {detail}
+        </span>
       )}
     </div>
   );
