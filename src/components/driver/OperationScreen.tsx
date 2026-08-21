@@ -396,14 +396,36 @@ function GapStrip({ gap }: { gap: GapResult }) {
   const t = useT();
   const fmt = useFormat();
 
+  /*
+   * QUANDO EXISTE NÚMERO, A GLOSA É UMA PALAVRA.
+   *
+   * A frase inteira não cabe na largura de um celular e virava "Measured from
+   * the time difference bet…", que não informa nada — o driver lê meia oração
+   * e fica sem saber de onde veio o número. Uma palavra cabe e responde a
+   * pergunta que importa ali: isto foi medido ou estimado?
+   *
+   * São as MESMAS chaves do selo do painel da direção, e não um par novo: as
+   * duas telas falam do mesmo cálculo, e usar palavras diferentes para ele em
+   * cada uma seria inventar uma distinção que não existe.
+   *
+   * A versão longa continua viva no painel, onde há largura para ela.
+   *
+   * OS CASOS SEM NÚMERO FICAM POR EXTENSO, e isso não é inconsistência: ali a
+   * frase não é glosa de coisa nenhuma, é o único conteúdo da faixa. "Carro de
+   * abertura sem posição. Vincule o aparelho dele." é uma instrução acionável;
+   * reduzi-la a uma palavra apagaria o que o motorista precisa fazer.
+   *
+   * E por extenso significa QUEBRANDO EM DUAS LINHAS, não truncada: medido em
+   * 374 px, essa frase pede 216 px onde cabem 167. Cortá-la só muda o lugar
+   * onde a instrução some.
+   */
+  const detalheCurto = gap.method === "measured" || gap.method === "projected";
+
   const detail =
     gap.method === "measured"
-      ? t("gap.measured")
+      ? t("gap.methodMeasured")
       : gap.method === "projected"
-        ? t("gap.projected", {
-            distance: fmt.distance(gap.gapM),
-            speed: fmt.speed(gap.sweepSpeedMps),
-          })
+        ? t("gap.methodProjected")
         : gap.leadOffsetM == null
           ? t("gap.noLead")
           : gap.sweepOffsetM == null
@@ -436,13 +458,15 @@ function GapStrip({ gap }: { gap: GapResult }) {
         {fmt.distance(gap.gapM)}
       </span>
       {gap.stale ? (
-        // O aviso de dado velho NÃO trunca: é a única coisa aqui que muda o
-        // que o motorista deve fazer, e meia frase de alerta não serve.
-        <span className="ml-auto shrink-0 whitespace-nowrap text-xs text-warn">
+        <span className="ml-auto min-w-0 text-right text-xs text-warn">
           {t("gap.stale", { age: fmt.age(gap.dataAgeSeconds) })}
         </span>
       ) : (
-        <span className="ml-auto min-w-0 truncate text-xs text-ink-faint">
+        <span
+          className={`ml-auto min-w-0 text-right text-xs text-ink-faint ${
+            detalheCurto ? "truncate" : ""
+          }`}
+        >
           {detail}
         </span>
       )}
