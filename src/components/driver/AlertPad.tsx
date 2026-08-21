@@ -7,6 +7,10 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import { fraseOuTexto } from "@/lib/i18n/frase";
 import type { DriverAlertView } from "@/lib/driver/protocol";
 import type { DriverSnapshot } from "@/lib/driver/runtime";
+import {
+  JANELA_APOS_ENCERRAR_MS,
+  encerradoHaMaisDe,
+} from "@/lib/driver/alerta-encerrado";
 import { ALERT_CATEGORY_META, type AlertCategory } from "@/lib/types";
 
 /**
@@ -171,7 +175,11 @@ interface Line {
 function MyAlerts({ snapshot }: { snapshot: DriverSnapshot }) {
   const t = useT();
   const fmt = useFormat();
-  const lines = buildLines(snapshot, t, fmt);
+  // A hora é lida na renderização, e quem renderiza é a leitura de estado que
+  // chega a cada 10 s. A linha some, na prática, até 10 s depois de vencer a
+  // janela — o que não muda nada para quem olha, e evita um timer só para
+  // apagar um aviso que já não diz mais nada.
+  const lines = buildLines(snapshot, t, fmt, Date.now());
 
   if (lines.length === 0) return null;
 
@@ -219,6 +227,7 @@ function buildLines(
   snapshot: DriverSnapshot,
   t: Translate,
   fmt: { distance: (m: number | null) => string },
+  agoraMs: number,
 ): Line[] {
   const lines = new Map<string, Line>();
 
@@ -239,6 +248,21 @@ function buildLines(
 
   for (const alert of snapshot.state?.alerts ?? []) {
     if (!alert.raisedBySelf) continue;
+
+    if (encerradoHaMaisDe(alert, agoraMs, JANELA_APOS_ENCERRAR_MS)) {
+      /*
+       * `delete`, e não `continue`.
+       *
+       * As três fontes escrevem no MESMO Map, com a mesma chave. A confirmação
+       * guardada no aparelho já pôs esta linha aqui algumas dezenas de linhas
+       * acima; pular agora deixaria aquela versão de pé, dizendo "entregue"
+       * para sempre. O alerta sumiria da fonte autoritativa e continuaria na
+       * tela pela fonte de reserva — que é o mesmo defeito com outra fachada.
+       */
+      lines.delete(alert.clientAlertId);
+      continue;
+    }
+
     lines.set(alert.clientAlertId, {
       key: alert.alertId,
       category: alert.category,
