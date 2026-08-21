@@ -11,6 +11,7 @@
  * imagem definitiva entrar, nada abaixo dela se move.
  */
 
+import { Lupa } from "@/components/marketing/Lupa";
 import type { SlotImagem } from "@/components/marketing/midia";
 
 interface Props {
@@ -20,6 +21,15 @@ interface Props {
   className?: string;
   /** A primeira imagem visível não deve ser adiada. */
   prioridade?: boolean;
+  /**
+   * A captura pode ser aberta em tamanho grande?
+   *
+   * Só faz sentido para imagem cujo CONTEÚDO é o argumento — uma tela do
+   * produto, que a página encolhe a ponto de o texto sumir. Uma foto de pavé
+   * não ganha nada com isso: ela já disse o que tinha a dizer no tamanho em
+   * que aparece.
+   */
+  ampliavel?: boolean;
   /**
    * Taxa de parallax da imagem dentro da caixa, entre 0.10 e 0.28.
    *
@@ -38,7 +48,15 @@ export function SlotImagemView({
   className,
   prioridade,
   parallax,
+  ampliavel,
 }: Props & { alt: string }) {
+  // A altura do arquivo sai da proporção declarada, que é a do próprio ativo:
+  // a lupa precisa dela para reservar a caixa do diálogo antes de a imagem
+  // grande decodificar.
+  const alturaRef = Math.round(
+    slot.larguraRef /
+      (Number(slot.proporcao.split("/")[0]) / Number(slot.proporcao.split("/")[1])),
+  );
   return (
     <div
       className={`fr-slot ${parallax ? "fr-slot--parallax " : ""}${className ?? ""}`}
@@ -48,20 +66,33 @@ export function SlotImagemView({
         // eslint-disable-next-line @next/next/no-img-element -- ativos estáticos
         // já exportados no corte certo; o pipeline de otimização do Next não
         // acrescenta nada e acrescentaria um salto de layout.
-        <img
-          className="fr-slot__img"
-          data-parallax={parallax}
-          src={slot.src}
-          alt={alt}
-          width={slot.larguraRef}
-          height={Math.round(
-            slot.larguraRef /
-              (Number(slot.proporcao.split("/")[0]) /
-                Number(slot.proporcao.split("/")[1])),
-          )}
-          loading={prioridade ? "eager" : "lazy"}
-          decoding="async"
-        />
+        (() => {
+          const img = (
+            <img
+              className="fr-slot__img"
+              data-parallax={parallax}
+              src={slot.src as string}
+              alt={alt}
+              width={slot.larguraRef}
+              height={alturaRef}
+              loading={prioridade ? "eager" : "lazy"}
+              decoding="async"
+            />
+          );
+
+          return ampliavel ? (
+            <Lupa
+              src={slot.src as string}
+              alt={alt}
+              largura={slot.larguraRef}
+              altura={alturaRef}
+            >
+              {img}
+            </Lupa>
+          ) : (
+            img
+          );
+        })()
       ) : (
         <div className="fr-slot__vazio">
           <span className="fr-slot__titulo">{rotulo}</span>

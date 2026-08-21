@@ -893,6 +893,7 @@ export const en: Dictionary = {
       altHero: "View from the race motorbike on a wet cobbled road, two riders ahead against the low sun, and the red final-kilometre arch crossing overhead with its pennant hanging.",
       altPanel: "Race control panel: course map with the support vehicles, the lead-to-closing gap marked as measured, and the alert queue.",
       altApp: "Driver app on a phone: the vehicle role, the measured lead-to-closing window, sending status and the alert buttons.",
+      zoom: "View larger",
       altPave: "A cobbled road winding between hills at sunset, three riders hundreds of metres apart and a support car in one of the gaps — the race has stopped being a peloton.",
       panelCapture: "Screenshot · race control panel",
       p1: "Live map with every vehicle, each role in its own colour and with the age of its data.",

@@ -905,6 +905,7 @@ export const fr: Dictionary = {
       altHero: "Vue depuis la moto de course sur une route pavée mouillée, deux coureurs devant à contre-jour au soleil bas, et l'arche rouge du dernier kilomètre qui traverse en haut avec sa banderole suspendue.",
       altPanel: "Panneau de la direction de course : carte du parcours avec les véhicules d'assistance, écart ouvreuse-balai indiqué comme mesuré, et la file d'alertes.",
       altApp: "Application du chauffeur sur téléphone : le rôle du véhicule, la fenêtre mesurée entre la voiture ouvreuse et la voiture de fin de course, l'état de l'envoi et les boutons d'alerte.",
+      zoom: "Agrandir",
       altPave: "Route pavée serpentant entre les collines au coucher du soleil, avec trois coureurs séparés de centaines de mètres et une voiture d'assistance dans l'un des écarts — la course n'est plus un peloton.",
       panelCapture: "Capture · panneau de la direction",
       p1: "Carte en direct avec tous les véhicules, chaque rôle dans sa couleur et avec l'âge de sa donnée.",

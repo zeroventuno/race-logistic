@@ -2188,3 +2188,124 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+/* ---------------------------------------------------------------------------
+   LUPA — a captura aberta em tamanho grande
+   ---------------------------------------------------------------------------
+   A página encolhe as duas telas do produto a 0,44 e 0,33 da escala original.
+   O número grande sobrevive; a lista de veículos e o quadro de conselho — que
+   são a PROVA do argumento — viram textura. E a coluna não cresce com o
+   monitor: numa tela de 27 polegadas continuam os mesmos ~700 px.
+--------------------------------------------------------------------------- */
+
+.fr-lupa__gatilho {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  cursor: zoom-in;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+/* A pista some para o mouse e APARECE para o teclado: quem navega por Tab não
+   tem hover, e sem isto o foco cairia num botão invisível sobre uma imagem. */
+.fr-lupa__pista {
+  position: absolute;
+  right: 0.625rem;
+  bottom: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.55rem;
+  font-family: var(--fr-mono);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fr-paper);
+  background: rgb(18 23 28 / 0.82);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.fr-lupa__gatilho:hover .fr-lupa__pista,
+.fr-lupa__gatilho:focus-visible .fr-lupa__pista {
+  opacity: 1;
+}
+
+.fr-lupa__gatilho:focus-visible {
+  outline: 3px solid var(--fr-ink);
+  outline-offset: -3px;
+}
+
+.fr-lupa__dialogo {
+  max-width: none;
+  max-height: none;
+  width: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+/* O embaçado é do ::backdrop, que é a única camada que enxerga a página
+   inteira por baixo — embaçar um div sobreposto não faria nada. */
+.fr-lupa__dialogo::backdrop {
+  background: rgb(18 23 28 / 0.72);
+  backdrop-filter: blur(10px) saturate(0.9);
+}
+
+.fr-lupa__img {
+  display: block;
+  /* AS DUAS EM auto, e isto não é redundância.
+     O `width`/`height` do HTML valem como largura e altura de apresentação.
+     Com só `height: auto`, a largura ficava presa no valor do atributo: a
+     altura era calculada pela proporção, o `max-height` a cortava, e a largura
+     não acompanhava — a captura do celular saía 780x792 no lugar de 780x1312,
+     achatada. Com as duas em auto o navegador reduz o par inteiro para caber
+     na caixa, preservando a proporção. */
+  width: auto;
+  height: auto;
+  max-height: 88vh;
+  /* A largura máxima vem inline, do tamanho real do arquivo: passar disso
+     ampliaria um raster e entregaria borrão no lugar de detalhe. */
+  border: 1px solid rgb(246 245 242 / 0.18);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.5);
+}
+
+.fr-lupa__barra {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+.fr-lupa__fechar {
+  font-family: var(--fr-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fr-paper);
+  background: transparent;
+  border: 1px solid rgb(246 245 242 / 0.45);
+  border-radius: 2px;
+  /* 44 px de alvo: o dedo fecha isto num tablet dentro de um carro. */
+  min-height: 2.75rem;
+  padding-inline: 1.1rem;
+  cursor: pointer;
+}
+
+.fr-lupa__fechar:hover,
+.fr-lupa__fechar:focus-visible {
+  border-color: var(--fr-paper);
+  background: rgb(246 245 242 / 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-lupa__pista {
+    transition: none;
+  }
+}

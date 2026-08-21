@@ -906,6 +906,7 @@ export const es: Dictionary = {
       altHero: "Vista desde la moto de carrera en una carretera adoquinada mojada, dos ciclistas delante a contraluz con el sol bajo, y el arco rojo del último kilómetro cruzando por encima con la banderola colgada.",
       altPanel: "Panel de la dirección de carrera: mapa del recorrido con los vehículos de apoyo, ventana entre apertura y cierre marcada como medida, y la cola de alertas.",
       altApp: "App del conductor en el móvil: el rol del vehículo, la ventana medida entre apertura y cierre, el estado del envío y los botones de alerta.",
+      zoom: "Ver más grande",
       altPave: "Carretera adoquinada serpenteando entre colinas al atardecer, con tres ciclistas separados por cientos de metros y un coche de apoyo en uno de los huecos: la carrera dejó de ser un pelotón.",
       panelCapture: "Captura · panel de la dirección",
       p1: "Mapa en directo con todos los vehículos, cada papel con su color y la antigüedad de su dato.",

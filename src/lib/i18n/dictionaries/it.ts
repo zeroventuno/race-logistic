@@ -898,6 +898,7 @@ export const it: Dictionary = {
       altHero: "Vista dalla moto di gara su una strada in pavé bagnata, due ciclisti davanti controluce al sole basso, e l'arco rosso dell'ultimo chilometro che attraversa in alto con lo striscione appeso.",
       altPanel: "Pannello della direzione gara: mappa del percorso con i veicoli di assistenza, divario tra apripista e chiusura indicato come misurato, e la coda degli allarmi.",
       altApp: "App dell'autista sul telefono: il ruolo del veicolo, la finestra misurata tra apripista e auto fine corsa, lo stato dell'invio e i pulsanti di allarme.",
+      zoom: "Ingrandisci",
       altPave: "Strada in pavé che serpeggia tra le colline al tramonto, con tre ciclisti distanti centinaia di metri e un'auto di assistenza in uno dei varchi: la gara ha smesso di essere un gruppo.",
       panelCapture: "Schermata · pannello della direzione",
       p1: "Mappa in tempo reale con tutti i veicoli, ogni ruolo con il suo colore e l'età del dato.",

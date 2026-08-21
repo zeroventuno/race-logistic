@@ -47,6 +47,7 @@ export function DuasTelas({ t }: { t: Translator }) {
             slot={SLOTS.painel}
             alt={t("landing.screens.altPanel")}
             rotulo={t("landing.screens.panelCapture")}
+            ampliavel
           />
           <div className="fr-tela__texto">
             <span className="fr-eyebrow">
@@ -67,6 +68,7 @@ export function DuasTelas({ t }: { t: Translator }) {
             alt={t("landing.screens.altApp")}
             rotulo={t("landing.screens.appCapture")}
             className="fr-slot--telefone"
+            ampliavel
           />
           <div className="fr-tela__texto">
             <span className="fr-eyebrow">{t("landing.screens.appEyebrow")}</span>
