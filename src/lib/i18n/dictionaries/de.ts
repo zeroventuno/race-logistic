@@ -598,6 +598,7 @@ export const de: Dictionary = {
       "Der aktuelle Code wird ungültig. Ein bereits verbundener Fahrer überträgt weiter, bis die Verbindung getrennt wird.",
     moveUp: "{position} nach oben",
     moveDown: "{position} nach unten",
+    dragHandle: "{position} zum Umsortieren ziehen",
     confirmRemove: "Wirklich entfernen?",
     orderHint:
       "die Reihenfolge der Liste ist die Reihenfolge im Live-Leitstand.",

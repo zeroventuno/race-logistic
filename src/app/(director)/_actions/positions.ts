@@ -574,3 +574,80 @@ export async function moverPosicao(
   revalidatePath(`/dashboard/${raceId}/posicoes/codigos`);
   return { ok: true };
 }
+
+/**
+ * Reescreve a ordem inteira de uma vez.
+ *
+ * É o que o arrastar precisa e o `moverPosicao` não dá: puxar um veículo de
+ * décimo para segundo são oito trocas de vizinho, oito idas ao banco e oito
+ * estados intermediários visíveis na tela.
+ *
+ * DUAS FASES, por causa de `unique (race_id, ordinal)`. Escrever os números
+ * finais direto colide com quem ainda não saiu do lugar, então todo mundo vai
+ * primeiro para uma faixa alta e vazia e só depois desce para 1..n. O `check
+ * (ordinal > 0)` é o motivo de a faixa ser alta e não negativa.
+ *
+ * AUTO-REPARÁVEL DE PROPÓSITO. Se o processo morrer entre as duas fases, as
+ * posições ficam estacionadas lá em cima — na ordem certa, com números
+ * absurdos. Como toda chamada estaciona TUDO e depois assenta TUDO, a próxima
+ * reordenação conserta sozinha. É a diferença entre um estado feio e um estado
+ * perdido.
+ *
+ * A LISTA DO CLIENTE MANDA NA ORDEM, NÃO NO CONJUNTO. Quem decide quais linhas
+ * existem é o banco: ids que sumiram são ignorados e ids que apareceram depois
+ * (outra aba adicionou uma moto) entram no fim, mantendo a ordem que já tinham.
+ * Assim uma tela desatualizada reordena o que sabe em vez de recusar tudo — ou,
+ * pior, de deixar uma posição para trás sem número.
+ */
+const FAIXA_DE_ESTACIONAMENTO = 1_000_000_000;
+
+export async function reordenarPosicoes(
+  raceId: string,
+  idsNaOrdem: string[],
+): Promise<ResultadoAcao> {
+  const { t } = await getTranslator();
+
+  try {
+    const { supabase } = await requireEditableRace(raceId);
+
+    const { data, error: erroLeitura } = await supabase
+      .from("race_positions")
+      .select("id, ordinal")
+      .eq("race_id", raceId)
+      .order("ordinal", { ascending: true });
+
+    if (erroLeitura) return { erro: mensagemDeErroDoBanco(erroLeitura, t) };
+
+    const doBanco = (data ?? []) as { id: string; ordinal: number }[];
+    if (doBanco.length === 0) return { ok: true };
+
+    const existe = new Set(doBanco.map((p) => p.id));
+    const pedidos = idsNaOrdem.filter((id) => existe.has(id));
+    const jaPedidos = new Set(pedidos);
+
+    const ordemFinal = [
+      ...pedidos,
+      ...doBanco.filter((p) => !jaPedidos.has(p.id)).map((p) => p.id),
+    ];
+
+    const mover = (id: string, ordinal: number) =>
+      supabase.from("race_positions").update({ ordinal }).eq("id", id);
+
+    for (let i = 0; i < ordemFinal.length; i++) {
+      const r = await mover(ordemFinal[i]!, FAIXA_DE_ESTACIONAMENTO + i);
+      if (r.error) return { erro: mensagemDeErroDoBanco(r.error, t) };
+    }
+
+    for (let i = 0; i < ordemFinal.length; i++) {
+      const r = await mover(ordemFinal[i]!, i + 1);
+      if (r.error) return { erro: mensagemDeErroDoBanco(r.error, t) };
+    }
+  } catch (e) {
+    if (e instanceof PermissaoNegadaError) return { erro: e.message };
+    throw e;
+  }
+
+  revalidatePath(`/dashboard/${raceId}/posicoes`);
+  revalidatePath(`/dashboard/${raceId}/posicoes/codigos`);
+  return { ok: true };
+}

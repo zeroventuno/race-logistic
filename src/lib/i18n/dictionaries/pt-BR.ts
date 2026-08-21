@@ -608,6 +608,7 @@ export const ptBR = {
       "O código atual deixa de funcionar. Se o motorista já estiver vinculado, ele continua transmitindo até ser desvinculado.",
     moveUp: "Subir {position}",
     moveDown: "Descer {position}",
+    dragHandle: "Arrastar {position} para reordenar",
     confirmRemove: "Remover mesmo?",
     orderHint: "a ordem da lista é a ordem em que elas aparecem no painel ao vivo.",
     emptyTitle: "Nenhuma posição cadastrada",

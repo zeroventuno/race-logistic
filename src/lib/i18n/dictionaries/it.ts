@@ -594,6 +594,7 @@ export const it: Dictionary = {
       "Il codice attuale smette di funzionare. Se il conducente è già collegato, continua a trasmettere finché non viene scollegato.",
     moveUp: "Sposta su {position}",
     moveDown: "Sposta giù {position}",
+    dragHandle: "Trascina {position} per riordinare",
     confirmRemove: "Rimuovere davvero?",
     orderHint: "l'ordine dell'elenco è l'ordine in cui compaiono nel pannello in diretta.",
     emptyTitle: "Nessun mezzo registrato",

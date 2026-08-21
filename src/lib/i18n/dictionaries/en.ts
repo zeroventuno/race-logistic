@@ -592,6 +592,7 @@ export const en: Dictionary = {
       "The current code stops working. If the driver is already linked, they keep transmitting until unlinked.",
     moveUp: "Move {position} up",
     moveDown: "Move {position} down",
+    dragHandle: "Drag {position} to reorder",
     confirmRemove: "Remove it?",
     orderHint: "the list order is the order they appear in on the live panel.",
     emptyTitle: "No vehicles set up",

@@ -596,6 +596,7 @@ export const es: Dictionary = {
       "El código actual deja de funcionar. Si el conductor ya está vinculado, sigue transmitiendo hasta que se desvincule.",
     moveUp: "Subir {position}",
     moveDown: "Bajar {position}",
+    dragHandle: "Arrastrar {position} para reordenar",
     confirmRemove: "¿Quitar de verdad?",
     orderHint:
       "el orden de la lista es el orden en que aparecen en el panel en directo.",

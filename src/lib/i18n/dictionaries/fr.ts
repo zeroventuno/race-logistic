@@ -598,6 +598,7 @@ export const fr: Dictionary = {
       "Le code actuel cesse de fonctionner. Si le conducteur est déjà associé, il continue à transmettre jusqu'à dissociation.",
     moveUp: "Monter {position}",
     moveDown: "Descendre {position}",
+    dragHandle: "Faire glisser {position} pour réordonner",
     confirmRemove: "Retirer vraiment ?",
     orderHint:
       "l'ordre de la liste est celui dans lequel elles apparaissent sur le panneau en direct.",

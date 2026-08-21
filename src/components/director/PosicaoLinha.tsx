@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type PointerEvent as EventoPonteiro } from "react";
 
 import {
   atualizarPosicao,
@@ -35,12 +35,17 @@ export function PosicaoLinha({
   primeira,
   ultima,
   podeEditar,
+  aoPegar,
+  arrastando = false,
 }: {
   raceId: string;
   posicao: RacePosition;
   primeira: boolean;
   ultima: boolean;
   podeEditar: boolean;
+  /** Início do arrasto. Ausente = só as setas reordenam. */
+  aoPegar?: (e: EventoPonteiro<HTMLElement>) => void;
+  arrastando?: boolean;
 }) {
   const t = useT();
   const [editando, setEditando] = useState(false);
@@ -96,10 +101,37 @@ export function PosicaoLinha({
   };
 
   return (
-    <li className="border border-border bg-surface-1">
+    <li
+      data-pos-id={posicao.id}
+      className={`border bg-surface-1 transition-shadow ${
+        arrastando
+          ? "border-border-strong opacity-90 shadow-lg"
+          : "border-border"
+      }`}
+    >
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3 p-4">
         {podeEditar ? (
           <div className="flex flex-col gap-1">
+            {/* A ALÇA É UM ACRÉSCIMO, NUNCA UM SUBSTITUTO.
+                Arrastar é rápido com mouse e impossível com teclado, então as
+                setas continuam aqui embaixo fazendo a mesma coisa — e são elas
+                que respondem ao leitor de tela. Trocar uma pela outra tornaria
+                a ordem do comboio inacessível para quem navega por Tab.
+
+                `touch-action: none` é o que faz isto funcionar no tablet: sem
+                ele o navegador entende o primeiro movimento do dedo como
+                rolagem da página e o arrasto nunca começa. */}
+            {aoPegar ? (
+              <button
+                type="button"
+                aria-label={t("positions.dragHandle", { position: posicao.label })}
+                onPointerDown={aoPegar}
+                style={{ touchAction: "none" }}
+                className="flex h-7 w-8 cursor-grab items-center justify-center rounded border border-border text-ink-faint transition hover:border-border-strong hover:text-ink active:cursor-grabbing"
+              >
+                <span aria-hidden>⠿</span>
+              </button>
+            ) : null}
             <button
               type="button"
               aria-label={t("positions.moveUp", { position: posicao.label })}

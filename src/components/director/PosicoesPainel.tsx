@@ -1,8 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type PointerEvent as EventoPonteiro,
+} from "react";
 
-import { adicionarPosicoes } from "@/app/(director)/_actions/positions";
+import {
+  adicionarPosicoes,
+  reordenarPosicoes,
+} from "@/app/(director)/_actions/positions";
 import { PosicaoLinha } from "@/components/director/PosicaoLinha";
 import {
   Aviso,
@@ -51,6 +60,100 @@ export function PosicoesPainel({
   const [quantidade, setQuantidade] = useState(1);
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
+
+  /*
+   * ARRASTAR PARA REORDENAR.
+   *
+   * A lista vira estado local para o veículo seguir o dedo — o servidor só
+   * fica sabendo quando solta. Sem isso cada pixel de movimento seria uma ida
+   * ao banco, e a linha andaria aos trancos atrás do cursor.
+   *
+   * PONTEIRO, e não a API de arrastar-e-soltar do HTML. Esta tela é usada em
+   * tablet dentro de carro; `dragstart` nem dispara no toque. `pointerdown`
+   * cobre mouse, dedo e caneta com o mesmo código.
+   */
+  const [ordem, setOrdem] = useState(posicoes);
+  const [arrastandoId, setArrastandoId] = useState<string | null>(null);
+  const listaRef = useRef<HTMLUListElement>(null);
+
+  // O ouvinte de `pointermove` é registrado uma vez por arrasto e enxergaria
+  // sempre a lista do primeiro quadro. A referência é o que o mantém atual.
+  const ordemRef = useRef(ordem);
+  ordemRef.current = ordem;
+
+  // Enquanto o dedo está na tela o servidor não manda: aceitar uma
+  // revalidação no meio do arrasto faria a linha pular de volta na mão de
+  // quem está arrastando.
+  useEffect(() => {
+    if (!arrastandoId) setOrdem(posicoes);
+  }, [posicoes, arrastandoId]);
+
+  useEffect(() => {
+    if (!arrastandoId) return;
+
+    const mover = (e: PointerEvent) => {
+      const lista = listaRef.current;
+      if (!lista) return;
+
+      const itens = Array.from(
+        lista.querySelectorAll<HTMLElement>("[data-pos-id]"),
+      );
+      // Onde o ponteiro está AGORA, medido nas caixas reais: a lista tem
+      // linhas de alturas diferentes (a de edição aberta é bem mais alta),
+      // então dividir a altura total pelo número de itens erraria o alvo.
+      const alvo = itens.findIndex((el) => {
+        const r = el.getBoundingClientRect();
+        return e.clientY >= r.top && e.clientY <= r.bottom;
+      });
+      if (alvo < 0) return;
+
+      const atual = ordemRef.current.findIndex((p) => p.id === arrastandoId);
+      if (atual < 0 || atual === alvo) return;
+
+      const nova = [...ordemRef.current];
+      const [movido] = nova.splice(atual, 1);
+      if (movido) nova.splice(alvo, 0, movido);
+      setOrdem(nova);
+    };
+
+    const soltar = () => {
+      setArrastandoId(null);
+
+      const idsNovos = ordemRef.current.map((p) => p.id);
+      const idsAntigos = posicoes.map((p) => p.id);
+      // Pegar e devolver no mesmo lugar não é uma reordenação: gravar aqui
+      // seria reescrever doze linhas do banco por um clique sem efeito.
+      if (idsNovos.join() === idsAntigos.join()) return;
+
+      setErro(null);
+      iniciar(async () => {
+        const r = await reordenarPosicoes(raceId, idsNovos);
+        // A ordem local volta ao que o servidor tem: se a gravação falhou, a
+        // tela não pode continuar mostrando uma ordem que não existe.
+        if (r.erro) {
+          setErro(r.erro);
+          setOrdem(posicoes);
+        }
+      });
+    };
+
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", soltar);
+    window.addEventListener("pointercancel", soltar);
+    return () => {
+      window.removeEventListener("pointermove", mover);
+      window.removeEventListener("pointerup", soltar);
+      window.removeEventListener("pointercancel", soltar);
+    };
+  }, [arrastandoId, posicoes, raceId]);
+
+  const pegar = (id: string) => (e: EventoPonteiro<HTMLElement>) => {
+    // Só o botão principal. Sem isto, o botão direito na alça começa um
+    // arrasto que fica preso quando o menu de contexto abre.
+    if (e.button !== 0) return;
+    e.preventDefault();
+    setArrastandoId(id);
+  };
 
   const adicionar = (role: PositionRole, qtd: number) => {
     setErro(null);
@@ -206,15 +309,17 @@ export function PosicoesPainel({
             </BotaoLink>
           </div>
 
-          <ul className="space-y-3">
-            {posicoes.map((p, i) => (
+          <ul className="space-y-3" ref={listaRef}>
+            {ordem.map((p, i) => (
               <PosicaoLinha
                 key={p.id}
                 raceId={raceId}
                 posicao={p}
                 primeira={i === 0}
-                ultima={i === posicoes.length - 1}
+                ultima={i === ordem.length - 1}
                 podeEditar={podeEditar}
+                aoPegar={podeEditar ? pegar(p.id) : undefined}
+                arrastando={arrastandoId === p.id}
               />
             ))}
           </ul>
