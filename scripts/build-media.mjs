@@ -26,6 +26,8 @@ const OUT = join(ROOT, "public", "marketing");
 const FONTES = {
   heroi: process.env.SRC_HEROI,
   pave: process.env.SRC_PAVE,
+  painel: process.env.SRC_PAINEL,
+  app: process.env.SRC_APP,
 };
 
 /**
@@ -42,6 +44,18 @@ const PERFIS = {
   // navegador fazer.
   heroi: { larguras: [900, 1536], tetoKB: 320, qualidade: { avif: 52, webp: 74 } },
   pave: { larguras: [700, 1400], tetoKB: 180, qualidade: { avif: 50, webp: 72 } },
+
+  // CAPTURA DE TELA NÃO É FOTOGRAFIA, e por isso leva qualidade mais alta que
+  // o herói apesar de ser menor. Foto perdoa: ninguém sabe onde ficava cada
+  // folha. Interface não — a mesma taxa que deixa um pavé impecável transforma
+  // "66,2 km" numa mancha, e o argumento da seção depende de o visitante
+  // conseguir LER o número na tela. Em compensação, área chapada comprime
+  // muito bem, então o teto continua modesto mesmo com qualidade alta.
+  // q62 é o degrau mais alto que cabe no teto: 212 KB contra 222 do q64. A
+  // lista de veículos, que é o menor corpo de texto da tela, continua nítida
+  // a 3x de zoom — conferido no recorte antes de fixar.
+  painel: { larguras: [900, 1600], tetoKB: 220, qualidade: { avif: 62, webp: 76 } },
+  app: { larguras: [420, 780], tetoKB: 140, qualidade: { avif: 64, webp: 84 } },
 };
 
 async function gerar(nome, origem) {

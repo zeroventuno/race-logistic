@@ -108,8 +108,16 @@ export const SLOTS = {
   painel: {
     id: "painel",
     tipo: "imagem",
-    proporcao: "16/10",
-    src: null,
+    // A PROPORÇÃO VEM DA CAPTURA, e não o contrário. 16/10 era um palpite feito
+    // antes de o ativo existir; a tela real é 1862x939, quase 2:1, porque é uma
+    // janela de navegador em monitor largo — que é onde o painel vive. Cortar
+    // 19% da largura para caber no palpite decepava a coluna de veículos, que é
+    // metade do argumento desta seção.
+    // A proporção é a do ARQUIVO ENTREGUE (1600x806), não a da origem: é a
+    // caixa que o navegador reserva antes do byte chegar, e um desencontro
+    // aqui é um salto de layout no meio da página.
+    proporcao: "1600/806",
+    src: "/marketing/painel-1600.avif",
     altChave: "landing.screens.altPanel",
     maxKB: 220,
     formatos: ["avif", "webp"],
@@ -122,7 +130,9 @@ export const SLOTS = {
   app: {
     id: "app",
     tipo: "imagem",
-    proporcao: "39/80",
+    // Mesma regra: 952x1600 é o celular real do teste, não o 39/80 teórico de
+    // um aparelho de catálogo.
+    proporcao: "952/1600",
     src: null,
     altChave: "landing.screens.altApp",
     maxKB: 140,
