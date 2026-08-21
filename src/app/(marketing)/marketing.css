@@ -2244,11 +2244,21 @@ html[data-fr-reveal="on"] .fr-landing [data-reveal].fr-visivel {
 .fr-lupa__dialogo {
   max-width: none;
   max-height: none;
-  width: auto;
   padding: 0;
   border: 0;
   background: transparent;
   overflow: visible;
+
+  /* MARGIN: AUTO É O QUE CENTRALIZA, e ele precisa ser reposto à mão.
+     O navegador dá `margin: auto` ao <dialog> modal justamente para centrar
+     dentro do `inset: 0` que ele mesmo aplica. O preflight do Tailwind zera
+     margin em tudo, inclusive aqui — e o diálogo, com inset 0 e margem 0,
+     esticava até preencher a viewport e encostava a imagem no canto superior
+     esquerdo. `fit-content` faz a caixa ter o tamanho do conteúdo para a
+     margem automática ter o que centrar. */
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
 }
 
 /* O embaçado é do ::backdrop, que é a única camada que enxerga a página
