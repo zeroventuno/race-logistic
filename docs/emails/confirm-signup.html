@@ -1,0 +1,108 @@
+<!--
+  Supabase → Authentication → Emails → Confirm signup
+
+  Subject: Confirm your Flamme Rouge account
+
+  ---------------------------------------------------------------------------
+  WHY THIS LOOKS LIKE 2005 HTML
+
+  Tables, inline styles, no flexbox, no web fonts. Outlook renders with Word's
+  engine, Gmail strips <style> blocks from the head, and a good third of race
+  organisers read mail on a phone client nobody tests against. Everything here
+  is the subset that survives all of them.
+
+  {{ .ConfirmationURL }} ALREADY POINTS AT /auth/callback, because the signup
+  action sets `emailRedirectTo` from the request host. That means this same
+  template works on localhost, on a Vercel preview and in production without
+  anyone editing it — and it is why the link must not be hand-written here.
+
+  THE URL APPEARS TWICE ON PURPOSE: once as a button, once as text. Corporate
+  mail gateways strip buttons, and a link the person cannot copy is a dead end
+  with no way out.
+  ---------------------------------------------------------------------------
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background-color:#f6f5f2;margin:0;padding:32px 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:520px;background-color:#ffffff;border:1px solid #e3e0da;">
+
+        <!-- Wordmark. Red only on ROUGE: inside the product red means "someone
+             needs help" and is never decoration, but an email is brand, not
+             operational surface. -->
+        <tr>
+          <td style="padding:28px 32px 0 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:3px;font-weight:700;color:#12171c;">
+            FLAMME <span style="color:#d92d20;">ROUGE</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 32px 0 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;line-height:1.3;font-weight:700;color:#12171c;">
+            Confirm your account
+          </td>
+        </tr>
+
+        <!-- Says what the product is. Someone who signed up on Tuesday and
+             opens this on Thursday should not have to remember. -->
+        <tr>
+          <td style="padding:14px 32px 0 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#4a5158;">
+            Flamme Rouge is live race control for road cycling — the lead-to-closing
+            window measured instead of estimated, and every support vehicle on one map.
+            Confirm this address and your account is ready.
+          </td>
+        </tr>
+
+        <!-- Bulletproof button: the colour is on the <td>, not on the <a>, so
+             Outlook still paints it. -->
+        <tr>
+          <td style="padding:26px 32px 0 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td bgcolor="#12171c" style="border-radius:2px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block;padding:14px 26px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.5px;color:#ffffff;text-decoration:none;">
+                    Confirm my account
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:22px 32px 0 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#7b8288;">
+            If the button does not work, paste this into your browser:
+            <br />
+            <span style="color:#4a5158;word-break:break-all;">{{ .ConfirmationURL }}</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:22px 32px 0 32px;">
+            <div style="height:1px;background-color:#e3e0da;line-height:1px;font-size:0;">&nbsp;</div>
+          </td>
+        </tr>
+
+        <!-- The link expires and works once. Saying so prevents the support
+             message that starts with "I clicked it yesterday and now it fails". -->
+        <tr>
+          <td style="padding:18px 32px 28px 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#7b8288;">
+            This link works once and then expires. If you did not create a
+            Flamme Rouge account, ignore this message — nothing was activated.
+          </td>
+        </tr>
+
+      </table>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+        <tr>
+          <td style="padding:16px 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;color:#9aa0a6;">
+            Flamme Rouge · flammerouge.org
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
