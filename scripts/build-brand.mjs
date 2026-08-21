@@ -111,9 +111,8 @@ async function main() {
   put(join(BRAND_DIR, "mark-rouge.svg"), iconSvg({ color: ROUGE }));
   put(join(BRAND_DIR, "mark-mono-dark.svg"), iconSvg({ color: CHALK }));
   put(join(BRAND_DIR, "mark-mono-light.svg"), iconSvg({ color: ASPHALT }));
-  put(join(BRAND_DIR, "mark-with-pole.svg"), (() => {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${ROUGE}"/><polygon points="${FLAG}" fill="${ROUGE}"/></svg>`;
-  })());
+  const markComMastro = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${ROUGE}"/><polygon points="${FLAG}" fill="${ROUGE}"/></svg>`;
+  put(join(BRAND_DIR, "mark-with-pole.svg"), markComMastro);
 
   put(join(BRAND_DIR, "signature.svg"), signatureSvg({}));
   put(join(BRAND_DIR, "signature-dark.svg"), signatureSvg({ ink: CHALK }));
@@ -136,6 +135,36 @@ async function main() {
   written.push(await png(appIcon, 512, join(PUBLIC, "icon-512.png")));
   written.push(await png(maskable, 512, join(PUBLIC, "icon-maskable-512.png")));
   written.push(await png(appIcon, 180, join(PUBLIC, "apple-touch-icon.png")));
+
+  // --- Marca para e-mail ---------------------------------------------------
+
+  /*
+   * SÓ A FLÂMULA, SEM O LETREIRO, e isso é conclusão de teste e não gosto.
+   *
+   * O letreiro depende de Barlow Condensed, e o rasterizador do `sharp`
+   * (librsvg) não a tem: rasterizar `signature.svg` aqui devolve ROUGE com
+   * SERIFA. Tentei embutir a fonte no próprio SVG como `@font-face` com data
+   * URI — o librsvg ignora. Verificado nas duas formas antes de desistir.
+   *
+   * A flâmula é retângulo mais polígono, geometria pura: sai idêntica em
+   * qualquer máquina, sem fonte instalada. No e-mail ela vai ao lado do
+   * letreiro escrito em HTML, que é a combinação mais robusta de qualquer
+   * jeito — cliente de e-mail bloqueia imagem por padrão, e um logo que é
+   * só imagem vira um retângulo vazio para metade de quem recebe.
+   *
+   * `trim` porque o `viewBox` é quadrado e a flâmula não é: sem ele a imagem
+   * carrega margem branca que o e-mail teria de compensar na mão.
+   */
+  {
+    const destino = join(BRAND_DIR, "email-mark.png");
+    await sharp(Buffer.from(markComMastro), { density: 512 })
+      .resize({ width: 256 })
+      .trim()
+      .flatten({ background: "#ffffff" })
+      .png({ compressionLevel: 9 })
+      .toFile(destino);
+    written.push(destino);
+  }
 
   // Favicon PNG de apoio: fundo transparente, vermelho sólido. Sobrevive à
   // aba clara e à escura sem duas versões.

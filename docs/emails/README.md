@@ -42,6 +42,25 @@ Se algum dia isso incomodar, a saída é parar de usar o e-mail do Supabase e
 mandar a confirmação pelo Resend, que já é dependência do formulário de
 contato — aí o idioma vem do cadastro.
 
+## O logo
+
+A flâmula vem de `/brand/email-mark.png`, gerada pelo `npm run brand` a
+partir da mesma geometria do logotipo do site. O **letreiro é texto HTML**, não
+imagem, e isso é conclusão de teste:
+
+- rasterizar `signature.svg` com o `sharp` devolve ROUGE **com serifa** — o
+  librsvg não tem Barlow Condensed;
+- embutir a fonte no SVG como `@font-face` com data URI **também não funciona**,
+  o librsvg ignora.
+
+E mesmo que funcionasse, logo que é só imagem vira retângulo vazio para quem
+tem bloqueio de imagem — que é o padrão de boa parte dos clientes. Com o nome
+em texto a marca chega sempre; a flâmula é o acréscimo.
+
+O `src` aponta para o domínio de produção em absoluto, porque e-mail não tem
+URL relativa. Numa prévia da Vercel a imagem virá de produção, o que é o
+comportamento certo.
+
 ## O link
 
 O template usa `{{ .ConfirmationURL }}`, e **não** uma URL escrita à mão.

@@ -28,12 +28,37 @@
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
              style="max-width:520px;background-color:#ffffff;border:1px solid #e3e0da;">
 
-        <!-- Wordmark. Red only on ROUGE: inside the product red means "someone
-             needs help" and is never decoration, but an email is brand, not
-             operational surface. -->
+        <!--
+          LOGO: FLÂMULA COMO IMAGEM, LETREIRO COMO TEXTO.
+
+          Não é meio-termo, é a única combinação que funciona. O letreiro
+          depende de Barlow Condensed, e o rasterizador do build não a tem —
+          gerar a assinatura inteira em PNG devolve ROUGE com serifa.
+          Verificado, inclusive embutindo a fonte no SVG, que o librsvg ignora.
+
+          E mesmo que funcionasse: cliente de e-mail bloqueia imagem por
+          padrão. Logo que é só imagem vira retângulo vazio para metade de
+          quem recebe. Com o nome em texto, a marca chega sempre; a flâmula é
+          o acréscimo que aparece quando as imagens carregam.
+
+          alt vazio de propósito: a flâmula é decorativa quando o nome está
+          escrito ao lado. Descrevê-la faria o leitor de tela dizer o nome
+          duas vezes.
+        -->
         <tr>
-          <td style="padding:28px 32px 0 32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:3px;font-weight:700;color:#12171c;">
-            FLAMME <span style="color:#d92d20;">ROUGE</span>
+          <td style="padding:28px 32px 0 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding-right:10px;vertical-align:middle;">
+                  <img src="https://flammerouge.org/brand/email-mark.png"
+                       width="30" height="32" alt=""
+                       style="display:block;border:0;outline:none;text-decoration:none;" />
+                </td>
+                <td style="vertical-align:middle;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:3px;font-weight:700;color:#12171c;">
+                  FLAMME <span style="color:#d92d20;">ROUGE</span>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
 
