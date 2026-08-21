@@ -8,6 +8,7 @@ import { Letreiro } from "@/components/Letreiro";
 import { SeletorIdioma } from "@/components/SeletorIdioma";
 import { TemaBotao } from "@/components/TemaBotao";
 import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
+import { ehAdministrador } from "@/lib/admin";
 import { I18nProvider } from "@/lib/i18n/client";
 import { getTranslator } from "@/lib/i18n/server";
 
@@ -57,6 +58,29 @@ export default async function DirectorLayout({
             </Link>
 
             <div className="flex items-center gap-3">
+              {/*
+                A PORTA DO PAINEL DO DONO, e ela só existe para o dono.
+                Sem isto `/admin` só era alcançável digitando a URL, que é
+                jeito de esconder ferramenta de si mesmo.
+
+                A mesma checagem da página, refeita aqui — mas com propósito
+                diferente: lá ela é a fronteira de segurança, aqui é só
+                visibilidade. Se um dia divergirem, o pior que acontece é um
+                link que leva a um 404, e não um painel aberto.
+
+                "Admin" sem passar pelos dicionários, de propósito: é a mesma
+                palavra em português, inglês, italiano, espanhol e francês, e
+                quem lê é uma pessoa só. Ver a nota em `admin/actions.ts`.
+              */}
+              {ehAdministrador(user.email) ? (
+                <Link
+                  href="/admin"
+                  className="min-h-9 border border-border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-ink-faint transition hover:border-border-strong hover:text-ink"
+                >
+                  Admin
+                </Link>
+              ) : null}
+
               <span
                 className="hidden text-sm text-ink-muted sm:inline"
                 title={user.email ?? undefined}
