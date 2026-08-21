@@ -320,6 +320,125 @@ que a tela — é um pedido pessoal.
 
 **Hashtags** · `#granfondo #ciclismo #organizaçãodeeventos #eventosesportivos`
 
+
+---
+
+## Formato: feed, story ou reels?
+
+**Feed é a espinha. Story é a campainha. Reels, um só.**
+
+O raciocínio: o objetivo é alguém que já te conhece fazer uma apresentação.
+Isso descarta o que o Reels faz de melhor — alcançar estranho. Um ciclista
+desconhecido que vê seu reel não tem como te apresentar a ninguém.
+
+E favorece o que o feed faz: **permanência**. Quem vai pensar *"peraí, meu
+primo organiza um granfondo"* pode ter esse pensamento três semanas depois, ao
+abrir seu perfil por outro motivo. Story já sumiu; post está lá.
+
+Mas o story tem o que o feed não tem: **responder é um gesto só**. É de lá que
+sai o direct.
+
+### Story queima menos boa vontade que post
+
+Cinco posts de projeto em 30 dias já é bastante para um perfil pessoal; quinze
+seriam demais. Story sobre o que você está construindo os amigos toleram bem —
+é o registro natural de "estou trabalhando nisso".
+
+Então: mantenha os cinco posts, e use story à vontade para bastidor solto — um
+print de código, o mapa dando errado, uma captura nova. Alimenta a narrativa
+sem gastar o feed.
+
+---
+
+## Roteiro dos stories, post a post
+
+### Post 1 · o carro de fechamento
+
+**Um story, no mesmo dia, algumas horas depois do post.**
+
+1. A mesma foto da estrada, sem texto por cima.
+   Legenda curta na tela: *"Escrevi sobre isto hoje."*
+   Figurinha de link para o post.
+
+Não repita a legenda do post no story. O story é o convite; o texto está lá.
+
+### Post 2 · a janela
+
+**Cinco stories, os mesmos slides do carrossel.** É o post mais didático, e
+story em sequência é onde as pessoas de fato leem coisa didática.
+
+1. *Quanto tempo a rua fica fechada numa prova de ciclismo?*
+2. *Do carro de abertura até o de fechamento. Essa é a janela.*
+3. *É ela que a autoridade de trânsito autoriza.*
+4. **ENQUETE** — *"Você achava que isso era medido?"* · **Sim** / **Não fazia ideia**
+   A enquete não é engajamento decorativo: a resposta te diz quanto do seu
+   público entende o problema, e isso muda o tom dos posts seguintes.
+5. *Estourou a janela, rua fechada além do combinado. Encurtou, ciclista sem
+   proteção.* + link para o carrossel.
+
+### Post 3 · a tela — **o Reels**
+
+É o único conteúdo em que movimento acrescenta informação. Foto de estrada
+parada com música é enfeite; o painel com doze veículos andando e a janela
+mudando não cabe em imagem estática.
+
+**Como gravar**, com o que já existe no projeto:
+
+```bash
+npm run sim -- --limpar --stream --base=http://localhost:3001
+```
+
+Deixa rodando e faz uma captura de tela de **15 a 20 segundos** do painel, com
+o comboio se movendo. Vertical, cortando na coluna do mapa mais o cartão da
+janela.
+
+Roteiro do reel, sem narração:
+- 0–3 s · o mapa parado, com os veículos visíveis
+- 3–10 s · o comboio andando (é aqui que a coisa acontece)
+- 10–15 s · aproxima no cartão da janela, mostrando **MEASURED** e os 45 min
+- texto fixo na tela, uma linha só: *A janela entre o primeiro e o último carro. Medida, não estimada.*
+
+**Stories do mesmo dia:** bastidor. Você mexendo no painel, o telefone no
+suporte do carro, a folha de códigos impressa. Bastidor de story vale mais que
+bastidor de post — ali ninguém espera produção.
+
+### Post 4 · o celular
+
+**Um story, e ele é melhor que o carrossel:** filme a própria mão pegando a
+folha impressa, apontando a câmera do celular para o QR, e a tela abrindo já no
+mapa. **Cinco segundos.** Sem corte, sem texto.
+
+É a coisa mais difícil de explicar em palavras e a mais fácil de mostrar em
+vídeo. Se sair bom, considere promover a reels — mas o post continua carrossel,
+porque quem chega depois precisa dos três slides.
+
+### Post 5 · o pedido
+
+**Aqui é onde a colheita acontece, e ela acontece no story, não no post.**
+
+1. A mesma foto sua do post.
+2. **FIGURINHA DE PERGUNTA** — *"Conhece alguém que organiza prova de ciclismo?"*
+
+A figurinha de pergunta tira todo o atrito: a pessoa responde ali, sem abrir
+direct, sem pensar em como começar a mensagem. Quem responder qualquer coisa
+você puxa para conversa privada depois.
+
+Repita esse story **três ou quatro vezes ao longo da semana seguinte**, em
+horários diferentes. Não é insistência: story tem alcance parcial, e quem viu
+na terça de manhã não é quem vê na quinta à noite.
+
+---
+
+## Resumo
+
+| post | feed | story | reels |
+|---|---|---|---|
+| 1 · o carro de fechamento | foto única | 1 story com link | — |
+| 2 · a janela | carrossel 5 | 5 stories, enquete no 4 | — |
+| 3 · a tela | post | bastidor | **sim, 15–20 s** |
+| 4 · o celular | carrossel 3 | mão escaneando o QR | talvez |
+| 5 · o pedido | foto sua | **figurinha de pergunta, repetida** | — |
+
 ---
 
 ## Uma decisão antes do post 5
