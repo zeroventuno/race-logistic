@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { MiniPercurso } from "@/components/director/MiniPercurso";
-import { BotaoLink, Cartao, Selo } from "@/components/director/ui";
+import { Aviso, BotaoLink, Cartao, Selo } from "@/components/director/ui";
 import { formatDistance, formatDuration } from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/config";
@@ -36,7 +36,7 @@ const CHAVE_FILTRO: Record<Filtro, TranslationKey> = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string }>;
+  searchParams: Promise<{ estado?: string; confirmado?: string }>;
 }) {
   const { supabase } = await requireUser();
   const { locale, t } = await getTranslator();
@@ -142,7 +142,9 @@ export default async function DashboardPage({
     };
   });
 
-  const pedido = (await searchParams).estado;
+  const params = await searchParams;
+  const pedido = params.estado;
+  const confirmado = params.confirmado === "1";
   const filtro: Filtro = FILTROS.includes(pedido as Filtro)
     ? (pedido as Filtro)
     : "todas";
@@ -159,6 +161,20 @@ export default async function DashboardPage({
 
   return (
     <main className="mx-auto max-w-[73.75rem] px-5 pb-24 pt-12 sm:px-10">
+      {/*
+        O AVISO DE QUE A CONFIRMAÇÃO DEU CERTO.
+        Quem chega aqui vindo do link do e-mail já está autenticado — mas
+        entrar sem que nada diga por quê deixa a pessoa sem saber se o clique
+        funcionou. Era a reclamação: "o site não dá nenhuma mensagem
+        informando sucesso". Some sozinho na próxima navegação, porque vive no
+        parâmetro da URL e não em estado nenhum.
+      */}
+      {confirmado ? (
+        <Aviso tone="ok" titulo={t("auth.confirmedTitle")} className="mb-8">
+          {t("auth.confirmed")}
+        </Aviso>
+      ) : null}
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.24em] text-ink-faint">

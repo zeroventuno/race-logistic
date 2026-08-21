@@ -14,7 +14,11 @@ export async function generateMetadata() {
   return { title: t("auth.metaLogin") };
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ confirmacao?: string }>;
+}) {
   // Quem já está autenticado não tem por que ver esta tela — e no dia da prova
   // um clique errado no botão de voltar não pode custar uma ida ao login.
   const supabase = await supabaseServer();
@@ -22,7 +26,10 @@ export default async function LoginPage() {
   if (data.user) redirect("/dashboard");
 
   const tema = temaDoCookie((await cookies()).get(TEMA_COOKIE)?.value);
-  const { locale } = await getTranslator();
+  const { locale, t } = await getTranslator();
+
+  // O callback manda para cá quando o link do e-mail já foi usado ou expirou.
+  const falhou = (await searchParams).confirmacao === "falhou";
 
   return (
     <PortaDaDirecao
@@ -30,7 +37,11 @@ export default async function LoginPage() {
       locale={locale}
       modo="login"
     >
-      <AuthForm modo="login" acao={entrar} />
+      <AuthForm
+        modo="login"
+        acao={entrar}
+        estadoInicial={falhou ? { erro: t("auth.confirmFailed") } : undefined}
+      />
     </PortaDaDirecao>
   );
 }

@@ -19,14 +19,24 @@ import { useT } from "@/lib/i18n/client";
 export function AuthForm({
   modo,
   acao,
+  estadoInicial,
 }: {
   modo: "login" | "cadastro";
   acao: (estado: AuthState, formData: FormData) => Promise<AuthState>;
+  /**
+   * Mensagem já presente na primeira renderização.
+   *
+   * Serve para quem chega de fora com algo a ser dito — hoje, o link de
+   * confirmação que expirou. Sem isto a pessoa cairia no login sem explicação
+   * nenhuma, que é o mesmo beco que o aviso de "confirmação enviada" existe
+   * para evitar do outro lado.
+   */
+  estadoInicial?: AuthState;
 }) {
   const t = useT();
   const [estado, submeter, pendente] = useActionState<AuthState, FormData>(
     acao,
-    {},
+    estadoInicial ?? {},
   );
 
   const ehCadastro = modo === "cadastro";

@@ -1,5 +1,7 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -130,7 +132,23 @@ export async function cadastrar(
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.senha,
-    options: { data: { full_name: parsed.data.nome } },
+    options: {
+      data: { full_name: parsed.data.nome },
+      /*
+       * PARA ONDE O LINK DO E-MAIL VOLTA.
+       *
+       * Sem isto o Supabase usa a "Site URL" configurada no painel dele, que
+       * aponta para a raiz — e a raiz é a landing, que não sabe que uma
+       * confirmação acabou de acontecer. A pessoa clicava no link e não recebia
+       * sinal nenhum de sucesso.
+       *
+       * O endereço sai do CABEÇALHO DA REQUISIÇÃO, e não de variável de
+       * ambiente: assim a pré-visualização da Vercel confirma contra si mesma e
+       * o desenvolvimento local contra o localhost, sem ninguém configurar
+       * nada. A variável fica como reserva para quando não houver cabeçalho.
+       */
+      emailRedirectTo: `${await enderecoDoSite()}/auth/callback`,
+    },
   });
 
   if (error) {
@@ -209,4 +227,29 @@ function traduzirErroDeAuth(
   }
 
   return t("auth.genericFailure");
+}
+
+/**
+ * De onde este servidor está sendo acessado agora.
+ *
+ * `origin` é o cabeçalho que o navegador manda em requisições de ação; quando
+ * ele falta, `host` mais o protocolo reconstroem a mesma coisa. A variável de
+ * ambiente é o último recurso, para o caso de a ação rodar fora de um pedido.
+ */
+async function enderecoDoSite(): Promise<string> {
+  const h = await headers();
+
+  const origem = h.get("origin");
+  if (origem) return origem;
+
+  const host = h.get("host");
+  if (host) {
+    const protocolo = host.startsWith("localhost") ? "http" : "https";
+    return `${protocolo}://${host}`;
+  }
+
+  return (
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "")
+  );
 }
