@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 import { Movimento } from "@/components/marketing/Movimento";
 import { DEFAULT_TIMEZONE } from "@/app/(director)/_lib/timezone";
@@ -82,6 +83,24 @@ export default async function MarketingLayout({
       <div className="fr-landing">
         {children}
         <Movimento />
+        {/*
+          A MEDIÇÃO É DO SITE, NÃO DO SISTEMA.
+        
+          A instalação da Vercel pôs isto no layout RAIZ, o que instrumentaria o
+          produto inteiro. Duas razões para não deixar ali:
+        
+          O app do motorista é um aparelho num carro, com sinal ruim, desenhado
+          para funcionar offline — é o último lugar onde vale acrescentar rede
+          que não é essencial à prova.
+        
+          E os caminhos do painel carregam o UUID da prova
+          (`/dashboard/<uuid>/ao-vivo`). Isso é identificador de cliente saindo
+          para um terceiro sem que ninguém tenha pedido.
+        
+          Aqui na casca da landing ele mede o que tem propósito comercial: quem
+          chega, de onde, e se rola até o contato.
+        */}
+        <Analytics />
       </div>
     </I18nProvider>
   );

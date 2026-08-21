@@ -748,6 +748,7 @@ export const ptBR = {
     finishedAt: "encerrada às {time}",
     confirmStart: "confirmar largada",
     confirmFinish: "confirmar encerramento",
+    confirmFinishBody: "Tira o mapa de toda a equipe que ainda está na estrada, e o painel não desfaz.",
   },
 
   auth: {

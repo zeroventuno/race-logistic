@@ -731,6 +731,7 @@ export const en: Dictionary = {
     finishedAt: "finished at {time}",
     confirmStart: "confirm start",
     confirmFinish: "confirm finish",
+    confirmFinishBody: "Takes the map away from the whole crew still out on the road, and the panel cannot undo it.",
   },
 
   auth: {

@@ -742,6 +742,7 @@ export const es: Dictionary = {
     finishedAt: "finalizada a las {time}",
     confirmStart: "confirmar salida",
     confirmFinish: "confirmar cierre",
+    confirmFinishBody: "Quita el mapa a todo el equipo que sigue en carretera, y el panel no lo deshace.",
   },
 
   auth: {

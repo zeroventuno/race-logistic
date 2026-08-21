@@ -734,6 +734,7 @@ export const it: Dictionary = {
     finishedAt: "conclusa alle {time}",
     confirmStart: "conferma partenza",
     confirmFinish: "conferma chiusura",
+    confirmFinishBody: "Toglie la mappa a tutta la squadra ancora in strada, e il pannello non lo annulla.",
   },
 
   auth: {

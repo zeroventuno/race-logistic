@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import {
   encerrarProva,
@@ -12,12 +12,35 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import type { RaceStatus } from "@/lib/types";
 
 /**
+ * Prazo da confirmação armada.
+ *
+ * 10 s e não os 6 s do `AlertPad`: lá a confirmação é um segundo toque
+ * imediato, aqui há uma frase de consequência para ler antes de decidir.
+ */
+const CONFIRMACAO_EXPIRA_MS = 10_000;
+
+/**
  * Largada e encerramento.
  *
  * As únicas ações desta tela COM confirmação, e o critério é reversibilidade.
  * Reconhecer um alerta por engano custa um segundo de atenção; encerrar a prova
- * por engano tira o mapa da equipe inteira enquanto ela ainda está na estrada,
- * e o gatilho do banco não deixa desfazer com um clique.
+ * por engano tira o mapa da equipe inteira enquanto ela ainda está na estrada.
+ *
+ * E NÃO EXISTE VOLTA. Este comentário já afirmou que "o gatilho do banco não
+ * deixa desfazer com um clique", e era falso: `races` tem três gatilhos —
+ * dono na inserção, dono congelado, `updated_at` — e nenhum olha para
+ * `status`. O `requireEditableRace` também só confere propriedade. Um `update`
+ * de `finished` para `live` passa sem resistência nenhuma; foi assim que uma
+ * prova encerrada por engano voltou, direto no banco.
+ *
+ * O que impede reabrir, portanto, é SÓ não existir caminho no código. Escrito
+ * aqui porque a versão anterior deste parágrafo faria a próxima pessoa confiar
+ * numa rede que não está pendurada.
+ *
+ * Daí as três proteções do encerramento, todas baratas para quem quis mesmo
+ * encerrar: a confirmação expira em 10 s, "cancelar" ocupa o lugar onde o
+ * gatilho estava (um toque repetido cancela em vez de confirmar), e a
+ * consequência aparece escrita ao lado da decisão.
  *
  * O botão de iniciar fica desabilitado enquanto houver pendência obrigatória no
  * checklist — sem percurso ou sem as duas referências, a janela abertura ↔
@@ -58,6 +81,21 @@ export function ControleProva({
     null,
   );
   const [pendente, iniciar] = useTransition();
+
+  /**
+   * A confirmação expira sozinha.
+   *
+   * Sem prazo ela ficava armada indefinidamente: o diretor toca "encerrar",
+   * é chamado no rádio, volta dez minutos depois e o primeiro toque naquela
+   * região da tela encerra a prova. O `AlertPad` já resolvia isso assim para
+   * o alerta de acidente, com 6 s; aqui são 10, porque há uma frase de
+   * consequência para ler antes de decidir.
+   */
+  useEffect(() => {
+    if (!confirmando) return;
+    const timer = setTimeout(() => setConfirmando(null), CONFIRMACAO_EXPIRA_MS);
+    return () => clearTimeout(timer);
+  }, [confirmando]);
 
   const executar = (acao: () => Promise<{ erro?: string }>) => {
     setErro(null);
@@ -172,7 +210,25 @@ export function ControleProva({
 
           {podeEditar && status === "live" ? (
             confirmando === "encerrar" ? (
-              <span className="flex items-center gap-2">
+              /*
+               * CANCELAR OCUPA O LUGAR DO GATILHO, e o confirmar vai para o
+               * lado. É a única proteção aqui que custa zero atrito para quem
+               * quis mesmo encerrar: um segundo toque involuntário — a mão
+               * repetindo o clique, o dedo tremendo num carro em movimento —
+               * cai onde estava "encerrar prova", e agora aquilo cancela.
+               *
+               * Continuam sendo DOIS toques, e não três. Isto é tela de dia de
+               * prova: quem precisa encerrar às vezes precisa encerrar agora, e
+               * empilhar confirmação ensina a passar por elas sem ler.
+               */
+              <span className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmando(null)}
+                  className="min-h-9 border border-border-strong bg-surface-2 px-4 text-sm font-semibold text-ink"
+                >
+                  {t("common.cancel")}
+                </button>
                 <button
                   type="button"
                   disabled={pendente}
@@ -181,13 +237,12 @@ export function ControleProva({
                 >
                   {t("live.confirmFinish")}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmando(null)}
-                  className="min-h-9 px-2 text-sm text-ink-muted underline underline-offset-4"
-                >
-                  {t("common.cancel")}
-                </button>
+                {/* A consequência por escrito, do lado da decisão. O alerta
+                    médico já fazia isso; encerrar a prova é mais grave e não
+                    dizia nada. */}
+                <span className="basis-full text-xs text-ink-muted">
+                  {t("live.confirmFinishBody")}
+                </span>
               </span>
             ) : (
               <button

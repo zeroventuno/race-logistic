@@ -744,6 +744,7 @@ export const de: Dictionary = {
     finishedAt: "beendet um {time}",
     confirmStart: "Start bestätigen",
     confirmFinish: "Abschluss bestätigen",
+    confirmFinishBody: "Nimmt der gesamten Mannschaft, die noch unterwegs ist, die Karte weg — und das Panel macht das nicht rückgängig.",
   },
 
   auth: {

@@ -740,6 +740,7 @@ export const fr: Dictionary = {
     finishedAt: "terminée à {time}",
     confirmStart: "confirmer le départ",
     confirmFinish: "confirmer la fin",
+    confirmFinishBody: "Retire la carte à toute l'équipe encore sur la route, et le panneau ne l'annule pas.",
   },
 
   auth: {
