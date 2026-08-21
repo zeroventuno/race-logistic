@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { Analytics } from "@vercel/analytics/next";
 
 import { getLocale, getTranslator } from "@/lib/i18n/server";
 import { TEMA_COOKIE, temaDoCookie } from "@/lib/tema";
@@ -71,7 +72,10 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} data-theme={tema === "system" ? undefined : tema}>
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
