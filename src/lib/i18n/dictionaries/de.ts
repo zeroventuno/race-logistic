@@ -908,7 +908,7 @@ export const de: Dictionary = {
       panelTitle: "Was die Rennleitung sieht",
       altHero: "Blick vom Rennmotorrad auf eine nasse Kopfsteinpflasterstraße, zwei Fahrer voraus im Gegenlicht der tiefen Sonne, und der rote Bogen des letzten Kilometers, der mit hängendem Wimpel darüber verläuft.",
       altPanel: "Panel der Rennleitung: Streckenkarte mit den Begleitfahrzeugen, der Abstand zwischen Führung und Schluss als gemessen markiert, und die Alarmliste.",
-      altApp: "Fahrer-App auf dem Handy: Fahrzeugrolle, aktueller Kilometer auf der Strecke, Sendestatus und die Alarmknöpfe.",
+      altApp: "Fahrer-App auf dem Telefon: die Fahrzeugrolle, das gemessene Fenster zwischen Führungs- und Schlussfahrzeug, der Sendestatus und die Alarmtasten.",
       altPave: "Kopfsteinpflasterstraße, die sich bei Sonnenuntergang durch Hügel windet, drei Fahrer Hunderte Meter voneinander entfernt und ein Begleitfahrzeug in einer der Lücken — das Rennen ist kein Feld mehr.",
       panelCapture: "Screenshot · Panel der Rennleitung",
       p1: "Live-Karte mit allen Fahrzeugen, jede Rolle in ihrer Farbe und mit dem Alter ihrer Daten.",

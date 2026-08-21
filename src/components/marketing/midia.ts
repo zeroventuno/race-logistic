@@ -130,10 +130,10 @@ export const SLOTS = {
   app: {
     id: "app",
     tipo: "imagem",
-    // Mesma regra: 952x1600 é o celular real do teste, não o 39/80 teórico de
-    // um aparelho de catálogo.
-    proporcao: "952/1600",
-    src: null,
+    // Mesma regra do painel: a proporção é a do ARQUIVO ENTREGUE (780x1312),
+    // vinda de um celular real, não o 39/80 teórico de um aparelho de catálogo.
+    proporcao: "780/1312",
+    src: "/marketing/app-780.avif",
     altChave: "landing.screens.altApp",
     maxKB: 140,
     formatos: ["avif", "webp"],

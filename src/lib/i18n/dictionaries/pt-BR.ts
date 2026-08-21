@@ -910,7 +910,7 @@ export const ptBR = {
       panelTitle: "O que a direção vê",
       altHero: "Vista de cima da moto de prova numa estrada de paralelepípedo molhada, dois ciclistas à frente contra o sol baixo, e o arco vermelho do último quilômetro cruzando por cima com a bandeirola pendurada.",
       altPanel: "Painel da direção de prova: mapa do percurso com os veículos de apoio, janela entre abertura e fechamento marcada como medida, e a fila de alertas.",
-      altApp: "App do motorista no celular: papel do veículo, quilômetro atual no percurso, estado do envio e os botões de alerta.",
+      altApp: "App do motorista no celular: papel do veículo, a janela entre abertura e fechamento medida, estado do envio e os botões de alerta.",
       altPave: "Estrada de paralelepípedo serpenteando entre colinas ao pôr do sol, com três ciclistas separados por centenas de metros e um carro de apoio num dos vãos — a prova deixou de ser um pelotão.",
       panelCapture: "Captura · painel da direção",
       p1: "Mapa ao vivo com todos os veículos, cada papel com sua cor e sua idade de dado.",
