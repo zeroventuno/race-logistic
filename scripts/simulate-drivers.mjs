@@ -643,9 +643,21 @@ async function main() {
       }
     }
 
+    // O relógio é do PRIMEIRO VEÍCULO, e não de um `decorridoS` solto: cada um
+    // tem o seu desde que o rastro passou a terminar por veículo. A versão
+    // anterior lia uma variável que agora vive dentro do laço acima, e o
+    // simulador morria no primeiro ciclo de transmissão — depois de semear
+    // tudo, que é o pior momento para morrer.
+    const lider = vivos[0];
+    const kmLider =
+      Math.min(
+        indice.total,
+        lider.offset + lider.vMps * ((Date.now() - lider.desdeMs) / 1000),
+      ) / 1000;
+
     process.stdout.write(
       `\r  ${new Date().toLocaleTimeString()} — comboio em km ` +
-        `${((vivos[0].offset + vMps * decorridoS) / 1000).toFixed(1)}   `,
+        `${kmLider.toFixed(1)}   `,
     );
   }
 
