@@ -20,13 +20,26 @@ const ROOT = join(__dirname, "..");
 const PUBLIC = join(ROOT, "public");
 const BRAND_DIR = join(PUBLIC, "brand");
 
-const ROUGE = "#D92D20";
-const ASPHALT = "#12171C";
-const CHALK = "#ECEFF1";
+/*
+ * A GEOMETRIA VEM DE mark.ts, E NÃO DE UMA CÓPIA AQUI.
+ *
+ * Este arquivo repetia os seis valores — três cores, o ícone, o mastro e a
+ * bandeirola. Batiam com os do produto porque foram digitados iguais, não
+ * porque um lesse o outro: mudar a marca exigia lembrar dos dois lugares, e o
+ * dia em que alguém esquecesse metade produziria arquivos de marca que não são
+ * a marca que o produto desenha.
+ *
+ * O Node 24 remove tipos de `.ts` nativamente, então o script importa a fonte
+ * do produto direto. Uma definição, como o manual sempre afirmou ter.
+ */
+import { BRAND, PENNANT_ICON, PENNANT_WITH_POLE } from "../src/brand/mark.ts";
 
-const PENNANT_ICON = "8,20 92,20 66,50 92,80 8,80";
-const POLE = { x: 16, y: 12, width: 7, height: 76 };
-const FLAG = "23,22 88,22 68,44 88,66 23,66";
+const ROUGE = BRAND.color.rouge;
+const ASPHALT = BRAND.color.asphalt;
+const CHALK = BRAND.color.chalk;
+
+const POLE = PENNANT_WITH_POLE.pole;
+const FLAG = PENNANT_WITH_POLE.flag;
 
 function iconSvg({ color = ROUGE, background = null, scale = 1, rounded = false }) {
   const inset = (100 * (1 - scale)) / 2;
@@ -115,17 +128,116 @@ function palavraEmCurvas(fonte, texto, x, y, tamanho, larguraAlvo) {
 }
 
 /**
- * Larguras iguais para as duas palavras.
+ * ENTRELETRA da assinatura em uma linha.
  *
- * O HTML resolve isso com flex; SVG não tem equivalente. Aqui o alinhamento
- * sai de `textLength` + `lengthAdjust="spacing"`: as duas linhas recebem a
- * MESMA largura alvo, e o renderizador distribui o espaço entre as letras.
- * "FLAMME" tem seis letras em peso leve e "ROUGE" cinco em peso pesado — sem
- * isto, as duas linhas terminam em pontos diferentes.
+ * 0,34 em, o mesmo valor do `.fr-assinatura__nome--linha` do site. Aqui NÃO
+ * há equalização de largura entre as palavras — e isso é decisão, não
+ * esquecimento: empilhadas elas formam um bloco e precisam casar; lado a lado
+ * o que dá ritmo é a entreletra corrida, e forçar larguras iguais abriria um
+ * buraco entre FLAMME e ROUGE.
  */
-const LARGURA_LETREIRO = 218;
+const TRACKING_LINHA = 0.34;
 
-function signatureSvg({ color = ROUGE, ink = ASPHALT, semMastro = false }) {
+/**
+ * Uma palavra em curvas com entreletra fixa, sem esticar para largura alvo.
+ *
+ * Devolve o caminho e onde o cursor parou, para a próxima palavra continuar
+ * de lá.
+ */
+function palavraCorrida(fonte, texto, x, y, tamanho, tracking) {
+  const escala = tamanho / fonte.unitsPerEm;
+  const glifos = fonte.glyphsForString(texto);
+  const extra = tamanho * tracking;
+
+  let cursor = x;
+  let d = "";
+
+  glifos.forEach((g) => {
+    d += g.path.scale(escala, -escala).translate(cursor, y).toSVG() + " ";
+    cursor += g.advanceWidth * escala + extra;
+  });
+
+  return { d: d.trim(), fim: cursor };
+}
+
+/**
+ * Assinatura em UMA LINHA: bandeirola + FLAMME ROUGE lado a lado.
+ *
+ * É a forma que o produto usa em cabeçalho, e a única que existe nas duas
+ * versões de mastro. A empilhada é sempre com mastro: ela é a assinatura de
+ * material de marca, onde há altura, e sem o mastro as duas linhas de texto
+ * ficariam grandes demais ao lado de uma bandeirola solta.
+ */
+function signatureInlineSvg({ color = ROUGE, ink = ASPHALT, semMastro = false }) {
+  const leve = carregarFonte(300);
+  const forte = carregarFonte(700);
+
+  const TAMANHO = 34;
+  const BASE = 46;
+  const INICIO = semMastro ? 78 : 92;
+
+  const flamme = palavraCorrida(leve, "FLAMME", INICIO, BASE, TAMANHO, TRACKING_LINHA);
+  // Um espaço de palavra, e não só a entreletra: sem ele "FLAMMEROUGE" vira
+  // uma palavra só à distância, que é onde o letreiro é lido.
+  const rouge = palavraCorrida(
+    forte,
+    "ROUGE",
+    flamme.fim + TAMANHO * 0.22,
+    BASE,
+    TAMANHO,
+    TRACKING_LINHA,
+  );
+
+  // A largura acompanha o conteúdo: o último glifo não leva entreletra à
+  // direita, então o `fim` do cursor sobra um tracking.
+  const largura = Math.ceil(rouge.fim - TAMANHO * TRACKING_LINHA + 8);
+
+  const mastro = semMastro
+    ? ""
+    : `<rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largura} 60" width="${largura}" height="60">
+  <g transform="translate(${semMastro ? -2 : 4} 6) scale(0.48)">
+    ${mastro}
+    <polygon points="${FLAG}" fill="${color}"/>
+  </g>
+  <path d="${flamme.d}" fill="${ink}"/>
+  <path d="${rouge.d}" fill="${color}"/>
+</svg>`;
+}
+
+/**
+ * LARGURAS IGUAIS, E A LARGURA SAI DA PALAVRA MAIS LARGA.
+ *
+ * As duas palavras precisam ocupar exatamente a mesma largura para formarem um
+ * bloco — "FLAMME" tem seis letras em peso leve e "ROUGE" cinco em peso
+ * pesado, e sem isso as linhas terminam em pontos diferentes.
+ *
+ * O QUE ESTAVA ERRADO: a largura era 218, um número cravado à mão. O site não
+ * faz isso — o `Assinatura` distribui as letras com `space-between` numa
+ * coluna flex, então a coluna assume a largura da palavra MAIS LARGA e a outra
+ * estica até bater. Cravar 218 abria a entreletra 40% além do que a marca é, e
+ * o arquivo de marca ficava mais solto que o produto.
+ *
+ * Agora a conta é a mesma do site: cada palavra com a entreletra base, e o
+ * alvo é a maior das duas. O número deixou de existir.
+ */
+const TRACKING_LETREIRO = 0.34;
+
+function larguraDoLetreiro(fontes, palavras, tamanho) {
+  return Math.max(
+    ...palavras.map((t, i) => {
+      const fonte = fontes[i];
+      const escala = tamanho / fonte.unitsPerEm;
+      const natural = fonte
+        .glyphsForString(t)
+        .reduce((a, g) => a + g.advanceWidth * escala, 0);
+      return natural + tamanho * TRACKING_LETREIRO * (t.length - 1);
+    }),
+  );
+}
+
+function signatureSvg({ color = ROUGE, ink = ASPHALT }) {
   // Assinatura horizontal: bandeirola com mastro + nome empilhado.
   // Duas palavras longas lado a lado empurrariam o símbolo para fora da caixa
   // e o conjunto deixaria de caber num cabeçalho.
@@ -136,13 +248,17 @@ function signatureSvg({ color = ROUGE, ink = ASPHALT, semMastro = false }) {
   const leve = carregarFonte(300);
   const forte = carregarFonte(700);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 110" width="360" height="110">
+  const largura = larguraDoLetreiro([leve, forte], ["FLAMME", "ROUGE"], 36);
+  // A caixa acompanha o conteúdo em vez de sobrar à direita.
+  const caixa = Math.ceil(118 + largura + 8);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${caixa} 110" width="${caixa}" height="110">
   <g transform="translate(4 5) scale(0.9)">
-    ${semMastro ? "" : `<rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>`}
+    <rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>
     <polygon points="${FLAG}" fill="${color}"/>
   </g>
-  <path d="${palavraEmCurvas(leve, "FLAMME", 118, 46, 36, LARGURA_LETREIRO)}" fill="${ink}"/>
-  <path d="${palavraEmCurvas(forte, "ROUGE", 118, 80, 36, LARGURA_LETREIRO)}" fill="${color}"/>
+  <path d="${palavraEmCurvas(leve, "FLAMME", 118, 46, 36, largura)}" fill="${ink}"/>
+  <path d="${palavraEmCurvas(forte, "ROUGE", 118, 80, 36, largura)}" fill="${color}"/>
 </svg>`;
 }
 
@@ -174,20 +290,25 @@ async function main() {
   put(join(BRAND_DIR, "signature-dark.svg"), signatureSvg({ ink: CHALK }));
 
   /*
-   * A ASSINATURA SEM MASTRO existe porque o produto a usa.
+   * A ASSINATURA EM LINHA é a que tem as duas versões de mastro.
    *
-   * O site assina com mastro — é material de marca, tem espaço, e o mastro é
-   * o que faz a bandeirola parecer pendurada. O painel da direção assina sem
-   * ele: ali o letreiro vive num cabeçalho de altura fixa, onde o mastro
-   * ocupa altura sem acrescentar reconhecimento, e some visualmente no
-   * tamanho em que aquele cabeçalho roda.
-   *
-   * São a mesma marca em dois contextos, e não duas marcas.
+   * Com mastro no site, sem mastro no painel da direção e no app do motorista:
+   * num cabeçalho de altura fixa o mastro gasta altura sem acrescentar
+   * reconhecimento, e some visualmente no tamanho em que aquele cabeçalho
+   * roda. A empilhada não entra nessa escolha — ela é sempre com mastro.
    */
-  put(join(BRAND_DIR, "signature-no-pole.svg"), signatureSvg({ semMastro: true }));
+  put(join(BRAND_DIR, "signature-inline.svg"), signatureInlineSvg({}));
   put(
-    join(BRAND_DIR, "signature-no-pole-dark.svg"),
-    signatureSvg({ ink: CHALK, semMastro: true }),
+    join(BRAND_DIR, "signature-inline-dark.svg"),
+    signatureInlineSvg({ ink: CHALK }),
+  );
+  put(
+    join(BRAND_DIR, "signature-inline-no-pole.svg"),
+    signatureInlineSvg({ semMastro: true }),
+  );
+  put(
+    join(BRAND_DIR, "signature-inline-no-pole-dark.svg"),
+    signatureInlineSvg({ ink: CHALK, semMastro: true }),
   );
 
   // --- Rasterizações -------------------------------------------------------

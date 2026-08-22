@@ -8,25 +8,21 @@
  * vez que alguém ajusta um vértice.
  *
  * ---------------------------------------------------------------------------
- * ARQUITETURA DE MARCA — endossada
- *
- *   Flamme Rouge, by TRAKR
+ * ARQUITETURA DE MARCA — própria
  *
  * A marca é própria porque o comprador é próprio: quem contrata um sistema de
- * direção de prova é organização e federação, não o atleta que usa o TRAKR nem
- * o treinador que usa o TRAKR+. São públicos vizinhos, com ciclos de venda
- * diferentes. Numa venda de sistema de SEGURANÇA, um nome que veio do mundo
- * fitness de consumidor é objeção; um nome que o comissariado reconhece é
- * credencial.
+ * direção de prova é organização e federação, não atleta nem treinador. Numa
+ * venda de sistema de SEGURANÇA, um nome vindo do mundo fitness de consumidor
+ * é objeção; um nome que o comissariado reconhece é credencial.
  *
- * O endosso existe porque a vizinhança é real: o diretor de prova conhece o
- * TRAKR pelos treinadores e atletas que passam pelos eventos dele. "by TRAKR"
- * carrega essa confiança sem diluir a marca própria.
+ * HOUVE UM ENDOSSO, "Flamme Rouge, by TRAKR", e ele saiu. Um diretor de prova
+ * lendo o nome de um produto que ainda não existe publicamente não ganha
+ * confiança — ganha a dúvida de estar comprando o subproduto de outra coisa.
+ * Se voltar, volta quando houver o que ele endosse.
  *
  * Formas do nome:
  *   Completo .... "Flamme Rouge"  — login, impressos, domínio, contrato
  *   Curto ....... "Flamme"        — cabeçalho estreito, ícone, rádio
- *   Endossado ... "Flamme Rouge, by TRAKR" — rodapé, comercial, primeiro contato
  *
  * A forma curta é oficial, não uma abreviação que aconteceu sozinha. Doze
  * caracteres em duas palavras seriam encurtados de qualquer jeito na prática;
@@ -55,8 +51,6 @@
 export const BRAND = {
   fullName: "Flamme Rouge",
   shortName: "Flamme",
-  endorsement: "by TRAKR",
-  endorsedName: "Flamme Rouge, by TRAKR",
 
   tagline: {
     "pt-BR": "Direção de prova ao vivo",
@@ -73,8 +67,6 @@ export const BRAND = {
     rougeDeep: "#8F1A12",
     asphalt: "#12171C",
     chalk: "#ECEFF1",
-    /** Lime do TRAKR — usado só no endosso, nunca sozinho. */
-    trakrLime: "#A6E51A",
   },
 } as const;
 
