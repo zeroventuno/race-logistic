@@ -125,7 +125,7 @@ function palavraEmCurvas(fonte, texto, x, y, tamanho, larguraAlvo) {
  */
 const LARGURA_LETREIRO = 218;
 
-function signatureSvg({ color = ROUGE, ink = ASPHALT }) {
+function signatureSvg({ color = ROUGE, ink = ASPHALT, semMastro = false }) {
   // Assinatura horizontal: bandeirola com mastro + nome empilhado.
   // Duas palavras longas lado a lado empurrariam o símbolo para fora da caixa
   // e o conjunto deixaria de caber num cabeçalho.
@@ -138,7 +138,7 @@ function signatureSvg({ color = ROUGE, ink = ASPHALT }) {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 110" width="360" height="110">
   <g transform="translate(4 5) scale(0.9)">
-    <rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>
+    ${semMastro ? "" : `<rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>`}
     <polygon points="${FLAG}" fill="${color}"/>
   </g>
   <path d="${palavraEmCurvas(leve, "FLAMME", 118, 46, 36, LARGURA_LETREIRO)}" fill="${ink}"/>
@@ -172,6 +172,23 @@ async function main() {
 
   put(join(BRAND_DIR, "signature.svg"), signatureSvg({}));
   put(join(BRAND_DIR, "signature-dark.svg"), signatureSvg({ ink: CHALK }));
+
+  /*
+   * A ASSINATURA SEM MASTRO existe porque o produto a usa.
+   *
+   * O site assina com mastro — é material de marca, tem espaço, e o mastro é
+   * o que faz a bandeirola parecer pendurada. O painel da direção assina sem
+   * ele: ali o letreiro vive num cabeçalho de altura fixa, onde o mastro
+   * ocupa altura sem acrescentar reconhecimento, e some visualmente no
+   * tamanho em que aquele cabeçalho roda.
+   *
+   * São a mesma marca em dois contextos, e não duas marcas.
+   */
+  put(join(BRAND_DIR, "signature-no-pole.svg"), signatureSvg({ semMastro: true }));
+  put(
+    join(BRAND_DIR, "signature-no-pole-dark.svg"),
+    signatureSvg({ ink: CHALK, semMastro: true }),
+  );
 
   // --- Rasterizações -------------------------------------------------------
 
