@@ -43,6 +43,17 @@ export interface JanelaGapProps {
   race: LiveRaceView;
   /** Relógio do SERVIDOR, para a idade do dado. */
   nowMs: number;
+  /**
+   * Versão de uma linha, para quando o cartão está grudado no alto de uma tela
+   * estreita e rolada.
+   *
+   * Sobrevivem o NÚMERO e a DISTÂNCIA PARA O ALVO, porque juntos eles são a
+   * decisão inteira: quanto tempo separa os dois carros, e se isso está dentro
+   * do que a autoridade autorizou. O resto do cartão — distância pela estrada,
+   * veredito escrito, ressalvas — é o porquê, e o porquê espera você rolar de
+   * volta para cima.
+   */
+  compacta?: boolean;
 }
 
 const BAND_TOM: Record<GapBand, string> = {
@@ -53,7 +64,7 @@ const BAND_TOM: Record<GapBand, string> = {
   unknown: "border-border bg-surface-2 text-ink-faint",
 };
 
-export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
+export function JanelaGap({ gap, race, nowMs, compacta = false }: JanelaGapProps) {
   const t = useT();
   const fmt = useFormat();
 
@@ -64,6 +75,45 @@ export function JanelaGap({ gap, race, nowMs }: JanelaGapProps) {
     idade === null || idadeFechamento === null
       ? (idade ?? idadeFechamento)
       : Math.max(idade, idadeFechamento);
+
+  if (compacta) {
+    // `bg-surface-1` sólido e não translúcido: esta faixa fica por cima do
+    // conteúdo que rola por baixo, e vidro aqui deixaria dois textos
+    // sobrepostos justamente no número que precisa ser lido de relance.
+    return (
+      <section
+        aria-label={t("gap.title")}
+        className={`flex items-center gap-3 border bg-surface-1 px-3 py-2 ${
+          confiavel ? "border-border" : "border-warn/50"
+        }`}
+      >
+        <span className="shrink-0 font-mono text-[0.6rem] uppercase tracking-[0.16em] text-ink-faint">
+          {t("gap.short")}
+        </span>
+
+        <span className="medido tnum shrink-0 whitespace-nowrap text-2xl leading-none text-ink">
+          {fmt.duration(gap.gapSeconds)}
+        </span>
+
+        {gap.deltaToTargetSeconds !== null ? (
+          <span
+            className={`tnum shrink-0 whitespace-nowrap text-sm ${
+              Math.abs(gap.deltaToTargetSeconds) < 60
+                ? "text-ink-faint"
+                : "text-warn"
+            }`}
+          >
+            {gap.deltaToTargetSeconds >= 0 ? "+" : "−"}
+            {fmt.duration(Math.abs(gap.deltaToTargetSeconds))}
+          </span>
+        ) : null}
+
+        <span className="ml-auto shrink-0">
+          <SeloMetodo gap={gap} />
+        </span>
+      </section>
+    );
+  }
 
   return (
     <section

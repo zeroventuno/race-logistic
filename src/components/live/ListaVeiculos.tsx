@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { VehicleIcon } from "@/components/icons/vehicle";
 import { useFormat, useT } from "@/lib/i18n/client";
@@ -59,6 +59,20 @@ export function ListaVeiculos({
 }: ListaVeiculosProps) {
   const t = useT();
 
+  /*
+   * FECHADA POR PADRÃO — e só no estreito.
+   *
+   * Uma dúzia de veículos é o normal numa prova, e empilhada num celular a
+   * lista empurra o mapa para longe do polegar. Fechada, ela vira uma linha
+   * com a contagem, e quem quiser o detalhe abre.
+   *
+   * Na tela larga o estado é ignorado: `hidden lg:block` devolve o conteúdo
+   * acima de 64rem independentemente do que este `useState` diga. Assim não há
+   * `matchMedia` no cliente, nem risco de o servidor desenhar um estado e o
+   * navegador outro na hidratação.
+   */
+  const [aberta, setAberta] = useState(false);
+
   const { semSinal, emOperacao } = useMemo(
     () => groupVehicles(vehicles, sort, nowMs),
     [vehicles, sort, nowMs],
@@ -74,10 +88,26 @@ export function ListaVeiculos({
           <h2 className="font-mono text-sm font-semibold uppercase tracking-[0.14em] text-ink">
             {t("map.vehicles")}
           </h2>
-          <span className="tnum text-xs text-ink-muted">{vehicles.length}</span>
+          <span className="flex items-center gap-2">
+            <span className="tnum text-xs text-ink-muted">{vehicles.length}</span>
+
+            {/* O nome acessível é "Veículos" e o estado vem de `aria-expanded`,
+                que o leitor de tela anuncia como recolhido ou expandido. Por
+                isso o botão não precisa de texto próprio nem de chave nova nos
+                seis dicionários para dizer "mostrar" e "ocultar". */}
+            <button
+              type="button"
+              onClick={() => setAberta((v) => !v)}
+              aria-label={t("map.vehicles")}
+              aria-expanded={aberta}
+              className="flex h-7 w-7 items-center justify-center border border-border text-ink-muted transition hover:border-border-strong hover:text-ink lg:hidden"
+            >
+              <span aria-hidden>{aberta ? "▴" : "▾"}</span>
+            </button>
+          </span>
         </div>
 
-        <div className="mt-2 flex gap-1">
+        <div className={"mt-2 gap-1 " + (aberta ? "flex" : "hidden lg:flex")}>
           {ORDENS.map((o) => (
             <button
               key={o.valor}
@@ -96,7 +126,11 @@ export function ListaVeiculos({
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        className={
+          "min-h-0 flex-1 overflow-y-auto " + (aberta ? "" : "hidden lg:block")
+        }
+      >
         {semSinal.length > 0 ? (
           <>
             <p className="font-mono sticky top-0 z-10 bg-critical/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-critical backdrop-blur">

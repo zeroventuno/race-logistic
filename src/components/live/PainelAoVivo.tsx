@@ -84,6 +84,38 @@ export function PainelAoVivo({
   );
   const [enquadrarToken, setEnquadrarToken] = useState(0);
   const [alturaBarra, setAlturaBarra] = useState(0);
+
+  /*
+   * A JANELA ENCOLHE QUANDO A TELA ROLA.
+   *
+   * Um sentinela de um pixel no topo da área rolável. Enquanto ele está
+   * visível, a pessoa está no começo e o cartão aparece inteiro; quando sai de
+   * vista, ela desceu para ver mapa ou veículos, e o cartão vira uma linha —
+   * número e distância para o alvo — grudada no alto.
+   *
+   * `IntersectionObserver` e não ouvinte de rolagem: o ouvinte dispara a cada
+   * quadro e obriga a ler posição de rolagem no meio do desenho, que é o
+   * caminho conhecido para engasgar a rolagem num aparelho modesto. O
+   * observador avisa só na transição.
+   *
+   * NA TELA LARGA ISTO NUNCA LIGA: lá o `main` não rola — é `overflow-hidden` —
+   * então o sentinela nunca sai de vista e `compacta` fica falso sozinho. Sem
+   * media query no JavaScript, e sem duas verdades para manter em sincronia.
+   */
+  const sentinela = useRef<HTMLDivElement>(null);
+  const [compacta, setCompacta] = useState(false);
+
+  useEffect(() => {
+    const alvo = sentinela.current;
+    if (!alvo) return;
+
+    const observador = new IntersectionObserver(
+      ([entrada]) => setCompacta(!entrada?.isIntersecting),
+      { threshold: 0 },
+    );
+    observador.observe(alvo);
+    return () => observador.disconnect();
+  }, []);
   const [semSom, setSemSom] = useState(false);
 
   const tokenRef = useRef(0);
@@ -194,6 +226,10 @@ export function PainelAoVivo({
         className="relative flex w-full flex-1 flex-col overflow-y-auto bg-surface-0 lg:block lg:min-h-[36rem] lg:overflow-hidden"
         style={{ paddingTop: alturaBarra > 0 ? alturaBarra : undefined }}
       >
+        {/* Um pixel invisível no alto da pilha. Só existe para o observador ter
+            o que observar — ver a nota em `compacta`. */}
+        <div ref={sentinela} aria-hidden className="order-1 h-px w-full shrink-0" />
+
         {/* O mapa por baixo de tudo. Sem percurso não há mapa — e não há
             quilometragem nem janela —, então o lugar dele recebe a explicação
             em vez de um retângulo cinza. */}
@@ -259,7 +295,23 @@ export function PainelAoVivo({
         </div>
 
         {/* --- Coluna esquerda: o que decide ------------------------------ */}
-        <div className="coluna-flutuante order-2 w-full px-3 pb-3 lg:left-3 lg:w-[22rem] lg:px-0 lg:pb-0 xl:left-5">
+        {/* GRUDA NO ALTO enquanto o resto rola, e só no estreito: `lg:static`
+            devolve a coluna flutuante na tela larga, onde nada rola e portanto
+            nada precisa grudar.
+
+            O fundo sólido entra apenas quando compacta — expandida ela está no
+            topo, sem nada por baixo para vazar. */}
+        <div
+          className={`coluna-flutuante order-2 w-full px-3 pb-3 lg:static lg:left-3 lg:w-[22rem] lg:px-0 lg:pb-0 xl:left-5 ${
+            compacta
+              ? "sticky top-0 z-30 bg-surface-0 pt-2 lg:bg-transparent lg:pt-0"
+              : ""
+          }`}
+        >
+          {/* O controle da prova sai do caminho quando a faixa encolhe: ele é
+              preparação e encerramento, não leitura de corrida em movimento, e
+              grudado no alto comeria a altura que o mapa precisa. */}
+          <div className={compacta ? "hidden lg:block" : ""}>
           <div className="vidro p-4">
             <ControleProva
               raceId={raceId}
@@ -274,7 +326,14 @@ export function PainelAoVivo({
             />
           </div>
 
-          <JanelaGap gap={snapshot.gap} race={snapshot.race} nowMs={nowMs} />
+          </div>
+
+          <JanelaGap
+            gap={snapshot.gap}
+            race={snapshot.race}
+            nowMs={nowMs}
+            compacta={compacta}
+          />
         </div>
 
         {/* --- Coluna direita: o que exige ação, e o detalhe --------------- */}
