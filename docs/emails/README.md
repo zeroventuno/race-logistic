@@ -13,6 +13,9 @@ recriado.
 | `confirm-signup.html` | Confirm signup | `Confirm your Flamme Rouge account` |
 | `reset-password.html` | Reset password | `Reset your Flamme Rouge password` |
 
+E, fora do Supabase, `assinatura-pessoal.html` — a assinatura para colar no
+cliente de e-mail, derivada da assinatura Ventuno. Ver o fim deste arquivo.
+
 ## O que NÃO existe, e por quê
 
 O Supabase oferece seis templates. Quatro estão sem uso porque o produto não
@@ -75,3 +78,47 @@ O remetente ainda é o genérico do Supabase, e o serviço de e-mail embutido
 deles tem **limite de poucos envios por hora** — é para desenvolvimento, não
 para produção. Configurar SMTP próprio (Resend) em *Authentication → Emails →
 SMTP Settings* resolve o remetente e o limite de uma vez.
+
+## A assinatura pessoal
+
+`assinatura-pessoal.html`, para colar em *Configurações → Assinatura* do
+cliente de e-mail. **Cole como HTML, não como texto**, senão vira código na
+tela de quem recebe.
+
+Ela repete a estrutura da assinatura Ventuno de propósito — marca à esquerda,
+régua vertical, dados à direita. As duas são do mesmo remetente, e a
+familiaridade entre elas é o que faz as duas parecerem sérias. O que muda é só
+o que é identidade: a bandeirola no lugar do letreiro Ventuno, o rouge no lugar
+do roxo, e o descritivo do produto.
+
+**O vermelho pode aparecer aqui.** Dentro do produto ele significa uma coisa só
+— alguém precisa de socorro —, mas assinatura é material de marca, não
+superfície de operação. Ocupa o mesmo lugar que o roxo ocupa na Ventuno.
+
+### O descritivo, nos seis idiomas
+
+A linha sob o nome sai de `BRAND.tagline` em `src/brand/mark.ts`. Troque
+conforme para quem você responde:
+
+| | |
+|---|---|
+| pt-BR | `Flamme Rouge · direção de prova ao vivo` |
+| **it** | `Flamme Rouge · direzione gara in tempo reale` ← no arquivo |
+| en | `Flamme Rouge · live race control` |
+| fr | `Flamme Rouge · direction de course en direct` |
+| es | `Flamme Rouge · dirección de carrera en directo` |
+| de | `Flamme Rouge · rennleitung in echtzeit` |
+
+Deixei o italiano porque é onde estão os primeiros organizadores e é o registro
+da sua assinatura Ventuno. Se a maioria das respostas for para fora, troque
+pelo inglês.
+
+### A marca é imagem, o nome é texto
+
+Cliente de e-mail bloqueia imagem por padrão. Com o nome em texto a assinatura
+chega inteira mesmo assim, e a bandeirola é o acréscimo que aparece quando as
+imagens carregam — mesmo raciocínio do e-mail de confirmação.
+
+A imagem é `/brand/email-mark.png`, servida do domínio de produção. Ela é a
+**bandeirola com mastro**, que o manual reserva para material de marca, e a 46
+px de altura fica bem acima do mínimo de 24 px que a versão com mastro pede.
