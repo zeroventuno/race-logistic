@@ -401,6 +401,35 @@ body {
 /* Coluna flutuante: rola sozinha, nunca empurra o mapa.
    `align-content: start` para os cartões não esticarem quando sobra espaço, e
    `max-height` descontando a faixa de baixo, para nunca passar por cima dela. */
+/*
+ * AS COLUNAS SÓ FLUTUAM QUANDO CABEM.
+ *
+ * Elas nasceram absolutas sobre o mapa, com 22rem e 21rem de largura fixa —
+ * 688px somados. Num celular de 390px cada uma sozinha cobria a tela, e como
+ * as duas eram absolutas elas se empilhavam uma sobre a outra: a tela não
+ * ficava apertada, ficava ilegível.
+ *
+ * Abaixo de 64rem elas voltam para o fluxo do documento e viram blocos
+ * empilhados. Não é "versão móvel": é a mesma tela num tamanho onde sobrepor
+ * não é opção. Um diretor com o notebook morto e só o celular na mão precisa
+ * ler, não admirar o layout.
+ *
+ * O ponto de corte é 64rem porque é onde as duas colunas mais uma faixa de
+ * mapa entre elas ainda respiram. Abaixo disso o mapa vira uma fresta.
+ */
+.coluna-flutuante {
+  position: static;
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  /* LARGURA NÃO MORA AQUI. As duas colunas têm larguras diferentes (22rem e
+     21rem) e quem as define é cada uma, no componente. Um `width` nesta classe
+     vencia o utilitário do Tailwind por ordem na folha, e as colunas iam para
+     1440px na tela grande — o painel principal quebrava para consertar o
+     celular. */
+}
+
+@media (min-width: 64rem) {
 .coluna-flutuante {
   position: absolute;
   /* Abaixo da faixa de estado, que ocupa o alto e é onde a coluna direita
@@ -420,6 +449,7 @@ body {
   padding-bottom: 0.5rem;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
+}
 }
 
 .coluna-flutuante::-webkit-scrollbar {
@@ -508,7 +538,12 @@ body {
    uma dúzia de posições é o normal, não o extremo. A da esquerda tem
    identidade e janela, altura praticamente fixa, então é ela que cede o topo
    para a faixa de estado. */
-.coluna-flutuante--alta {
-  top: 0.75rem;
-  max-height: calc(100% - 8.5rem);
+/* Só vale quando ela flutua: empilhada, "começar mais alto" não quer dizer
+   nada, e o teto de altura viraria uma segunda barra de rolagem dentro da
+   página que já rola. */
+@media (min-width: 64rem) {
+  .coluna-flutuante--alta {
+    top: 0.75rem;
+    max-height: calc(100% - 8.5rem);
+  }
 }

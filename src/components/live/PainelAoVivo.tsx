@@ -174,14 +174,30 @@ export function PainelAoVivo({
         onAltura={setAlturaBarra}
       />
 
+      {/*
+        NO ESTREITO ISTO É UMA PILHA; NO LARGO, UM PALCO.
+
+        Acima de 64rem tudo continua como era: o mapa em tela cheia e os
+        cartões flutuando por cima. Abaixo, vira coluna que rola — porque com
+        390px de largura não existe "por cima" que caiba, e a tela precisa ser
+        lida por um diretor que ficou só com o celular.
+
+        A ORDEM NO CELULAR NÃO É A DA TELA GRANDE. O alerta crítico já está
+        resolvido fora daqui, na barra fixa que fica acima de tudo, então o que
+        sobra é ordenado por utilidade: primeiro a janela e o controle da
+        prova, depois alertas e veículos, e o MAPA POR ÚLTIMO. Cento e dez
+        quilômetros de percurso num celular não se leem — ele é o elemento que
+        menos informa e mais ocupa, e deixá-lo no topo empurraria todo o resto
+        para fora da primeira tela.
+      */}
       <main
-        className="relative min-h-[36rem] w-full flex-1 overflow-hidden bg-surface-0"
+        className="relative flex w-full flex-1 flex-col overflow-y-auto bg-surface-0 lg:block lg:min-h-[36rem] lg:overflow-hidden"
         style={{ paddingTop: alturaBarra > 0 ? alturaBarra : undefined }}
       >
         {/* O mapa por baixo de tudo. Sem percurso não há mapa — e não há
             quilometragem nem janela —, então o lugar dele recebe a explicação
             em vez de um retângulo cinza. */}
-        <div className="absolute inset-0">
+        <div className="relative order-4 h-[55vh] min-h-[16rem] w-full shrink-0 lg:absolute lg:inset-0 lg:order-none lg:h-auto lg:min-h-0">
           {renderPoints.length >= 2 ? (
             <MapaAoVivo
               basemap={snapshot.race.basemap}
@@ -208,7 +224,7 @@ export function PainelAoVivo({
             veículos estão. Não intercepta clique. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[1]"
+          className="pointer-events-none absolute inset-0 z-[1] hidden lg:block"
           style={{
             background:
               "radial-gradient(120% 90% at 50% 50%, transparent 34%, var(--color-vignette) 100%)",
@@ -221,7 +237,7 @@ export function PainelAoVivo({
             tela inteira existe para tirar. O gradiente escurece o suficiente
             para o texto se sustentar e deixa a estrada aparecer por baixo. */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-start px-3 py-3 sm:px-5"
+          className="pointer-events-none order-1 flex justify-start px-3 py-3 sm:px-5 lg:absolute lg:inset-x-0 lg:top-0 lg:z-20"
           style={{
             background:
               "linear-gradient(180deg, var(--color-vignette), transparent)",
@@ -243,7 +259,7 @@ export function PainelAoVivo({
         </div>
 
         {/* --- Coluna esquerda: o que decide ------------------------------ */}
-        <div className="coluna-flutuante left-3 w-[22rem] sm:left-5">
+        <div className="coluna-flutuante order-2 w-full px-3 pb-3 lg:left-3 lg:w-[22rem] lg:px-0 lg:pb-0 xl:left-5">
           <div className="vidro p-4">
             <ControleProva
               raceId={raceId}
@@ -262,7 +278,7 @@ export function PainelAoVivo({
         </div>
 
         {/* --- Coluna direita: o que exige ação, e o detalhe --------------- */}
-        <div className="coluna-flutuante coluna-flutuante--alta right-3 w-[21rem] sm:right-5">
+        <div className="coluna-flutuante coluna-flutuante--alta order-3 w-full px-3 pb-3 lg:right-3 lg:w-[21rem] lg:px-0 lg:pb-0 xl:right-5">
           <PainelAlertas
             alerts={snapshot.alerts}
             vehicles={snapshot.vehicles}
@@ -285,7 +301,7 @@ export function PainelAoVivo({
         </div>
 
         {/* --- Faixa de baixo: referência, nunca decisão ------------------- */}
-        <div className="pointer-events-none absolute inset-x-3 bottom-[5.5rem] z-20 flex flex-wrap items-end justify-between gap-2 sm:inset-x-5">
+        <div className="pointer-events-none order-5 flex flex-wrap items-end justify-between gap-2 px-3 pb-4 pt-3 lg:absolute lg:inset-x-3 lg:bottom-[5.5rem] lg:z-20 lg:px-0 lg:pb-0 lg:pt-0 xl:inset-x-5">
           <p className="vidro pointer-events-auto px-3 py-2 font-mono text-[0.6rem] uppercase leading-relaxed tracking-[0.14em] text-ink-faint">
             {t("live.clockNote", { timezone: snapshot.race.timezone })}
             {alertasPendentes > 0 ? (
