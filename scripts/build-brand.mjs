@@ -9,10 +9,11 @@
  * onde a marca é definida.
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import * as fontkit from "fontkit";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -22,7 +23,6 @@ const BRAND_DIR = join(PUBLIC, "brand");
 const ROUGE = "#D92D20";
 const ASPHALT = "#12171C";
 const CHALK = "#ECEFF1";
-const TRAKR_LIME = "#A6E51A";
 
 const PENNANT_ICON = "8,20 92,20 66,50 92,80 8,80";
 const POLE = { x: 16, y: 12, width: 7, height: 76 };
@@ -39,19 +39,80 @@ function iconSvg({ color = ROUGE, background = null, scale = 1, rounded = false 
 }
 
 /**
- * Pilha de fontes das assinaturas.
+ * O LETREIRO É CURVA, NÃO TEXTO.
  *
- * ADVERTÊNCIA que vale registrar: um `<text>` em SVG só desenha na fonte
- * pedida se ela existir no contexto que renderiza. Dentro da aplicação a
- * Barlow está carregada e sai correta. Num arquivo SVG aberto solto, ou
- * colocado num editor de terceiros, ele cai para a reserva.
+ * Um `<text>` em SVG só desenha na fonte pedida se ela existir no contexto que
+ * renderiza. Dentro da aplicação a Barlow está carregada e sai correta — mas o
+ * arquivo aberto solto, colocado num editor de terceiros, impresso, ou
+ * rasterizado por qualquer ferramenta que não tenha a fonte, cai para a
+ * reserva. Foi o que aconteceu: `ROUGE` saía COM SERIFA, e o manual da marca
+ * mostrava um logotipo que não é o logotipo.
  *
- * Para IMPRESSÃO e para material que sai da aplicação, o texto precisa ser
- * convertido em contorno. Está anotado como pendência no manual — converter
- * exige um passo de vetorização que não vale automatizar antes de a fonte
- * estar definitiva.
+ * Duas tentativas antes desta, as duas verificadas olhando o resultado:
+ * rasterizar com o `sharp` não usa a fonte, e embuti-la no próprio SVG como
+ * `@font-face` com data URI também não — o librsvg ignora.
+ *
+ * Agora as letras viram `<path>` a partir do arquivo da fonte, que é
+ * dependência declarada (`@fontsource/barlow-condensed`). O SVG passa a ser
+ * autocontido: mesma forma em qualquer máquina, com ou sem fonte instalada,
+ * na tela e no papel. É o que se espera de um arquivo de logotipo.
  */
-const FONT = "Barlow Condensed,Barlow,Arial Narrow,sans-serif";
+const ARQUIVOS_DA_FONTE = join(
+  ROOT,
+  "node_modules/@fontsource/barlow-condensed/files",
+);
+
+/**
+ * FONTKIT, E NÃO OPENTYPE.JS — e a escolha custou uma investigação.
+ *
+ * O opentype.js lê esta fonte e devolve avanços corretos, mas `getPath`
+ * produzia `NaN` dentro do caminho de alguns glifos, e OS GLIFOS AFETADOS
+ * MUDAVAM ENTRE EXECUÇÕES: numa rodada M, Q e S; noutra M, V e 3. O mesmo
+ * glifo, chamado isolado com os mesmos argumentos, saía perfeito. Estado
+ * compartilhado entre chamadas, portanto — e um gerador de logotipo não
+ * determinístico é pior que nenhum.
+ *
+ * O fontkit converte os 26 glifos dos dois pesos sem uma única falha, e três
+ * execuções seguidas dão byte idêntico.
+ */
+function carregarFonte(peso) {
+  return fontkit.create(
+    readFileSync(
+      join(ARQUIVOS_DA_FONTE, `barlow-condensed-latin-${peso}-normal.woff`),
+    ),
+  );
+}
+
+/**
+ * Uma palavra em curvas, esticada até a largura alvo.
+ *
+ * Reproduz o que `textLength` + `lengthAdjust="spacing"` faziam no `<text>`: a
+ * folga vai para os ESPAÇOS ENTRE AS LETRAS, e não para dentro delas. Esticar o
+ * glifo deformaria a face — que é justamente o que a entreletra existe para
+ * evitar.
+ *
+ * A escala inverte o Y porque fonte é desenhada de baixo para cima e SVG de
+ * cima para baixo; sem isso o letreiro sai espelhado na vertical.
+ */
+function palavraEmCurvas(fonte, texto, x, y, tamanho, larguraAlvo) {
+  const escala = tamanho / fonte.unitsPerEm;
+  const glifos = fonte.glyphsForString(texto);
+
+  const avancos = glifos.map((g) => g.advanceWidth * escala);
+  const natural = avancos.reduce((a, b) => a + b, 0);
+  const vaos = glifos.length - 1;
+  const extraPorVao = vaos > 0 ? (larguraAlvo - natural) / vaos : 0;
+
+  let cursor = x;
+  let d = "";
+
+  glifos.forEach((g, i) => {
+    d += g.path.scale(escala, -escala).translate(cursor, y).toSVG() + " ";
+    cursor += avancos[i] + extraPorVao;
+  });
+
+  return d.trim();
+}
 
 /**
  * Larguras iguais para as duas palavras.
@@ -64,29 +125,24 @@ const FONT = "Barlow Condensed,Barlow,Arial Narrow,sans-serif";
  */
 const LARGURA_LETREIRO = 218;
 
-function signatureSvg({ color = ROUGE, ink = ASPHALT, endorsed = false }) {
+function signatureSvg({ color = ROUGE, ink = ASPHALT }) {
   // Assinatura horizontal: bandeirola com mastro + nome empilhado.
   // Duas palavras longas lado a lado empurrariam o símbolo para fora da caixa
   // e o conjunto deixaria de caber num cabeçalho.
   //
   // FLAMME em 300 e ROUGE em 700: o contraste de peso dá ritmo ao
   // empilhamento e faz a palavra vermelha carregar peso visual junto com a
-  // cor, em vez de cor e peso competirem. A entreletra do ROUGE é menor
-  // porque o peso maior já ocupa mais largura — igualar os dois trackings
-  // deixaria as palavras desalinhadas na vertical.
-  const endorsementBlock = endorsed
-    ? `<text x="118" y="94" font-family="${FONT}" font-size="9" font-weight="500" letter-spacing="1.6" fill="${ink}" opacity="0.55">BY </text>
-       <text x="137" y="94" font-family="${FONT}" font-size="9" font-weight="700" letter-spacing="1.6" fill="${TRAKR_LIME}">TRAKR</text>`
-    : "";
+  // cor, em vez de cor e peso competirem.
+  const leve = carregarFonte(300);
+  const forte = carregarFonte(700);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 110" width="360" height="110">
   <g transform="translate(4 5) scale(0.9)">
     <rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>
     <polygon points="${FLAG}" fill="${color}"/>
   </g>
-  <text x="118" y="46" textLength="${LARGURA_LETREIRO}" lengthAdjust="spacing" font-family="${FONT}" font-size="36" font-weight="300" fill="${ink}">FLAMME</text>
-  <text x="118" y="80" textLength="${LARGURA_LETREIRO}" lengthAdjust="spacing" font-family="${FONT}" font-size="36" font-weight="700" fill="${color}">ROUGE</text>
-  ${endorsementBlock}
+  <path d="${palavraEmCurvas(leve, "FLAMME", 118, 46, 36, LARGURA_LETREIRO)}" fill="${ink}"/>
+  <path d="${palavraEmCurvas(forte, "ROUGE", 118, 80, 36, LARGURA_LETREIRO)}" fill="${color}"/>
 </svg>`;
 }
 
@@ -116,9 +172,6 @@ async function main() {
 
   put(join(BRAND_DIR, "signature.svg"), signatureSvg({}));
   put(join(BRAND_DIR, "signature-dark.svg"), signatureSvg({ ink: CHALK }));
-  put(join(BRAND_DIR, "signature-endorsed.svg"), signatureSvg({ endorsed: true }));
-  put(join(BRAND_DIR, "signature-endorsed-dark.svg"),
-      signatureSvg({ ink: CHALK, endorsed: true }));
 
   // --- Rasterizações -------------------------------------------------------
 

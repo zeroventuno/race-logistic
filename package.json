@@ -45,6 +45,7 @@
     "dotenv": "^17.2.2",
     "eslint": "^9.36.0",
     "eslint-config-next": "^15.5.4",
+    "fontkit": "^2.0.4",
     "pg": "^8.16.3",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
