@@ -173,31 +173,60 @@ function signatureInlineSvg({ color = ROUGE, ink = ASPHALT, semMastro = false })
   const forte = carregarFonte(700);
 
   const TAMANHO = 34;
-  const BASE = 46;
-  const INICIO = semMastro ? 78 : 92;
+  const ESCALA = 0.48;
+  const MARGEM = 4;
+  const VAO = 16;
 
-  const flamme = palavraCorrida(leve, "FLAMME", INICIO, BASE, TAMANHO, TRACKING_LINHA);
+  /*
+   * A BANDEIROLA CENTRA CONTRA O TEXTO, e a conta muda com o mastro.
+   *
+   * É o que o site faz: `.fr-assinatura` e o `Letreiro` são flex com
+   * `align-items: center`. Aqui não há flex, então o alinhamento tem de ser
+   * calculado — e calculado POR VARIANTE, porque a caixa do desenho muda: com
+   * mastro ela vai de y=12 a y=88, sem mastro só a bandeirola, de y=22 a y=66.
+   *
+   * O erro anterior foi usar o mesmo deslocamento vertical nas duas. Sem o
+   * mastro a caixa encolhe por baixo, e a bandeirola subia — ficava na altura
+   * da versão com mastro, só que sem ele.
+   */
+  const topo = semMastro ? 22 : POLE.y;
+  const base = semMastro ? 66 : POLE.y + POLE.height;
+  const esquerda = semMastro ? 23 : POLE.x;
+
+  // Altura das maiúsculas: é contra ela que o desenho centra, e não contra a
+  // linha inteira — descendentes não existem em caixa alta.
+  const alturaCaixaAlta = leve.capHeight * (TAMANHO / leve.unitsPerEm);
+  const linhaDeBase = 44;
+  const centroDoTexto = linhaDeBase - alturaCaixaAlta / 2;
+
+  const deslocX = MARGEM - esquerda * ESCALA;
+  const deslocY = centroDoTexto - ((topo + base) / 2) * ESCALA;
+
+  const inicio = MARGEM + (88 - esquerda) * ESCALA + VAO;
+
+  const flamme = palavraCorrida(leve, "FLAMME", inicio, linhaDeBase, TAMANHO, TRACKING_LINHA);
   // Um espaço de palavra, e não só a entreletra: sem ele "FLAMMEROUGE" vira
   // uma palavra só à distância, que é onde o letreiro é lido.
   const rouge = palavraCorrida(
     forte,
     "ROUGE",
     flamme.fim + TAMANHO * 0.22,
-    BASE,
+    linhaDeBase,
     TAMANHO,
     TRACKING_LINHA,
   );
 
-  // A largura acompanha o conteúdo: o último glifo não leva entreletra à
+  // A caixa acompanha o conteúdo: o último glifo não leva entreletra à
   // direita, então o `fim` do cursor sobra um tracking.
-  const largura = Math.ceil(rouge.fim - TAMANHO * TRACKING_LINHA + 8);
+  const largura = Math.ceil(rouge.fim - TAMANHO * TRACKING_LINHA + MARGEM);
+  const altura = Math.ceil(Math.max(linhaDeBase + 6, deslocY + base * ESCALA + 6));
 
   const mastro = semMastro
     ? ""
     : `<rect x="${POLE.x}" y="${POLE.y}" width="${POLE.width}" height="${POLE.height}" fill="${color}"/>`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largura} 60" width="${largura}" height="60">
-  <g transform="translate(${semMastro ? -2 : 4} 6) scale(0.48)">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largura} ${altura}" width="${largura}" height="${altura}">
+  <g transform="translate(${deslocX.toFixed(2)} ${deslocY.toFixed(2)}) scale(${ESCALA})">
     ${mastro}
     <polygon points="${FLAG}" fill="${color}"/>
   </g>
