@@ -65,10 +65,9 @@ você viu o problema.
 **Ideia central** · O último carro de uma prova tem uma responsabilidade que
 ninguém enxerga: é a passagem dele que devolve a rua ao trânsito.
 
-**Texto da arte** (foto única)
-
-> O ÚLTIMO CARRO DA PROVA
-> Quando ele passa, a rua reabre.
+**Texto da arte** · Nenhum. A placa no teto do carro já diz `FINE GARA
+CICLISTICA` — duas frases competindo enfraquecem as duas. A foto vai limpa e a
+legenda faz o resto.
 
 **Legenda**
 
@@ -96,8 +95,22 @@ ninguém enxerga: é a passagem dele que devolve a rua ao trânsito.
 
 **CTA** · Nenhum. Este post só planta a cena.
 
-**Imagem** · A foto da estrada vazia com o carro de apoio visto de trás — a que
-já está no rodapé do site. Se tiver foto sua real do dia, use a sua: vale mais.
+**Imagem** · A selfie na frente do carro de fechamento que você dirigiu, com a
+placa `FINE GARA CICLISTICA` no teto. Real, e a placa é a tese do post
+fotografada. Corte só por cima, da copa das árvores, se precisar chegar em 4:5 —
+nunca de baixo nem da esquerda, que é onde estão você e a placa.
+
+Sem logo. É foto sua, num dia real; assinar seria transformar memória em anúncio.
+
+A estrada vazia gerada fica onde já está: no rodapé do site.
+
+**As bandeirolas ao fundo** · Publicar foto real de um evento em que você
+trabalhou, do perfil pessoal, é normal e não é problema de marca. O que não pode
+é o contrário — arte do Flamme Rouge construída sobre marcas de terceiros, ou
+texto que sugira que eles usam ou endossam o sistema. Então: **não marque
+ninguém e não cite o nome do evento na legenda.** Assim a foto é biografia, não
+endosso. E confira se a região citada bate com onde foi: agora a foto identifica
+o lugar para quem conhece.
 
 **Hashtags** · `#ciclismo #granfondo #ciclismodeestrada #piemonte`
 `#direçãodeprova #organizaçãodeeventos`
