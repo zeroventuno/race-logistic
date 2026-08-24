@@ -71,7 +71,7 @@ legenda faz o resto.
 
 **Legenda**
 
-> Em julho eu dirigi o carro de fechamento de um granfondo no Piemonte.
+> Em maio eu dirigi o carro de fechamento de um granfondo no Piemonte.
 >
 > É uma função estranha. Você não vê a corrida — ela está toda na sua frente. O
 > que você vê é a estrada voltando a ser estrada atrás de você.
@@ -83,7 +83,7 @@ legenda faz o resto.
 >
 > ---
 >
-> A luglio ho guidato l'auto fine corsa di una granfondo in Piemonte.
+> A maggio ho guidato l'auto fine corsa di una granfondo in Piemonte.
 >
 > È un ruolo strano. La gara non la vedi mai — è tutta davanti a te. Quello che
 > vedi è la strada che torna a essere strada dietro di te.
