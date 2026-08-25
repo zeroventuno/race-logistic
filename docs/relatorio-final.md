@@ -392,6 +392,38 @@ Restam:
 2. **Idioma:** o da prova, o de quem pede, ou os dois no mesmo arquivo? A
    autoridade italiana quer italiano; um organizador brasileiro pode querer
    português para o arquivo dele.
-3. **Quem pode gerar?** Qualquer membro da prova, ou só quem pode editá-la? O
-   documento tem telefone de motorista e rastro de incidente — não é material
-   para qualquer um com o link.
+~~3. Quem pode gerar?~~
+**DECIDIDO: quem encerra a prova.** Ver abaixo.
+
+---
+
+## Quem gera o relatório
+
+**Decidido em 25/08/2026: a mesma pessoa que encerra a prova, e ninguém mais.**
+
+O diretor de prova é quem tem conta no sistema, com login e senha. Ele encerra
+a prova e ele gera o relatório. É um gesto só, em duas etapas.
+
+**Não é permissão nova.** A checagem já existe e já é usada pela ação de
+encerrar: `can_edit_race` (`supabase/migrations/0002_rls.sql:48`), que é
+verdadeira para quem criou a prova ou para quem consta em `race_members` com
+papel `owner` ou `director`. O relatório entra atrás do mesmo portão. Nada de
+inventar um conceito de permissão só para o PDF — conceito de permissão a mais
+é superfície de erro a mais.
+
+Note que `is_race_member` é um conjunto **mais largo** e não serve aqui. O
+relatório traz telefone de motorista e o rastro completo de cada incidente; um
+fiscal com acesso de leitura ao painel não tem por que receber isso.
+
+### O PDF congelado também é protegido
+
+Congelar o relatório cria um arquivo, e arquivo tende a virar link. **Não pode
+virar.** O PDF guardado é servido **só** pela rota autenticada, atrás do mesmo
+`can_edit_race`. Nada de URL pública, nada de link assinado de longa duração,
+nada de bucket aberto "só para facilitar".
+
+Quem manda o relatório para a federação ou para a prefeitura **é o diretor**,
+pelo canal dele, com o nome dele. O sistema entrega o documento a quem é
+responsável por ele e para por aí. Um PDF com telefone de doze motoristas
+circulando por link público seria um problema de outra ordem — e é o tipo de
+coisa que ninguém percebe até vazar.
