@@ -112,22 +112,65 @@ buracos visíveis e assumidos.
 É a imagem que vende o produto sozinha, e ela só é convincente porque tem
 buracos.
 
-### 3 · A rua, trecho a trecho
+### 3 · Os pontos de bloqueio
 
 **A tabela que ninguém consegue produzir hoje**, e provavelmente a seção que a
-polícia mais quer:
+polícia mais quer.
 
-| trecho | fechou | reabriu | duração |
-|---|---|---|---|
-| Via Roma, Cuneo | 09:14 | 09:51 | 37 min |
-| SP 422, km 8–14 | 09:22 | 10:03 | 41 min |
+A unidade aqui não é trecho de rua — é **ponto de bloqueio**. Rua não fecha em
+faixa contínua: fecha em rotatória, em cruzamento, em entroncamento, e em cada
+um desses pontos existe **uma pessoa parada segurando o trânsito**. É essa
+pessoa que o relatório presta contas.
 
-"Fechou" é a passagem da abertura. "Reabriu" é a passagem do último veículo —
-**a vassoura, não o fechamento**. Essa distinção é do domínio e o relatório não
-pode errar: atrás do carro de fechamento ainda vem prova.
+| km | ponto | fechou | reabriu | duração |
+|---|---|---|---|---|
+| 3,2 | Rotatória Via Roma × SP 422 | 09:14 | 09:51 | 37 min |
+| 8,6 | Cruzamento SP 422 × Via Cuneo | 09:22 | 10:03 | 41 min |
+| 14,1 | km 14,1 | 09:31 | 10:12 | 41 min |
 
-Esta é a única seção que **precisa de dado que o sistema ainda não tem** — ver
-abaixo.
+"Fechou" é a passagem da abertura por aquele quilômetro. "Reabriu" é a
+passagem do **último veículo — a vassoura, não o fechamento**. Essa distinção é
+do domínio e o relatório não pode errar: atrás do carro de fechamento ainda
+vem prova.
+
+**Por que isso é melhor que segmentar por quilometragem arbitrária:** a linha
+vira conferível e pessoal. "O seu agente na rotatória da Via Roma ficou lá das
+09h14 às 09h51, 37 minutos" é uma frase que a autoridade de trânsito pode
+checar com o próprio agente. "Km 0 a 8 fechado por 37 minutos" não diz nada a
+ninguém.
+
+E é o mesmo documento que o organizador já produziu: a lista de pontos a
+bloquear, com quantos fiscais em cada um, é exatamente o que ele entregou à
+prefeitura para conseguir a autorização. O relatório devolve aquele documento
+preenchido com horários reais.
+
+**Nada disso exige instrumentação nova.** Já sabemos o offset de cada veículo
+ao longo do tempo; dado um quilômetro, sabemos quando a abertura passou por
+ele e quando a vassoura passou. O que falta é só a lista de quilômetros que
+importam.
+
+#### De onde vem a lista de pontos
+
+Em ordem de preferência, com queda limpa entre elas:
+
+1. **Detectados no import do GPX.** Uma consulta única ao Overpass
+   (OpenStreetMap, sem chave, sem custo) sobre a *bbox* do percurso devolve os
+   nós de junção — onde duas ou mais vias se encontram — com os nomes das
+   ruas. Cruzando com a geometria da rota, sai a lista com quilômetro e nome.
+   Roda **uma vez, no cadastro**, não a cada relatório. E cai no caminho dos
+   99%, que é a importação de GPX.
+2. **Editados pela direção.** A lista automática vai trazer junção demais —
+   toda entrada de garagem vira nó no OSM. A direção poda o que não é
+   bloqueio, renomeia o que ficou com nome ruim, e **acrescenta** o que faltou.
+   Esta é a lista que vale, porque é a que bate com o documento da prefeitura.
+3. **Sem nome, só quilômetro.** Se o Overpass falhar, se a cobertura do OSM
+   naquela estrada for pobre, ou se ninguém quiser editar nada, o ponto entra
+   como `km 14,1`. Menos útil para a prefeitura, mas **honesto e entregável
+   hoje** — e continua conferível, porque quilômetro numa prova é uma
+   referência que todo mundo do meio entende.
+
+O relatório nunca deixa de sair por falta de nome de rua. O nome é acabamento;
+o horário é a prova.
 
 ### 4 · Os incidentes
 
@@ -236,25 +279,29 @@ regenerado diferente amanhã não é prova de nada.
 
 ---
 
-## O que falta de dado: a rua tem nome
+## O que falta de dado: a lista de pontos de bloqueio
 
-A tabela da seção 3 precisa saber que o quilômetro 8 ao 14 é a SP 422 e que o
-trecho tal fica em Cuneo. Hoje o percurso é só geometria — `route_tracks` tem
-pontos, não topônimos.
+É a única coisa que a seção 3 pede e o sistema ainda não tem. Detalhada lá em
+cima; aqui fica só o que é trabalho de construção.
 
-Três saídas, em ordem de esforço:
+**Uma tabela nova**, digamos `route_blockpoints`: prova, quilômetro (offset em
+metros ao longo da rota), nome quando houver, origem (`detected` | `manual`),
+e um sinalizador de ativo — a direção poda sem apagar, para não perder a lista
+detectada.
 
-1. **A direção declara os trechos** ao cadastrar a prova: nome e quilometragem
-   inicial. Trabalhoso, mas é exatamente a lista que o organizador já entregou
-   à prefeitura para pedir a autorização — ele já tem esse documento na mão.
-2. **Geocodificação reversa** do traçado, uma vez, no cadastro. O MapTiler já
-   está contratado. Erra em estrada rural.
-3. **v1 sem nomes**: tabela por quilômetro (`km 0–8`, `km 8–14`). Menos útil
-   para a prefeitura, mas honesto e entrega hoje.
+**Um passo no import do GPX** que consulta o Overpass uma vez e semeia a
+tabela. Assíncrono e tolerante a falha: se o Overpass estiver fora do ar, a
+importação do percurso **não pode falhar por causa disso** — o percurso é o
+essencial, os pontos são acabamento. Semeia depois, ou nunca, e o relatório sai
+com quilômetro puro.
 
-Começaria pela 3, com a 1 disponível para quem quiser caprichar.
+**Uma tela de edição** junto do percurso, onde a direção poda, renomeia e
+acrescenta. Provavelmente a menor tela do sistema, e a que gera a linha mais
+valiosa do relatório.
 
----
+Nada disso toca na geometria da rota nem na matemática de offset. É tabela
+lateral, lida só na hora de gerar o PDF — o caminho quente do produto não fica
+sabendo que ela existe.
 
 ## Como gerar
 
