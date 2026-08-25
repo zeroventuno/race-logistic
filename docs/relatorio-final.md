@@ -229,55 +229,85 @@ Praticamente não falta instrumentação. Faltam duas coisas, e uma delas é sé
 
 ---
 
-## O problema sério: o histórico depende de um navegador aberto
+## DECIDIDO: a série é recalculada dos pings, não lida do histórico
 
-`gap_snapshots` é escrito pelo **navegador do diretor**. `useLiveState` chama o
-endpoint periodicamente, com `gravarHistorico`. O endpoint faz a coisa certa —
+**O problema.** `gap_snapshots` é escrito pelo **navegador do diretor**.
+`useLiveState` chama o endpoint periodicamente. O endpoint faz a coisa certa —
 recalcula no servidor em vez de confiar no número que o browser mandou, e o
-comentário lá explica exatamente por quê: *"se alguém questionar depois por que
-a rua foi liberada às 14h32, a resposta não pode ter passado pelo browser de
-ninguém."*
+comentário lá explica por quê: *"se alguém questionar depois por que a rua foi
+liberada às 14h32, a resposta não pode ter passado pelo browser de ninguém."*
 
-Só que o **disparo** ainda passa. Se a direção fechar o notebook, se a aba
-dormir no tablet, se o celular bloquear a tela, se a bateria acabar às 14h —
-o histórico simplesmente para. E o buraco não fica marcado como
-`insufficient_data`: ele fica **sem linha nenhuma**, indistinguível de um
-período que não existiu.
+Só que o **disparo** ainda passava. Notebook fechado, aba dormindo no tablet,
+bateria acabando às 14h: o histórico parava. E o buraco não ficava marcado como
+`insufficient_data` — ficava **sem linha nenhuma**, indistinguível de um período
+que não existiu.
 
-Para um painel ao vivo isso é aceitável. Para um documento de prova, é o ponto
-exato onde ele quebra — e é a pergunta que uma federação faria primeiro.
+**A decisão (25/08/2026): caminho B.** O relatório reconstrói a série inteira a
+partir de `location_pings`, no momento da geração, com a mesma matemática de
+offset que o painel usa ao vivo.
 
-Isso não dá para consertar depois. **Histórico não medido não se recupera.**
+### Por que B, e não uma tarefa agendada
 
-Dois caminhos, e eu recomendaria o segundo:
+**Não depende de aba nenhuma jamais ter existido.** Era o problema; some por
+construção, sem infraestrutura nova — nada de cron, nada de função agendada na
+Vercel para manter de pé.
 
-**A · gravar no servidor.** Uma tarefa agendada escreve `gap_snapshots` a cada
-30 s enquanto a prova estiver `live`, independente de quem está olhando. Custa
-uma rotina agendada e um pouco de escrita.
+**É mais forte como prova.** "Recalculamos a partir do registro bruto de GPS"
+vale mais que "confiamos no número que um navegador calculou na hora". O
+relatório passa a ser derivado da evidência, não um resumo dela — e derivação
+se refaz e se confere.
 
-**B · recalcular no relatório.** O relatório reconstrói a série inteira a
-partir de `location_pings`, com a mesma matemática de offset da rota. Aí o
-documento não depende de aba nenhuma jamais ter existido, e `gap_snapshots`
-volta a ser o que deveria ser: conveniência do painel ao vivo, não o registro
-oficial.
+**A honestidade fica melhor, não pior.** Com o registro bruto na mão dá para
+ver exatamente quando cada veículo ficou calado, e classificar cada instante da
+série pelo que de fato havia. O caminho A só saberia o que conseguiu calcular
+na hora; B enxerga a prova inteira depois, inclusive os silêncios.
 
-B é mais honesto e mais barato — mas amarra o relatório à retenção dos pings.
+**E vale para trás.** As provas que já rodaram têm pings gravados. Dá para
+gerar relatório delas — inclusive para testar o gerador contra dados reais, em
+vez de esperar a próxima prova.
 
-### A retenção e o relatório são o mesmo assunto
+**`gap_snapshots` continua existindo**, mas rebaixado ao que sempre deveria ter
+sido: conveniência do painel ao vivo. Não é mais o registro oficial de nada.
 
-Já estava na lista apagar `location_pings` antigos. Se o relatório for
-calculado a partir deles (caminho B), **apagar os pings destrói a capacidade de
-gerar o relatório**.
+### O custo, e por que ele é menor do que parece
 
-A saída é fazer os dois na ordem certa: ao encerrar a prova, o sistema gera o
-relatório, **congela** (PDF guardado, com hash), e só então os pings daquela
-prova ficam elegíveis para expurgo. O documento vira o registro; os pings viram
-descartáveis.
+A cadência medida é de **um ping a cada ~20 s**. Uma prova de 6 h dá cerca de
+1 080 pings por veículo — com doze veículos, ~13 000 pontos. Fazer *snap* de
+tudo isso contra uma rota de milhares de pontos seria pesado.
 
-Congelar tem outro motivo, independente: um documento de prova que pode ser
-regenerado diferente amanhã não é prova de nada.
+Só que **não é preciso**. A janela é a distância entre dois veículos: a
+abertura e o fechamento. Somando a vassoura, que é quem devolve a rua e por
+isso define a coluna "reabriu" da seção 3, são **três veículos — ~3 200
+pontos**, não treze mil.
 
----
+E há uma propriedade a explorar: um veículo **anda para a frente**. Cada snap
+pode começar a busca perto do offset anterior em vez de varrer a rota inteira,
+o que derruba o custo de linear para praticamente constante por ponto. Só
+precisa tratar com cuidado a virada de volta, em prova de várias voltas.
+
+Os demais nove veículos entram só na seção 5, de cobertura de sinal — e ali
+basta o **carimbo de tempo** dos pings, sem snap nenhum. É contagem, é barata.
+
+Ainda assim, a geração não deve ser síncrona no clique: gera em segundo plano e
+entrega quando ficar pronta.
+
+### O que isso torna carga estrutural: a retenção dos pings
+
+Já estava na lista apagar `location_pings` antigos. Com B, **isso passa a ser
+perigoso**: apagar os pings destrói a capacidade de gerar o relatório daquela
+prova.
+
+A regra, então, tem ordem obrigatória:
+
+1. A prova é encerrada.
+2. O relatório é gerado e **congelado** — PDF guardado, com hash.
+3. **Só então** os pings daquela prova ficam elegíveis para expurgo.
+
+E enquanto o congelamento não existir, **não expurgar nada**. Uma limpeza feita
+antes disso é irreversível e leva junto a única prova que a prova aconteceu.
+
+Congelar tem outro motivo, independente deste: um documento de prova que pode
+ser regenerado diferente amanhã não prova nada.
 
 ## O que falta de dado: a lista de pontos de bloqueio
 
@@ -347,11 +377,21 @@ nada.
 
 ## O que decidir antes de escrever a primeira linha
 
-1. **A · gravar no servidor, ou B · recalcular dos pings?** Tudo depende disso,
-   e A precisa estar de pé antes da primeira prova real — histórico perdido não
-   volta.
-2. **Congelar o PDF ou gerar sob demanda?** Amarra com a política de retenção.
-3. **Trecho por nome ou por quilômetro na v1?**
-4. **Idioma:** o da prova, o de quem pede, ou os dois no mesmo arquivo? A
+~~1. A · gravar no servidor, ou B · recalcular dos pings?~~
+**DECIDIDO em 25/08/2026: caminho B.** Ver a seção acima.
+
+~~2. Trecho por nome ou por quilômetro?~~
+**DECIDIDO: por ponto de bloqueio** — rotatória, cruzamento, entroncamento —
+com nome quando o Overpass der, e só o quilômetro quando não der. Ver a seção 3.
+
+Restam:
+
+1. **Congelar o PDF ou gerar sob demanda?** Recomendo congelar, e o caminho B
+   torna isso quase obrigatório: é o congelamento que libera o expurgo dos
+   pings sem perder a prova.
+2. **Idioma:** o da prova, o de quem pede, ou os dois no mesmo arquivo? A
    autoridade italiana quer italiano; um organizador brasileiro pode querer
    português para o arquivo dele.
+3. **Quem pode gerar?** Qualquer membro da prova, ou só quem pode editá-la? O
+   documento tem telefone de motorista e rastro de incidente — não é material
+   para qualquer um com o link.
