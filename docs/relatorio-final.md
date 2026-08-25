@@ -192,8 +192,8 @@ quando algo deu errado.
 
 ### 5 · O comboio
 
-Os veículos, papéis, motoristas, telefones, placas. Quando cada um vinculou o
-aparelho. E a **cobertura de sinal de cada um**: quanto tempo transmitindo,
+Os veículos, papéis, motoristas e placas. **Sem telefone** — ver abaixo.
+Quando cada um vinculou o aparelho. E a **cobertura de sinal de cada um**: quanto tempo transmitindo,
 quantos e quais intervalos sem sinal, com início, fim e quilômetro.
 
 É a seção que explica os buracos das seções anteriores. Sem ela, o buraco no
@@ -411,9 +411,10 @@ papel `owner` ou `director`. O relatório entra atrás do mesmo portão. Nada de
 inventar um conceito de permissão só para o PDF — conceito de permissão a mais
 é superfície de erro a mais.
 
-Note que `is_race_member` é um conjunto **mais largo** e não serve aqui. O
-relatório traz telefone de motorista e o rastro completo de cada incidente; um
-fiscal com acesso de leitura ao painel não tem por que receber isso.
+Note que `is_race_member` é um conjunto **mais largo** e não serve aqui. Mesmo
+sem telefone, o relatório traz nome de motorista, placa e o rastro completo de
+cada incidente — quem chamou, onde, quando. Um fiscal com acesso de leitura ao
+painel não tem por que receber isso.
 
 ### O PDF congelado também é protegido
 
@@ -424,6 +425,28 @@ nada de bucket aberto "só para facilitar".
 
 Quem manda o relatório para a federação ou para a prefeitura **é o diretor**,
 pelo canal dele, com o nome dele. O sistema entrega o documento a quem é
-responsável por ele e para por aí. Um PDF com telefone de doze motoristas
-circulando por link público seria um problema de outra ordem — e é o tipo de
-coisa que ninguém percebe até vazar.
+responsável por ele e para por aí.
+
+## O relatório não leva telefone de motorista
+
+**Decidido em 25/08/2026.** O documento carrega **o que prova, não o que
+opera.**
+
+O telefone do motorista existe para uma coisa só: o diretor ligar para ele
+durante a prova. Depois que a prova acabou, ele não prova nada — não sustenta
+horário, não sustenta posição, não sustenta tempo de resposta. É dado
+operacional que perdeu a função, e dado sem função num documento que circula é
+só risco.
+
+E este documento **circula por definição**: vai para a prefeitura, para a
+federação, eventualmente para uma seguradora. Cada cópia é uma cópia a mais da
+agenda telefônica do comboio, em mãos que nunca pediram por ela e não têm
+obrigação nenhuma de guardá-la.
+
+**Nome e placa ficam**, e por um motivo diferente: eles respondem "quem estava
+no carro de fechamento", que é exatamente o tipo de pergunta que uma
+investigação faz. Têm valor probatório; o telefone não tem.
+
+O critério, para as próximas seções que alguém quiser acrescentar: **se o dado
+não sustenta uma afirmação do relatório, ele não entra.** Completude não é
+virtude num documento de prova — é superfície.
