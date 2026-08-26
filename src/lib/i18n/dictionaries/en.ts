@@ -418,6 +418,8 @@ export const en: Dictionary = {
     ready: "All set",
     goLive: "Start race",
     finish: "Finish race",
+    report: "Final report",
+    reportHint: "PDF with the measured window, incidents and convoy.",
 
     areaOverline: "Race control area",
     filterAll: "All",

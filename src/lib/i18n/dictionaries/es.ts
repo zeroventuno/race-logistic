@@ -420,6 +420,8 @@ export const es: Dictionary = {
     ready: "Todo listo",
     goLive: "Iniciar carrera",
     finish: "Finalizar carrera",
+    report: "Informe final",
+    reportHint: "PDF con la ventana medida, los incidentes y el convoy.",
 
     areaOverline: "Área de dirección de carrera",
     filterAll: "Todas",

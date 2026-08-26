@@ -38,8 +38,8 @@ describe("reconstruirSerie", () => {
       ateMs: 3600 * S,
     });
 
-    expect(r.porMetodo.measured).toBe(r.pontos.length);
-    expect(r.porMetodo.projected).toBe(0);
+    expect(r.porProcedencia.measured).toBe(r.pontos.length);
+    expect(r.porProcedencia.projected).toBe(0);
 
     // 30 minutos, com folga de um passo para a interpolação do histórico.
     expect(r.gapSegundosMedio).toBeGreaterThan(ATRASO_S - 30);
@@ -64,7 +64,7 @@ describe("reconstruirSerie", () => {
     });
 
     const p = r.pontos[0]!;
-    expect(p.method).toBe("measured");
+    expect(p.procedencia).toBe("measured");
     // O abertura passou por aqui 30 min antes — muito além de qualquer janela
     // de histórico recente.
     expect(p.gapSeconds).toBeGreaterThan(ATRASO_S - 30);
@@ -79,7 +79,7 @@ describe("reconstruirSerie", () => {
       ateMs: (ATRASO_S - 60) * S,
     });
 
-    expect(r.porMetodo.insufficient_data).toBe(r.pontos.length);
+    expect(r.porProcedencia.insufficient_data).toBe(r.pontos.length);
     expect(r.gapSegundosMedio).toBeNull();
     expect(r.coberturaMedida).toBe(0);
   });
@@ -97,7 +97,7 @@ describe("reconstruirSerie", () => {
       ateMs: 600 * S,
     });
 
-    expect(r.porMetodo.measured).toBe(0);
+    expect(r.porProcedencia.measured).toBe(0);
     expect(r.gapSegundosMin).toBeNull();
     expect(r.gapSegundosMax).toBeNull();
     expect(r.gapSegundosMedio).toBeNull();
@@ -113,7 +113,7 @@ describe("reconstruirSerie", () => {
     });
 
     expect(r.pontos[0]!.sweepAheadOfLead).toBe(true);
-    expect(r.pontos[0]!.method).toBe("insufficient_data");
+    expect(r.pontos[0]!.procedencia).toBe("insufficient_data");
   });
 
   it("respeita o passo pedido", () => {

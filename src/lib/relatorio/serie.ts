@@ -1,4 +1,4 @@
-import { computeGap, type GapMethod, type OffsetSample } from "@/lib/route/gap";
+import { computeGap, type OffsetSample } from "@/lib/route/gap";
 
 /**
  * A série histórica da janela, reconstruída depois da prova.
@@ -74,11 +74,31 @@ export interface AmostraDePing {
   offsetAbsolutoM: number;
 }
 
+/**
+ * A procedência de um ponto, no mesmo vocabulário que `gap_snapshots.method`
+ * já grava. Não é invenção do relatório: é o que o sistema registra desde
+ * sempre, e o documento herda em vez de criar dialeto próprio.
+ *
+ * O sufixo `_stale` existe porque a última posição conhecida NÃO EXPIRA
+ * sozinha. Se o comboio para de transmitir, o `computeGap` continua achando o
+ * cruzamento no histórico e devolvendo `measured` — sobre um veículo que pode
+ * estar em qualquer lugar há horas. Sem esta distinção, o relatório
+ * apresentaria posição congelada como medição, que é a mentira mais fácil de
+ * cometer aqui e a mais cara de descobrir depois.
+ */
+export type Procedencia =
+  | "measured"
+  | "measured_stale"
+  | "projected"
+  | "projected_stale"
+  | "insufficient_data"
+  | "insufficient_data_stale";
+
 export interface PontoDaSerie {
   atMs: number;
   gapM: number | null;
   gapSeconds: number | null;
-  method: GapMethod;
+  procedencia: Procedencia;
   leadOffsetM: number | null;
   sweepOffsetM: number | null;
   stale: boolean;
@@ -101,7 +121,7 @@ export interface EntradaDaSerie {
 export interface ResumoDaSerie {
   pontos: PontoDaSerie[];
   /** Quantos pontos de cada procedência. É o que a legenda do gráfico explica. */
-  porMetodo: Record<GapMethod, number>;
+  porProcedencia: Record<Procedencia, number>;
   /** Só entre os pontos `measured` — os outros não sustentam afirmação. */
   gapSegundosMin: number | null;
   gapSegundosMax: number | null;
@@ -150,7 +170,7 @@ export function reconstruirSerie(entrada: EntradaDaSerie): ResumoDaSerie {
       atMs: t,
       gapM: r.gapM,
       gapSeconds: r.gapSeconds,
-      method: r.method,
+      procedencia: (r.stale ? `${r.method}_stale` : r.method) as Procedencia,
       leadOffsetM: r.leadOffsetM,
       sweepOffsetM: r.sweepOffsetM,
       stale: r.stale,
@@ -200,28 +220,31 @@ function veiculoEm(
 }
 
 function resumir(pontos: PontoDaSerie[]): ResumoDaSerie {
-  const porMetodo: Record<GapMethod, number> = {
+  const porProcedencia: Record<Procedencia, number> = {
     measured: 0,
+    measured_stale: 0,
     projected: 0,
+    projected_stale: 0,
     insufficient_data: 0,
+    insufficient_data_stale: 0,
   };
-  for (const p of pontos) porMetodo[p.method]++;
+  for (const p of pontos) porProcedencia[p.procedencia]++;
 
   // SÓ OS MEDIDOS ENTRAM NA ESTATÍSTICA. Um mínimo de janela calculado em cima
   // de pontos projetados seria um número que ninguém observou, apresentado
   // como se tivesse sido observado — exatamente o que este relatório não faz.
   const medidos = pontos
-    .filter((p) => p.method === "measured" && p.gapSeconds !== null)
+    .filter((p) => p.procedencia === "measured" && p.gapSeconds !== null)
     .map((p) => p.gapSeconds!);
 
   return {
     pontos,
-    porMetodo,
+    porProcedencia,
     gapSegundosMin: medidos.length ? Math.min(...medidos) : null,
     gapSegundosMax: medidos.length ? Math.max(...medidos) : null,
     gapSegundosMedio: medidos.length
       ? Math.round(medidos.reduce((s, v) => s + v, 0) / medidos.length)
       : null,
-    coberturaMedida: pontos.length ? porMetodo.measured / pontos.length : 0,
+    coberturaMedida: pontos.length ? porProcedencia.measured / pontos.length : 0,
   };
 }

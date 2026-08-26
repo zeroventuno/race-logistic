@@ -433,6 +433,8 @@ export const ptBR = {
     ready: "Tudo pronto",
     goLive: "Iniciar prova",
     finish: "Encerrar prova",
+    report: "Relatório final",
+    reportHint: "PDF com a janela medida, os incidentes e o comboio.",
 
     areaOverline: "Área da direção de prova",
     filterAll: "Todas",

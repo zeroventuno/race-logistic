@@ -112,7 +112,10 @@ export function ControleProva({
   const temAcoes =
     Boolean(onEnquadrar) ||
     (podeEditar &&
-      (status === "draft" || status === "armed" || status === "live"));
+      (status === "draft" ||
+        status === "armed" ||
+        status === "live" ||
+        status === "finished"));
 
   /*
    * TRÊS FAIXAS EXPLÍCITAS, e não um `flex-wrap` só.
@@ -254,6 +257,30 @@ export function ControleProva({
                 ■ {t("director.finish")}
               </button>
             )
+          ) : null}
+
+          {/*
+           * O RELATÓRIO APARECE ONDE A PROVA ACABOU DE SER ENCERRADA.
+           *
+           * É o instante em que ainda tem alguém olhando a tela e com a prova
+           * na cabeça. Enterrado numa lista, o documento vira coisa que se
+           * lembra na segunda-feira — e quem pede não é o diretor, é a
+           * prefeitura, com prazo.
+           *
+           * Link e não botão: é uma navegação para um arquivo, e o navegador
+           * já sabe baixar. Botão que dispara download precisaria de estado de
+           * carregando, de tratamento de erro e de um `blob` na memória, para
+           * fazer pior o que o `href` faz sozinho.
+           */}
+          {podeEditar && status === "finished" ? (
+            <a
+              href={`/api/races/${raceId}/relatorio`}
+              title={t("director.reportHint")}
+              className="inline-flex min-h-9 items-center gap-2 border border-border-strong bg-surface-2 px-4 text-sm font-semibold text-ink transition hover:border-ink"
+            >
+              <span aria-hidden>↓</span>
+              {t("director.report")}
+            </a>
           ) : null}
 
           {/* Enquadrar o percurso: ação de MAPA, mas mora aqui.

@@ -422,6 +422,8 @@ export const fr: Dictionary = {
     ready: "Tout est prêt",
     goLive: "Démarrer la course",
     finish: "Terminer la course",
+    report: "Rapport final",
+    reportHint: "PDF avec la fenêtre mesurée, les incidents et le convoi.",
 
     areaOverline: "Espace direction de course",
     filterAll: "Toutes",
