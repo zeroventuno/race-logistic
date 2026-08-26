@@ -8,7 +8,8 @@ import {
   encerrarProva,
   iniciarProva,
 } from "@/app/(director)/dashboard/[raceId]/ao-vivo/actions";
-import { useFormat, useT } from "@/lib/i18n/client";
+import { useFormat, useLocaleSwitcher, useT } from "@/lib/i18n/client";
+import { LOCALES } from "@/lib/i18n/config";
 import type { RaceStatus } from "@/lib/types";
 
 /**
@@ -76,6 +77,7 @@ export function ControleProva({
 }: ControleProvaProps) {
   const t = useT();
   const fmt = useFormat();
+  const { locale } = useLocaleSwitcher();
   const [erro, setErro] = useState<string | null>(null);
   const [confirmando, setConfirmando] = useState<"iniciar" | "encerrar" | null>(
     null,
@@ -273,14 +275,37 @@ export function ControleProva({
            * fazer pior o que o `href` faz sozinho.
            */}
           {podeEditar && status === "finished" ? (
-            <a
-              href={`/api/races/${raceId}/relatorio`}
-              title={t("director.reportHint")}
-              className="inline-flex min-h-9 items-center gap-2 border border-border-strong bg-surface-2 px-4 text-sm font-semibold text-ink transition hover:border-ink"
-            >
-              <span aria-hidden>↓</span>
-              {t("director.report")}
-            </a>
+            <span className="flex flex-wrap items-center gap-2">
+              <a
+                href={`/api/races/${raceId}/relatorio`}
+                title={t("director.reportHint")}
+                className="inline-flex min-h-9 items-center gap-2 border border-border-strong bg-surface-2 px-4 text-sm font-semibold text-ink transition hover:border-ink"
+              >
+                <span aria-hidden>↓</span>
+                {t("director.report")}
+              </a>
+
+              {/*
+               * OS OUTROS IDIOMAS FICAM À VISTA, e não atrás de um menu.
+               *
+               * Quem lê o relatório não é quem o baixa: é a autoridade de
+               * trânsito do lugar onde a prova aconteceu. O botão principal sai
+               * na língua da interface — que é o caso comum —, e as outras
+               * cinco ficam ao lado porque a hora de lembrar que a prefeitura
+               * lê italiano é justamente esta, não depois de já ter anexado o
+               * arquivo errado ao e-mail.
+               */}
+              {LOCALES.filter((l) => l !== locale).map((l) => (
+                <a
+                  key={l}
+                  href={`/api/races/${raceId}/relatorio?idioma=${l}`}
+                  title={t("director.reportHint")}
+                  className="inline-flex min-h-9 items-center border border-border px-2 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-ink-faint transition hover:border-border-strong hover:text-ink"
+                >
+                  {l === "pt-BR" ? "pt" : l}
+                </a>
+              ))}
+            </span>
           ) : null}
 
           {/* Enquadrar o percurso: ação de MAPA, mas mora aqui.

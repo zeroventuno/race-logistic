@@ -12,10 +12,13 @@ import {
 } from "@react-pdf/renderer";
 
 import { BRAND, PENNANT_WITH_POLE } from "@/brand/mark";
+import type { Locale } from "@/lib/i18n/config";
+import { createTranslator, type Translator } from "@/lib/i18n/translate";
 import { formatDuration } from "@/lib/route/gap";
 
 import type { DadosDoRelatorio, IncidenteDoRelatorio } from "./dados";
-import { montarGrafico } from "./grafico";
+import { montarGrafico, tracoDe } from "./grafico";
+import type { ResumoDaSerie } from "./serie";
 
 /**
  * O relatório final da prova, em PDF.
@@ -101,8 +104,9 @@ const s = StyleSheet.create({
  * forçada — que é justamente onde um erro de verdade se esconderia depois.
  * Sem embrulho, o tipo confere sozinho.
  */
-export function documentoDoRelatorio(dados: DadosDoRelatorio) {
-  const fmt = formatadores(dados.prova.fusoHorario);
+export function documentoDoRelatorio(dados: DadosDoRelatorio, locale: Locale) {
+  const t = createTranslator(locale);
+  const fmt = formatadores(dados.prova.fusoHorario, locale);
   const serie = dados.serie;
 
   const autorizado = dados.prova.janelaMaxMin ?? dados.prova.janelaAlvoMin ?? null;
@@ -113,15 +117,17 @@ export function documentoDoRelatorio(dados: DadosDoRelatorio) {
 
   return (
     <Document
-      title={`Relatório — ${dados.prova.nome}`}
+      title={`${t("report.kicker")} — ${dados.prova.nome}`}
       author="Flamme Rouge"
-      subject="Relatório final de prova"
+      subject={t("report.kicker")}
+      language={locale}
     >
-      <Capa dados={dados} fmt={fmt} autorizado={autorizado} estourou={estourou} />
-      <Sumario dados={dados} fmt={fmt} autorizado={autorizado} estourou={estourou} />
-      <PaginaDaJanela dados={dados} fmt={fmt} />
-      <PaginaDeIncidentes dados={dados} fmt={fmt} />
-      <PaginaDoComboio dados={dados} fmt={fmt} />
+      <Capa dados={dados} fmt={fmt} t={t} autorizado={autorizado} estourou={estourou} />
+      <Sumario dados={dados} fmt={fmt} t={t} autorizado={autorizado} estourou={estourou} />
+      <PaginaDaJanela dados={dados} fmt={fmt} t={t} />
+      <PaginaDeBloqueios dados={dados} fmt={fmt} t={t} />
+      <PaginaDeIncidentes dados={dados} fmt={fmt} t={t} />
+      <PaginaDoComboio dados={dados} fmt={fmt} t={t} />
     </Document>
   );
 }
@@ -131,11 +137,13 @@ export function documentoDoRelatorio(dados: DadosDoRelatorio) {
 function Capa({
   dados,
   fmt,
+  t,
   autorizado,
   estourou,
 }: {
   dados: DadosDoRelatorio;
   fmt: Formatadores;
+  t: Translator;
   autorizado: number | null;
   estourou: boolean;
 }) {
@@ -157,7 +165,7 @@ function Capa({
         </Text>
       </View>
 
-      <Text style={s.h2}>RELATÓRIO FINAL DE PROVA</Text>
+      <Text style={s.h2}>{t("report.kicker").toUpperCase()}</Text>
       <Text style={{ fontSize: 32, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
         {dados.prova.nome}
       </Text>
@@ -172,7 +180,7 @@ function Capa({
       */}
       {serie && serie.gapSegundosMax !== null ? (
         <View>
-          <Text style={s.h2}>A JANELA DA PROVA</Text>
+          <Text style={s.h2}>{t("report.windowSection").toUpperCase()}</Text>
           <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
             <Text
               style={[
@@ -183,31 +191,28 @@ function Capa({
               {formatDuration(serie.gapSegundosMax)}
             </Text>
             <Text style={{ fontSize: 11, color: C.muted, marginLeft: 10, marginBottom: 8 }}>
-              máxima observada
+              {t("report.maxObserved")}
             </Text>
           </View>
 
           <Text style={{ fontSize: 11, color: C.muted, marginTop: 10 }}>
             {autorizado === null
-              ? "Nenhum limite foi declarado no cadastro da prova."
-              : estourou
-                ? `Acima do limite de ${autorizado} min combinado com a autoridade de trânsito.`
-                : `Dentro do limite de ${autorizado} min combinado com a autoridade de trânsito.`}
+              ? t("report.noLimit")
+              : t(estourou ? "report.over" : "report.within", { min: autorizado })}
           </Text>
 
           <Text style={{ fontSize: 9, color: C.faint, marginTop: 24, lineHeight: 1.6 }}>
-            {`Medida em ${pct(serie.coberturaMedida)} da prova pela passagem dos dois veículos de referência pelo mesmo ponto da estrada. O restante é estimado ou não pôde ser apurado, e está identificado como tal ao longo do documento.`}
+            {t("report.measuredIn", { pct: pct(serie.coberturaMedida) })}
           </Text>
         </View>
       ) : (
         <View>
-          <Text style={s.h2}>A JANELA DA PROVA</Text>
+          <Text style={s.h2}>{t("report.windowSection").toUpperCase()}</Text>
           <Text style={{ fontSize: 15, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
-            Não pôde ser medida
+            {t("report.cannotMeasure")}
           </Text>
           <Text style={{ fontSize: 10, color: C.muted, lineHeight: 1.6, maxWidth: 380 }}>
-            {dados.serieImpossivel ??
-              "Não houve dado suficiente para apurar a janela desta prova."}
+            {dados.serieImpossivel ?? t("report.noDataAtAll")}
           </Text>
         </View>
       )}
@@ -215,7 +220,7 @@ function Capa({
       <View style={{ position: "absolute", bottom: 48, left: 48, right: 48 }}>
         <View style={{ height: 1, backgroundColor: C.regua, marginBottom: 8 }} />
         <Text style={{ fontSize: 7, color: C.faint }}>
-          {`Documento gerado em ${fmt.dataHora(dados.geradoEm)} a partir do registro de posição do comboio.`}
+          {t("report.generated", { quando: fmt.dataHora(dados.geradoEm) })}
         </Text>
       </View>
     </Page>
@@ -225,11 +230,13 @@ function Capa({
 function Sumario({
   dados,
   fmt,
+  t,
   autorizado,
   estourou,
 }: {
   dados: DadosDoRelatorio;
   fmt: Formatadores;
+  t: Translator;
   autorizado: number | null;
   estourou: boolean;
 }) {
@@ -256,42 +263,45 @@ function Sumario({
 
   return (
     <Page size="A4" style={s.pagina}>
-      <Cabecalho titulo="1 · Sumário" prova={dados.prova.nome} />
+      <Cabecalho titulo={t("report.summaryTitle")} prova={dados.prova.nome} />
 
       <View style={s.secao}>
-        <Text style={s.h2}>A JANELA ABERTURA ↔ FECHAMENTO</Text>
+        <Text style={s.h2}>{t("report.windowPair").toUpperCase()}</Text>
         <View style={s.linha}>
           <Dado
-            rotulo="autorizada"
-            valor={autorizado === null ? "não declarada" : `${autorizado} min`}
+            rotulo={t("report.authorized")}
+            valor={autorizado === null ? t("report.notDeclared") : `${autorizado} min`}
           />
-          <Dado rotulo="mínima" valor={formatDuration(serie?.gapSegundosMin ?? null)} />
-          <Dado rotulo="média" valor={formatDuration(serie?.gapSegundosMedio ?? null)} />
+          <Dado rotulo={t("report.minLabel")} valor={formatDuration(serie?.gapSegundosMin ?? null)} />
+          <Dado rotulo={t("report.avgLabel")} valor={formatDuration(serie?.gapSegundosMedio ?? null)} />
           <Dado
-            rotulo="máxima"
+            rotulo={t("report.maxLabel")}
             valor={formatDuration(serie?.gapSegundosMax ?? null)}
             destaque={estourou}
           />
         </View>
         <Text style={[s.p, { marginTop: 8 }]}>
           {serie
-            ? `Mínima, média e máxima consideram apenas os instantes efetivamente medidos — ${serie.porProcedencia.measured} de ${serie.pontos.length} pontos da série. Valores estimados não entram em estatística que o documento afirma.`
-            : (dados.serieImpossivel ?? "Sem série.")}
+            ? t("report.onlyMeasured", {
+                medidos: serie.porProcedencia.measured,
+                total: serie.pontos.length,
+              })
+            : (dados.serieImpossivel ?? t("report.noDataAtAll"))}
         </Text>
       </View>
 
       <View style={s.regua} />
 
       <View style={s.secao}>
-        <Text style={s.h2}>SOCORRO</Text>
+        <Text style={s.h2}>{t("report.rescue").toUpperCase()}</Text>
         <View style={s.linha}>
-          <Dado rotulo="incidentes" valor={String(inc.length)} />
+          <Dado rotulo={t("report.incidents")} valor={String(inc.length)} />
           <Dado
-            rotulo="tempo mediano até chegar"
+            rotulo={t("report.medianArrive")}
             valor={mediana === null ? "—" : formatDuration(mediana)}
           />
           <Dado
-            rotulo="sem encerramento"
+            rotulo={t("report.unresolved")}
             valor={String(semResolver)}
             destaque={semResolver > 0}
           />
@@ -301,15 +311,15 @@ function Sumario({
       <View style={s.regua} />
 
       <View style={s.secao}>
-        <Text style={s.h2}>COMBOIO</Text>
+        <Text style={s.h2}>{t("report.convoy").toUpperCase()}</Text>
         <View style={s.linha}>
-          <Dado rotulo="veículos" valor={String(dados.veiculos.length)} />
+          <Dado rotulo={t("report.vehicles")} valor={String(dados.veiculos.length)} />
           <Dado
-            rotulo="cobertura média de sinal"
+            rotulo={t("report.avgSignal")}
             valor={coberturaMedia === null ? "—" : pct(coberturaMedia)}
           />
           <Dado
-            rotulo="percurso"
+            rotulo={t("report.route")}
             valor={
               dados.percurso
                 ? `${(dados.percurso.distanciaDaProvaM / 1000).toFixed(1)} km`
@@ -322,10 +332,15 @@ function Sumario({
       <View style={s.regua} />
 
       <View style={s.secao}>
-        <Text style={s.h2}>PERÍODO</Text>
+        <Text style={s.h2}>{t("report.period").toUpperCase()}</Text>
         <Text style={s.p}>
-          {`Início ${fmt.dataHora(dados.prova.inicio)} · encerramento ${fmt.dataHora(dados.prova.fim)}`}
-          {dados.prova.fusoHorario ? ` · fuso ${dados.prova.fusoHorario}` : ""}
+          {t("report.periodLine", {
+            inicio: fmt.dataHora(dados.prova.inicio),
+            fim: fmt.dataHora(dados.prova.fim),
+          })}
+          {dados.prova.fusoHorario
+            ? t("report.timezone", { fuso: dados.prova.fusoHorario })
+            : ""}
         </Text>
 
         {/*
@@ -338,7 +353,7 @@ function Sumario({
         */}
         {dados.caudaSemDadoS !== null && dados.caudaSemDadoS > CAUDA_QUE_MERECE_AVISO_S ? (
           <Text style={[s.p, { marginTop: 8, color: C.ink }]}>
-            {`Atenção: o comboio parou de transmitir ${formatDuration(dados.caudaSemDadoS)} antes do encerramento registrado. O período acima é o declarado no sistema, não o tempo em que houve prova na estrada.`}
+            {t("report.tailWarning", { tempo: formatDuration(dados.caudaSemDadoS) })}
           </Text>
         ) : null}
       </View>
@@ -351,9 +366,11 @@ function Sumario({
 function PaginaDaJanela({
   dados,
   fmt,
+  t,
 }: {
   dados: DadosDoRelatorio;
   fmt: Formatadores;
+  t: Translator;
 }) {
   const serie = dados.serie;
   const g = serie
@@ -367,7 +384,7 @@ function PaginaDaJanela({
 
   return (
     <Page size="A4" style={s.pagina}>
-      <Cabecalho titulo="2 · A janela, minuto a minuto" prova={dados.prova.nome} />
+      <Cabecalho titulo={t("report.chartTitle")} prova={dados.prova.nome} />
 
       {g && g.temLinha ? (
         <>
@@ -446,32 +463,159 @@ function PaginaDaJanela({
           </View>
 
           <View style={{ marginTop: 16 }}>
-            <Text style={s.h2}>COMO LER</Text>
-            <Legenda cor={C.medido} tracejada={false} texto={`Medido — ${serie!.porProcedencia.measured} pontos. Diferença de horário entre a passagem dos dois veículos pelo mesmo ponto da estrada.`} />
-            <Legenda cor={C.projetado} tracejada texto={`Estimado — ${serie!.porProcedencia.projected} pontos. Calculado pela velocidade do fechamento, porque não há registro do abertura passando por aquele ponto.`} />
-            <Legenda cor={null} tracejada={false} texto={`Sem linha — ${serie!.porProcedencia.insufficient_data} pontos. Não havia posição confiável dos dois veículos. O vazio é declarado, não escondido.`} />
+            <Text style={s.h2}>{t("report.howToRead").toUpperCase()}</Text>
+            <Legenda
+              cor={C.medido}
+              tracejada={false}
+              texto={t("report.legMeasured", { n: contar(serie!, "medido") })}
+            />
+            <Legenda
+              cor={C.projetado}
+              tracejada
+              texto={t("report.legDeduced", { n: contar(serie!, "deduzido") })}
+            />
+            <Legenda
+              cor={null}
+              tracejada={false}
+              texto={t("report.legNoLine", { n: contar(serie!, "sem") })}
+            />
             {g.estouros.length > 0 ? (
-              <Legenda cor={C.rouge} tracejada={false} texto={`Faixa vermelha — trecho em que a janela passou do autorizado.`} />
+              <Legenda cor={C.rouge} tracejada={false} texto={t("report.legOvershoot")} />
             ) : null}
           </View>
 
           <View style={s.regua} />
-          <Text style={s.p}>
-            Eixo vertical em minutos de janela; horizontal, a hora local da prova.
-            A série é reconstruída do registro de posição gravado no servidor, com
-            um ponto a cada 30 segundos.
-          </Text>
+          <Text style={s.p}>{t("report.axes")}</Text>
         </>
       ) : (
         <View>
           <Text style={{ fontSize: 13, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
-            A janela não pôde ser apurada
+            {t("report.chartCannot")}
           </Text>
           <Text style={[s.p, { maxWidth: 380 }]}>
-            {dados.serieImpossivel ??
-              "Não houve posição suficiente dos veículos de referência durante esta prova."}
+            {dados.serieImpossivel ?? t("report.noDataAtAll")}
           </Text>
         </View>
+      )}
+
+      <Rodape dados={dados} fmt={fmt} />
+    </Page>
+  );
+}
+
+/**
+ * A tabela que ninguém consegue produzir hoje.
+ *
+ * Cada linha é uma pessoa que ficou parada segurando o trânsito num
+ * cruzamento, e o horário em que ela pôde ir embora. É o mesmo documento que o
+ * organizador entregou à prefeitura para conseguir a autorização, devolvido com
+ * horários reais — e é conferível: dá para ligar para o agente e perguntar.
+ */
+function PaginaDeBloqueios({
+  dados,
+  fmt,
+  t,
+}: {
+  dados: DadosDoRelatorio;
+  fmt: Formatadores;
+  t: Translator;
+}) {
+  return (
+    <Page size="A4" style={s.pagina}>
+      <Cabecalho titulo={t("report.blocksTitle")} prova={dados.prova.nome} />
+
+      {dados.bloqueios.length === 0 ? (
+        <Text style={[s.p, { maxWidth: 400 }]}>{t("report.blocksNone")}</Text>
+      ) : (
+        <>
+          <Text style={[s.p, { marginBottom: 14, maxWidth: 440 }]}>
+            {t("report.blocksLead")}
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              borderBottomWidth: 1,
+              borderBottomColor: C.regua,
+              paddingBottom: 4,
+            }}
+          >
+            <Text style={[s.h2, { width: 44, marginBottom: 0 }]}>
+              {t("report.colKm").toUpperCase()}
+            </Text>
+            <Text style={[s.h2, { flex: 1, marginBottom: 0 }]}>
+              {t("report.colPoint").toUpperCase()}
+            </Text>
+            <Text style={[s.h2, { width: 60, marginBottom: 0, textAlign: "right" }]}>
+              {t("report.colClosed").toUpperCase()}
+            </Text>
+            <Text style={[s.h2, { width: 60, marginBottom: 0, textAlign: "right" }]}>
+              {t("report.colReopened").toUpperCase()}
+            </Text>
+            <Text style={[s.h2, { width: 62, marginBottom: 0, textAlign: "right" }]}>
+              {t("report.colDuration").toUpperCase()}
+            </Text>
+          </View>
+
+          {dados.bloqueios.map((b) => (
+            <View
+              key={b.id}
+              style={{
+                flexDirection: "row",
+                paddingVertical: 5,
+                borderBottomWidth: 0.5,
+                borderBottomColor: C.regua,
+              }}
+            >
+              <Text style={[s.mono, { width: 44, fontSize: 8, color: C.muted }]}>
+                {(b.offsetM / 1000).toFixed(1)}
+              </Text>
+              <Text style={{ flex: 1, fontSize: 9 }}>
+                {b.nome ?? `${t("report.colKm")} ${(b.offsetM / 1000).toFixed(1)}`}
+              </Text>
+              <Text
+                style={[s.mono, { width: 60, fontSize: 8, textAlign: "right" }]}
+              >
+                {b.fechouMs === null
+                  ? "—"
+                  : fmt.hora(new Date(b.fechouMs).toISOString())}
+              </Text>
+              <Text
+                style={[s.mono, { width: 60, fontSize: 8, textAlign: "right" }]}
+              >
+                {b.reabriuMs === null
+                  ? "—"
+                  : fmt.hora(new Date(b.reabriuMs).toISOString())}
+              </Text>
+              <Text
+                style={[
+                  s.monoB,
+                  {
+                    width: 62,
+                    fontSize: 8,
+                    textAlign: "right",
+                    color: b.duracaoS === null ? C.faint : C.ink,
+                  },
+                ]}
+              >
+                {b.duracaoS === null
+                  ? t("report.blocksMissing")
+                  : formatDuration(b.duracaoS)}
+              </Text>
+            </View>
+          ))}
+
+          {/*
+            De quem é a passagem que devolveu a rua. Sem este nome a coluna é
+            uma afirmação sem responsável — e é a coluna que a prefeitura mais
+            olha.
+          */}
+          <Text style={[s.p, { marginTop: 12, fontSize: 8 }]}>
+            {dados.ultimoVeiculo === null
+              ? t("report.blocksNoSweep")
+              : `${t("report.colReopened")}: ${dados.ultimoVeiculo}`}
+          </Text>
+        </>
       )}
 
       <Rodape dados={dados} fmt={fmt} />
@@ -482,18 +626,22 @@ function PaginaDaJanela({
 function PaginaDeIncidentes({
   dados,
   fmt,
+  t,
 }: {
   dados: DadosDoRelatorio;
   fmt: Formatadores;
+  t: Translator;
 }) {
   return (
     <Page size="A4" style={s.pagina}>
-      <Cabecalho titulo="3 · Incidentes" prova={dados.prova.nome} />
+      <Cabecalho titulo={t("report.incidentsTitle")} prova={dados.prova.nome} />
 
       {dados.incidentes.length === 0 ? (
-        <Text style={s.p}>Nenhum acionamento de socorro foi registrado nesta prova.</Text>
+        <Text style={s.p}>{t("report.incidentsNone")}</Text>
       ) : (
-        dados.incidentes.map((i, n) => <Incidente key={n} i={i} n={n + 1} fmt={fmt} />)
+        dados.incidentes.map((i, n) => (
+          <Incidente key={n} i={i} n={n + 1} fmt={fmt} t={t} />
+        ))
       )}
 
       <Rodape dados={dados} fmt={fmt} />
@@ -505,10 +653,12 @@ function Incidente({
   i,
   n,
   fmt,
+  t,
 }: {
   i: IncidenteDoRelatorio;
   n: number;
   fmt: Formatadores;
+  t: Translator;
 }) {
   const aberto = i.status !== "resolved" && i.status !== "cancelled";
 
@@ -526,10 +676,10 @@ function Incidente({
 
       <Text style={[s.mono, { fontSize: 8, color: C.muted, marginTop: 3 }]}>
         {[
-          `chamado ${fmt.hora(i.criadoEm)}`,
+          t("report.called", { hora: fmt.hora(i.criadoEm) }),
           i.offsetM !== null ? `km ${(i.offsetM / 1000).toFixed(1)}` : null,
-          i.chamadoPor ? `por ${i.chamadoPor}` : null,
-          i.atendidoPor ? `atendido por ${i.atendidoPor}` : null,
+          i.chamadoPor ? t("report.calledBy", { quem: i.chamadoPor }) : null,
+          i.atendidoPor ? t("report.handledBy", { quem: i.atendidoPor }) : null,
         ]
           .filter(Boolean)
           .join("  ·  ")}
@@ -537,18 +687,29 @@ function Incidente({
 
       <Text style={[s.mono, { fontSize: 8, color: C.faint, marginTop: 2 }]}>
         {[
-          i.reconhecidoEm ? `reconhecido ${fmt.hora(i.reconhecidoEm)}` : null,
-          i.despachadoEm ? `despachado ${fmt.hora(i.despachadoEm)}` : null,
-          i.noLocalEm ? `no local ${fmt.hora(i.noLocalEm)}` : null,
-          i.resolvidoEm ? `encerrado ${fmt.hora(i.resolvidoEm)}` : null,
+          i.reconhecidoEm ? t("report.acknowledged", { hora: fmt.hora(i.reconhecidoEm) }) : null,
+          i.despachadoEm ? t("report.dispatched", { hora: fmt.hora(i.despachadoEm) }) : null,
+          i.noLocalEm ? t("report.onScene", { hora: fmt.hora(i.noLocalEm) }) : null,
+          i.resolvidoEm ? t("report.closed", { hora: fmt.hora(i.resolvidoEm) }) : null,
         ]
           .filter(Boolean)
-          .join("  ·  ") || "sem eventos registrados após o chamado"}
+          .join("  ·  ") || t("report.noEvents")}
       </Text>
 
       <Text style={{ fontSize: 8, color: C.muted, marginTop: 3 }}>
-        {`até chegar: ${i.segundosAteOLocal === null ? "não registrado" : formatDuration(i.segundosAteOLocal)}`}
-        {`   ·   até encerrar: ${i.segundosAteResolver === null ? "não encerrado" : formatDuration(i.segundosAteResolver)}`}
+        {t("report.toArrive", {
+          valor:
+            i.segundosAteOLocal === null
+              ? t("report.notRecorded")
+              : formatDuration(i.segundosAteOLocal),
+        })}
+        {"   ·   "}
+        {t("report.toClose", {
+          valor:
+            i.segundosAteResolver === null
+              ? t("report.notClosed")
+              : formatDuration(i.segundosAteResolver),
+        })}
       </Text>
 
       {i.nota ? (
@@ -561,20 +722,22 @@ function Incidente({
 function PaginaDoComboio({
   dados,
   fmt,
+  t,
 }: {
   dados: DadosDoRelatorio;
   fmt: Formatadores;
+  t: Translator;
 }) {
   return (
     <Page size="A4" style={s.pagina}>
-      <Cabecalho titulo="4 · O comboio" prova={dados.prova.nome} />
+      <Cabecalho titulo={t("report.convoyTitle")} prova={dados.prova.nome} />
 
       <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.regua, paddingBottom: 4 }}>
         <Text style={[s.h2, { width: 22, marginBottom: 0 }]}>#</Text>
-        <Text style={[s.h2, { flex: 2, marginBottom: 0 }]}>VEÍCULO</Text>
-        <Text style={[s.h2, { flex: 2, marginBottom: 0 }]}>MOTORISTA</Text>
-        <Text style={[s.h2, { flex: 1.2, marginBottom: 0 }]}>PLACA</Text>
-        <Text style={[s.h2, { width: 46, marginBottom: 0, textAlign: "right" }]}>SINAL</Text>
+        <Text style={[s.h2, { flex: 2, marginBottom: 0 }]}>{t("report.colVehicle").toUpperCase()}</Text>
+        <Text style={[s.h2, { flex: 2, marginBottom: 0 }]}>{t("report.colDriver").toUpperCase()}</Text>
+        <Text style={[s.h2, { flex: 1.2, marginBottom: 0 }]}>{t("report.colPlate").toUpperCase()}</Text>
+        <Text style={[s.h2, { width: 46, marginBottom: 0, textAlign: "right" }]}>{t("report.colSignal").toUpperCase()}</Text>
       </View>
 
       {dados.veiculos.map((v) => (
@@ -588,9 +751,9 @@ function PaginaDoComboio({
           <View style={{ flex: 2 }}>
             <Text style={{ fontSize: 9 }}>{v.rotulo}</Text>
             <Text style={{ fontSize: 7, color: C.faint }}>
-              {v.papel}
-              {v.ehAbertura ? " · abertura" : ""}
-              {v.ehFechamento ? " · fechamento" : ""}
+              {papelTraduzido(v.papel, t)}
+              {v.ehAbertura ? t("report.isLead") : ""}
+              {v.ehFechamento ? t("report.isSweep") : ""}
             </Text>
           </View>
           <Text style={{ flex: 2, fontSize: 9, color: C.muted }}>{v.motorista ?? "—"}</Text>
@@ -608,7 +771,7 @@ function PaginaDoComboio({
               },
             ]}
           >
-            {v.cobertura === null ? "nunca" : pct(v.cobertura)}
+            {v.cobertura === null ? t("report.never") : pct(v.cobertura)}
           </Text>
         </View>
       ))}
@@ -620,7 +783,7 @@ function PaginaDoComboio({
       */}
       {dados.veiculos.some((v) => v.silencios.length > 0) ? (
         <View style={{ marginTop: 22 }}>
-          <Text style={s.h2}>INTERRUPÇÕES DE SINAL ACIMA DE DOIS MINUTOS</Text>
+          <Text style={s.h2}>{t("report.outages").toUpperCase()}</Text>
           {dados.veiculos
             .filter((v) => v.silencios.length > 0)
             .map((v) => (
@@ -744,11 +907,11 @@ interface Formatadores {
  * servidor, ele está errado para todo mundo que estava lá — e é justamente o
  * número que a prefeitura vai conferir com o agente que ficou na rotatória.
  */
-function formatadores(fuso: string | null): Formatadores {
+function formatadores(fuso: string | null, locale: Locale): Formatadores {
   const zona = fuso ?? "UTC";
 
   const mk = (opts: Intl.DateTimeFormatOptions) => {
-    const f = new Intl.DateTimeFormat("pt-BR", { ...opts, timeZone: zona });
+    const f = new Intl.DateTimeFormat(locale, { ...opts, timeZone: zona });
     return (iso: string | null) => (iso ? f.format(new Date(iso)) : "—");
   };
 
@@ -768,4 +931,29 @@ function formatadores(fuso: string | null): Formatadores {
 
 function pct(v: number): string {
   return `${Math.round(v * 100)}%`;
+}
+
+/**
+ * O papel do veículo no idioma do documento.
+ *
+ * Vem do mesmo `roles.*` que o painel usa. Um relatório que traduz tudo menos
+ * "broom_wagon" entrega ao leitor a palavra do banco de dados, e essa palavra
+ * não significa nada para quem está lendo.
+ */
+function papelTraduzido(papel: string, t: Translator): string {
+  try {
+    return t(`roles.${papel}.label` as Parameters<Translator>[0]);
+  } catch {
+    return papel;
+  }
+}
+
+/** Conta os pontos por traço do gráfico, que é o agrupamento da legenda. */
+function contar(serie: ResumoDaSerie, qual: "medido" | "deduzido" | "sem"): number {
+  let n = 0;
+  for (const p of serie.pontos) {
+    const traco = tracoDe(p.procedencia);
+    if (qual === "sem" ? traco === null : traco === qual) n++;
+  }
+  return n;
 }

@@ -2,6 +2,8 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isUuid } from "@/app/(director)/_lib/session";
+import { isLocale } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { documentoDoRelatorio } from "@/lib/relatorio/Documento";
 import { montarRelatorio } from "@/lib/relatorio/dados";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -44,7 +46,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ raceId: string }> },
 ) {
   const { raceId } = await context.params;
@@ -79,13 +81,28 @@ export async function GET(
     return erro(409, "O relatório fica disponível depois que a prova é encerrada.");
   }
 
-  const pdf = await renderToBuffer(documentoDoRelatorio(dados));
+  /*
+   * QUEM ESCOLHE O IDIOMA É QUEM VAI MANDAR O DOCUMENTO.
+   *
+   * O leitor do relatório não é o diretor: é a autoridade de trânsito do lugar
+   * onde a prova aconteceu. Um diretor brasileiro organizando na Itália precisa
+   * do PDF em italiano, e a língua da interface dele diria português.
+   *
+   * Por isso o idioma vem no pedido, com a interface como padrão — e não de um
+   * campo na prova, que seria escolhido uma vez no cadastro e estaria errado no
+   * dia em que o mesmo documento precisasse ir para a prefeitura e para uma
+   * federação estrangeira.
+   */
+  const pedido = request.nextUrl.searchParams.get("idioma");
+  const idioma = isLocale(pedido) ? pedido : await getLocale();
+
+  const pdf = await renderToBuffer(documentoDoRelatorio(dados, idioma));
 
   return new NextResponse(new Uint8Array(pdf), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${nomeDoArquivo(dados.prova.nome, dados.prova.inicio)}"`,
+      "Content-Disposition": `attachment; filename="${nomeDoArquivo(dados.prova.nome, dados.prova.inicio, idioma)}"`,
       // Documento com nome de motorista e rastro de incidente não fica em
       // cache de proxy nenhum.
       "Cache-Control": "private, no-store",
@@ -104,7 +121,11 @@ function erro(status: number, mensagem: string) {
  * documentos de várias provas. Um `download.pdf` ali dentro é indistinguível
  * de qualquer outro em seis meses.
  */
-function nomeDoArquivo(nome: string, inicioIso: string | null): string {
+function nomeDoArquivo(
+  nome: string,
+  inicioIso: string | null,
+  idioma: string,
+): string {
   const base = nome
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -115,5 +136,8 @@ function nomeDoArquivo(nome: string, inicioIso: string | null): string {
 
   const dia = inicioIso ? inicioIso.slice(0, 10) : "sem-data";
 
-  return `relatorio-${base || "prova"}-${dia}.pdf`;
+  // O idioma entra no nome porque o mesmo relatório sai em mais de uma língua
+  // — para a prefeitura e para a federação — e dois arquivos com o mesmo nome
+  // na mesma pasta é como se perde o certo.
+  return `relatorio-${base || "prova"}-${dia}-${idioma}.pdf`;
 }

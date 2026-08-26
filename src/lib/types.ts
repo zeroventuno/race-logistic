@@ -241,6 +241,16 @@ export interface Race {
   created_at: string;
   updated_at: string;
   /**
+   * Voltas que a prova dá sobre o traçado. 1 = ponto-a-ponto ou volta única.
+   *
+   * A coluna existe desde `0009_convoy_semantics` e vem no `select("*")`; o
+   * tipo é que não a declarava. Sem ela, qualquer conta de distância TOTAL da
+   * prova feita a partir deste tipo erra por um fator igual ao número de
+   * voltas — que é exatamente o erro que `LoadedRoute.raceDistanceM` existe
+   * para evitar do outro lado.
+   */
+  laps?: number | null;
+  /**
    * Mapa de fundo desta prova (identificador do catálogo em
    * `@/lib/map/basemaps`). Opcional porque a coluna é nova: prova criada
    * antes da migração devolve `undefined`, e quem resolve cai no padrão.

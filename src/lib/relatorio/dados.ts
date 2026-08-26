@@ -2,6 +2,7 @@ import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+import { apurarBloqueios, type BloqueioApurado } from "./bloqueios";
 import { reconstruirSerie, type AmostraDePing, type ResumoDaSerie } from "./serie";
 
 /**
@@ -87,6 +88,15 @@ export interface DadosDoRelatorio {
    * declarado é o que a prefeitura vai ler.
    */
   caudaSemDadoS: number | null;
+  bloqueios: BloqueioApurado[];
+  /**
+   * Rótulo do veículo usado como "último do comboio" na coluna de reabertura.
+   *
+   * Vai impresso: quem lê precisa saber de quem é a passagem que devolveu a
+   * rua. Nulo quando nenhum veículo pôde ocupar o papel — e aí a coluna sai
+   * vazia, nunca preenchida com o carro de fechamento.
+   */
+  ultimoVeiculo: string | null;
   incidentes: IncidenteDoRelatorio[];
   veiculos: VeiculoDoRelatorio[];
   geradoEm: string;
@@ -109,7 +119,7 @@ export async function montarRelatorio(
 ): Promise<DadosDoRelatorio | null> {
   const admin = supabaseAdmin();
 
-  const [provaRes, percursoRes, posicoesRes, alertasRes] = await Promise.all([
+  const [provaRes, percursoRes, posicoesRes, alertasRes, bloqueiosRes] = await Promise.all([
     admin
       .from("races")
       .select(
@@ -137,6 +147,12 @@ export async function montarRelatorio(
       )
       .eq("race_id", raceId)
       .order("created_at"),
+    admin
+      .from("route_blockpoints")
+      .select("id, offset_m, name")
+      .eq("race_id", raceId)
+      .eq("active", true)
+      .order("offset_m"),
   ]);
 
   const prova = provaRes.data as ProvaRow | null;
@@ -162,9 +178,30 @@ export async function montarRelatorio(
   const inicioMs = prova.actual_start ? Date.parse(prova.actual_start) : null;
   const fimMs = prova.finished_at ? Date.parse(prova.finished_at) : null;
 
-  const [pingsAbertura, pingsFechamento, cobertura] = await Promise.all([
+  /*
+   * QUEM DEVOLVE A RUA AO TRÂNSITO.
+   *
+   * Não é o carro de fechamento: atrás dele ainda vem prova — motos de apoio,
+   * mecânicos, ambulâncias — e por último a vassoura, que recolhe quem
+   * abandonou. A reabertura é a passagem do ÚLTIMO veículo do comboio.
+   *
+   * Preferência pela vassoura declarada; sem ela, o maior `ordinal`, que é a
+   * ordem do comboio. Se sobrar o próprio fechamento, ele NÃO serve — melhor a
+   * coluna vazia do que um horário de reabertura cedo demais num documento que
+   * a prefeitura vai ler.
+   */
+  const ultimo =
+    posicoes.find((p) => p.role === "broom_wagon") ??
+    [...posicoes].sort((a, b) => b.ordinal - a.ordinal)[0] ??
+    null;
+  const ultimoUsavel = ultimo && !ultimo.is_reference_sweep ? ultimo : null;
+
+  const [pingsAbertura, pingsFechamento, pingsUltimo, cobertura] = await Promise.all([
     abertura ? carregarPings(raceId, abertura.id, distanciaTracadoM, inicioMs, fimMs) : [],
     fechamento ? carregarPings(raceId, fechamento.id, distanciaTracadoM, inicioMs, fimMs) : [],
+    ultimoUsavel
+      ? carregarPings(raceId, ultimoUsavel.id, distanciaTracadoM, inicioMs, fimMs)
+      : [],
     carregarCobertura(raceId, inicioMs, fimMs),
   ]);
 
@@ -204,6 +241,16 @@ export async function montarRelatorio(
     serie,
     serieImpossivel: impossivel,
     caudaSemDadoS: calcularCauda(cobertura, fimMs),
+    bloqueios: apurarBloqueios({
+      pontos: ((bloqueiosRes.data ?? []) as BloqueioRow[]).map((b) => ({
+        id: b.id,
+        offsetM: Number(b.offset_m),
+        nome: b.name,
+      })),
+      abertura: pingsAbertura,
+      ultimo: pingsUltimo,
+    }),
+    ultimoVeiculo: pingsUltimo.length > 0 ? (ultimoUsavel?.label ?? null) : null,
     incidentes: ((alertasRes.data ?? []) as AlertaRow[]).map((a) =>
       paraIncidente(a, porId),
     ),
@@ -511,6 +558,12 @@ interface PosicaoRow {
   vehicle_plate: string | null;
   is_reference_lead: boolean;
   is_reference_sweep: boolean;
+}
+
+interface BloqueioRow {
+  id: string;
+  offset_m: number | string;
+  name: string | null;
 }
 
 interface PingRow {

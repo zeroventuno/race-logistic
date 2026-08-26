@@ -171,6 +171,22 @@ export default async function ResumoDaProvaPage({
               {t("route.missingExplain")}
             </p>
           )}
+
+          {/* Os pontos de bloqueio moram junto do percurso porque é dele que
+              eles dependem: cada um é um quilômetro ao longo do traçado. Sem
+              percurso a tela não tem o que mostrar, então o acesso também não
+              aparece. */}
+          {activeTrack ? (
+            <div className="mt-5 border-t border-border pt-4">
+              <BotaoLink
+                href={`/dashboard/${race.id}/bloqueios`}
+                variant="ghost"
+                size="sm"
+              >
+                {t("blockpoints.title")}
+              </BotaoLink>
+            </div>
+          ) : null}
         </Cartao>
 
         <Cartao className="p-5 sm:p-6">
