@@ -611,9 +611,9 @@ function PaginaDeBloqueios({
             olha.
           */}
           <Text style={[s.p, { marginTop: 12, fontSize: 8 }]}>
-            {dados.ultimoVeiculo === null
+            {dados.veiculoDeReabertura === null
               ? t("report.blocksNoSweep")
-              : `${t("report.colReopened")}: ${dados.ultimoVeiculo}`}
+              : `${t("report.colReopened")}: ${dados.veiculoDeReabertura}`}
           </Text>
         </>
       )}

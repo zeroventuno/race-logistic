@@ -128,10 +128,26 @@ pessoa que o relatório presta contas.
 | 8,6 | Cruzamento SP 422 × Via Cuneo | 09:22 | 10:03 | 41 min |
 | 14,1 | km 14,1 | 09:31 | 10:12 | 41 min |
 
-"Fechou" é a passagem da abertura por aquele quilômetro. "Reabriu" é a
-passagem do **último veículo — a vassoura, não o fechamento**. Essa distinção é
-do domínio e o relatório não pode errar: atrás do carro de fechamento ainda
-vem prova.
+"Fechou" é a passagem do carro de abertura por aquele quilômetro. "Reabriu" é a
+passagem do **carro de fechamento**. Os dois veículos de referência existem
+para exatamente isso: um fecha a rua e liga o cronômetro naquele ponto, o outro
+reabre e para o cronômetro.
+
+**A duração de um bloqueio é a janela medida naquele quilômetro** — o mesmo
+número da seção 2, amostrado por ponto em vez de por tempo. As duas seções
+dizem a mesma coisa de dois jeitos, e é bom que digam: uma serve para ver o
+comportamento ao longo do dia, a outra para prestar contas a quem ficou parado
+num cruzamento.
+
+**O que vem atrás do fechamento não entra nessa conta.** Ali ainda há prova —
+motos de apoio, mecânicos, ambulâncias e por último a vassoura, que acompanha o
+último ciclista e recolhe quem abandona. Mas a rua já está aberta ao trânsito.
+Numa prova amadora é normal ter muita gente pedalando com a rua liberada, e é
+justamente por isso que esses ciclistas são os que mais precisam de apoio.
+
+> Esta seção já esteve errada aqui, com a vassoura no lugar do fechamento.
+> Registrado porque o erro é atraente: "a prova continua atrás do fechamento" é
+> verdade, e leva a concluir que a rua continua fechada — que não é.
 
 **Por que isso é melhor que segmentar por quilometragem arbitrária:** a linha
 vira conferível e pessoal. "O seu agente na rotatória da Via Roma ficou lá das

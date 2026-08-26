@@ -4,17 +4,24 @@ import type { AmostraDePing } from "./serie";
  * Quando cada ponto de bloqueio fechou e quando reabriu.
  *
  * ------------------------------------------------------------------------
- * FECHOU É A ABERTURA. REABRIU É A VASSOURA.
+ * FECHOU É A ABERTURA. REABRIU É O FECHAMENTO.
  *
- * Esta é a regra de domínio do arquivo inteiro e errá-la produziria um
- * documento que mente sobre segurança. A rua fecha quando o carro de abertura
- * passa. Mas ela NÃO reabre quando o carro de fechamento passa: atrás dele
- * ainda vem prova — motos de apoio, mecânicos, ambulâncias — e por último a
- * vassoura, que é quem recolhe quem abandonou. Quem devolve a rua ao trânsito
- * é o ÚLTIMO veículo do comboio.
+ * Os dois carros de referência existem para isso e só para isso: o de abertura
+ * fecha a rua e liga o cronômetro naquele ponto; o de fechamento reabre a rua e
+ * para o cronômetro. É a mesma janela da seção do gráfico, amostrada por ponto
+ * em vez de por tempo — a duração de um bloqueio É a janela naquele quilômetro.
  *
- * Um relatório que usasse o fechamento como reabertura declararia à prefeitura
- * uma rua liberada com ciclista ainda nela.
+ * O QUE VEM DEPOIS DO FECHAMENTO NÃO ENTRA NESSA CONTA. Atrás dele ainda há
+ * prova — motos de apoio, mecânicos, ambulâncias, e por último a vassoura, que
+ * acompanha o último ciclista e recolhe quem abandona. Mas a rua já está aberta
+ * ao trânsito. Numa prova amadora é normal ter muita gente pedalando com a rua
+ * já liberada, e é justamente por isso que esses ciclistas precisam de apoio.
+ *
+ * ESTA VERSÃO JÁ ESTEVE ERRADA, com a vassoura no lugar do fechamento. O efeito
+ * era duplo e todo ruim: inflava a duração declarada de cada bloqueio, e fazia
+ * a coluna sair vazia sempre que não houvesse vassoura — quando o dado
+ * necessário estava lá o tempo todo, no veículo de referência que toda prova
+ * tem por obrigação.
  *
  * ------------------------------------------------------------------------
  * INTERPOLA, MAS NÃO EXTRAPOLA
@@ -85,14 +92,15 @@ export function instanteDaPassagem(
 
 export interface EntradaDeBloqueios {
   pontos: PontoDeBloqueio[];
-  /** Rastro do carro de abertura. */
+  /** Rastro do carro de abertura: é a passagem dele que fecha a rua. */
   abertura: AmostraDePing[];
   /**
-   * Rastro do ÚLTIMO veículo do comboio — a vassoura, quando existe.
-   * Vazio significa que ninguém pôde ocupar esse papel, e a coluna de
+   * Rastro do carro de fechamento: é a passagem dele que reabre a rua.
+   *
+   * Vazio significa que o carro de fechamento não transmitiu, e a coluna de
    * reabertura sai vazia em vez de sair errada.
    */
-  ultimo: AmostraDePing[];
+  fechamento: AmostraDePing[];
 }
 
 export function apurarBloqueios(e: EntradaDeBloqueios): BloqueioApurado[] {
@@ -101,7 +109,7 @@ export function apurarBloqueios(e: EntradaDeBloqueios): BloqueioApurado[] {
     .sort((a, b) => a.offsetM - b.offsetM)
     .map((p) => {
       const fechouMs = instanteDaPassagem(e.abertura, p.offsetM, "primeira");
-      const reabriuMs = instanteDaPassagem(e.ultimo, p.offsetM, "ultima");
+      const reabriuMs = instanteDaPassagem(e.fechamento, p.offsetM, "ultima");
 
       return {
         ...p,

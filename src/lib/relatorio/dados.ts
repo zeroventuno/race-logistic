@@ -90,13 +90,12 @@ export interface DadosDoRelatorio {
   caudaSemDadoS: number | null;
   bloqueios: BloqueioApurado[];
   /**
-   * Rótulo do veículo usado como "último do comboio" na coluna de reabertura.
+   * Rótulo do veículo cuja passagem devolveu a rua ao trânsito.
    *
-   * Vai impresso: quem lê precisa saber de quem é a passagem que devolveu a
-   * rua. Nulo quando nenhum veículo pôde ocupar o papel — e aí a coluna sai
-   * vazia, nunca preenchida com o carro de fechamento.
+   * Vai impresso: quem lê precisa saber de quem é essa passagem. É o carro de
+   * fechamento; nulo quando ele não transmitiu, e aí a coluna sai vazia.
    */
-  ultimoVeiculo: string | null;
+  veiculoDeReabertura: string | null;
   incidentes: IncidenteDoRelatorio[];
   veiculos: VeiculoDoRelatorio[];
   geradoEm: string;
@@ -178,30 +177,9 @@ export async function montarRelatorio(
   const inicioMs = prova.actual_start ? Date.parse(prova.actual_start) : null;
   const fimMs = prova.finished_at ? Date.parse(prova.finished_at) : null;
 
-  /*
-   * QUEM DEVOLVE A RUA AO TRÂNSITO.
-   *
-   * Não é o carro de fechamento: atrás dele ainda vem prova — motos de apoio,
-   * mecânicos, ambulâncias — e por último a vassoura, que recolhe quem
-   * abandonou. A reabertura é a passagem do ÚLTIMO veículo do comboio.
-   *
-   * Preferência pela vassoura declarada; sem ela, o maior `ordinal`, que é a
-   * ordem do comboio. Se sobrar o próprio fechamento, ele NÃO serve — melhor a
-   * coluna vazia do que um horário de reabertura cedo demais num documento que
-   * a prefeitura vai ler.
-   */
-  const ultimo =
-    posicoes.find((p) => p.role === "broom_wagon") ??
-    [...posicoes].sort((a, b) => b.ordinal - a.ordinal)[0] ??
-    null;
-  const ultimoUsavel = ultimo && !ultimo.is_reference_sweep ? ultimo : null;
-
-  const [pingsAbertura, pingsFechamento, pingsUltimo, cobertura] = await Promise.all([
+  const [pingsAbertura, pingsFechamento, cobertura] = await Promise.all([
     abertura ? carregarPings(raceId, abertura.id, distanciaTracadoM, inicioMs, fimMs) : [],
     fechamento ? carregarPings(raceId, fechamento.id, distanciaTracadoM, inicioMs, fimMs) : [],
-    ultimoUsavel
-      ? carregarPings(raceId, ultimoUsavel.id, distanciaTracadoM, inicioMs, fimMs)
-      : [],
     carregarCobertura(raceId, inicioMs, fimMs),
   ]);
 
@@ -248,9 +226,10 @@ export async function montarRelatorio(
         nome: b.name,
       })),
       abertura: pingsAbertura,
-      ultimo: pingsUltimo,
+      fechamento: pingsFechamento,
     }),
-    ultimoVeiculo: pingsUltimo.length > 0 ? (ultimoUsavel?.label ?? null) : null,
+    veiculoDeReabertura:
+      pingsFechamento.length > 0 ? (fechamento?.label ?? null) : null,
     incidentes: ((alertasRes.data ?? []) as AlertaRow[]).map((a) =>
       paraIncidente(a, porId),
     ),

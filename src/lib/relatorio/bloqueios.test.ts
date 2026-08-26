@@ -13,7 +13,8 @@ function rastro(deS: number, ateS: number, offsetEmS: (s: number) => number) {
 }
 
 const abertura = rastro(0, 3600, (s) => 10 * s);
-const ultimo = rastro(1800, 5400, (s) => 10 * (s - 1800));
+/** Meia hora atrás do abertura: é a janela que a prefeitura autorizou. */
+const fechamento = rastro(1800, 5400, (s) => 10 * (s - 1800));
 
 describe("instanteDaPassagem", () => {
   it("interpola entre os dois pings que cercam o ponto", () => {
@@ -61,7 +62,7 @@ describe("apurarBloqueios", () => {
   ];
 
   it("ordena por quilômetro e apura fechou, reabriu e duração", () => {
-    const r = apurarBloqueios({ pontos, abertura, ultimo });
+    const r = apurarBloqueios({ pontos, abertura, fechamento });
 
     expect(r.map((x) => x.id)).toEqual(["a", "b"]);
 
@@ -72,12 +73,18 @@ describe("apurarBloqueios", () => {
   });
 
   /**
-   * A REGRA DE DOMÍNIO. Reabertura é a passagem do ÚLTIMO veículo, não do
-   * carro de fechamento — atrás dele ainda vem prova. Sem último veículo, a
-   * coluna sai vazia; nunca preenchida com o fechamento.
+   * A REGRA DE DOMÍNIO, e esta versão já esteve errada.
+   *
+   * Reabertura é a passagem do CARRO DE FECHAMENTO. Os dois carros de
+   * referência existem para isso: um fecha a rua e liga o cronômetro, o outro
+   * reabre e para. O que vem atrás do fechamento — motos, mecânicos,
+   * ambulâncias, vassoura — anda com a rua já aberta ao trânsito.
+   *
+   * Sem o fechamento transmitindo, a coluna sai vazia. Nunca preenchida com
+   * outro veículo qualquer.
    */
-  it("sem último veículo, não inventa reabertura", () => {
-    const r = apurarBloqueios({ pontos, abertura, ultimo: [] });
+  it("sem carro de fechamento, não inventa reabertura", () => {
+    const r = apurarBloqueios({ pontos, abertura, fechamento: [] });
 
     expect(r[0]!.fechouMs).toBe(300_000);
     expect(r[0]!.reabriuMs).toBeNull();
@@ -88,7 +95,7 @@ describe("apurarBloqueios", () => {
     const r = apurarBloqueios({
       pontos: [{ id: "x", offsetM: 99_000, nome: "Longe" }],
       abertura,
-      ultimo,
+      fechamento,
     });
 
     expect(r[0]!.fechouMs).toBeNull();
