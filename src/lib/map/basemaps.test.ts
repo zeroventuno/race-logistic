@@ -46,10 +46,27 @@ describe("catálogo de mapas de fundo", () => {
         }
 
         expect(estilo.version, `${b.id}/${tema}`).toBe(8);
-        expect(Object.keys(estilo.sources).length).toBeGreaterThan(0);
-        // Atribuição não é opcional: é exigência de licença dos dados.
-        const fonte = Object.values(estilo.sources)[0] as { attribution?: string };
-        expect(fonte.attribution, `${b.id}/${tema}`).toBeTruthy();
+
+        /*
+         * ESTILO SEM FONTE É LEGÍTIMO, e é o único caso.
+         *
+         * Sem chave de provedor o padrão cai para fundo liso: uma camada de
+         * cor e nada mais. Não há dado de terceiro em jogo, então não há o que
+         * atribuir — a exigência abaixo vale para quem USA dado alheio.
+         *
+         * A regra que este teste protege é a inversa e essa não cede: fonte
+         * declarada SEM atribuição é violação de licença, e passaria calada.
+         */
+        const fontes = Object.values(estilo.sources) as { attribution?: string }[];
+
+        if (fontes.length === 0) {
+          expect(estilo.layers.length, `${b.id}/${tema}`).toBeGreaterThan(0);
+          continue;
+        }
+
+        for (const fonte of fontes) {
+          expect(fonte.attribution, `${b.id}/${tema}`).toBeTruthy();
+        }
       }
     }
   });

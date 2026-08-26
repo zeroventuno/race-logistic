@@ -5,7 +5,11 @@ import { ProvaForm } from "@/components/director/ProvaForm";
 import { StatusProvaBotao } from "@/components/director/StatusProvaBotao";
 import { BotaoLink, Cartao, TituloSecao } from "@/components/director/ui";
 import { VehicleIcon } from "@/components/icons/vehicle";
-import { formatDistance, formatDuration } from "@/lib/i18n/format";
+import {
+  formatDistance,
+  formatDuration,
+  formatRouteDistance,
+} from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
 import { ROLE_META } from "@/lib/types";
 
@@ -128,7 +132,7 @@ export default async function ResumoDaProvaPage({
                   {t("race.distance")}
                 </dt>
                 <dd className="medido tnum mt-0.5 text-2xl text-ink">
-                  {formatDistance(activeTrack.total_distance_m, locale)}
+                  {formatRouteDistance(activeTrack.total_distance_m, locale)}
                 </dd>
               </div>
               <div>
@@ -143,7 +147,7 @@ export default async function ResumoDaProvaPage({
                 <div className="col-span-2 border border-border bg-surface-2/50 px-3 py-2 text-sm text-ink-muted">
                   {t("race.lapsTotal", {
                     laps: voltas,
-                    distance: formatDistance(
+                    distance: formatRouteDistance(
                       activeTrack.total_distance_m * voltas,
                       locale,
                     ),

@@ -2,7 +2,11 @@ import Link from "next/link";
 
 import { MiniPercurso } from "@/components/director/MiniPercurso";
 import { Aviso, BotaoLink, Cartao, Selo } from "@/components/director/ui";
-import { formatDistance, formatDuration } from "@/lib/i18n/format";
+import {
+  formatDistance,
+  formatDuration,
+  formatRouteDistance,
+} from "@/lib/i18n/format";
 import { getTranslator } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/config";
 import type { TranslationKey, Translator } from "@/lib/i18n/translate";
@@ -290,7 +294,7 @@ export default async function DashboardPage({
                       rotulo={t("race.route")}
                       valor={
                         percurso
-                          ? formatDistance(percurso.total_distance_m, locale)
+                          ? formatRouteDistance(percurso.total_distance_m, locale)
                           : "—"
                       }
                     />

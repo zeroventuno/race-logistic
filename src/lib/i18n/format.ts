@@ -46,6 +46,33 @@ export function formatDistance(meters: number | null, locale: Locale): string {
 }
 
 /**
+ * O comprimento de um PERCURSO, sempre com uma casa decimal.
+ *
+ * `formatDistance` arredonda para o quilômetro inteiro acima de 100 km, e para
+ * uma leitura operacional — "o veículo está no km 42" — está certo: a casa
+ * decimal ali é ruído numa tela que se lê de relance.
+ *
+ * O comprimento do percurso é outra coisa. É o número que o organizador
+ * publicou no site da prova, que ele conferiu no computador de bordo e que
+ * consta no pedido à prefeitura. Ver "111 km" onde o cartaz diz "110,62" faz
+ * ele desconfiar da importação inteira — e foi exatamente o que aconteceu.
+ */
+export function formatRouteDistance(
+  meters: number | null,
+  locale: Locale,
+): string {
+  if (meters === null || !Number.isFinite(meters)) return "—";
+
+  const abs = Math.abs(meters);
+  if (abs < 1000) return formatDistance(meters, locale);
+
+  return `${new Intl.NumberFormat(tag(locale), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(abs / 1000)} km`;
+}
+
+/**
  * Duração legível: "1 h 04", "23 min", "45 s".
  *
  * Usa as unidades curtas do próprio Intl quando disponíveis, porque "min" em

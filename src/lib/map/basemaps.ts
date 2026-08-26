@@ -117,6 +117,37 @@ function raster(
   };
 }
 
+/**
+ * Fundo sem tile nenhum: só a cor do papel.
+ *
+ * É o último recurso, para o ambiente que não tem chave — quem clonou o
+ * repositório, uma pré-visualização de branch, um deploy onde a variável
+ * ficou de fora.
+ *
+ * A alternativa seria seguir puxando tiles gratuitas de terceiro sem
+ * cadastro, e foi o que este arquivo fazia até descobrirmos o custo: as tiles
+ * do CARTO continuam respondendo 200, mas agora vêm com "API KEY REQUIRED"
+ * IMPRESSO NA IMAGEM. Não é falha que dê erro em lugar nenhum — é a marca de
+ * quem está usando o serviço fora dos termos, carimbada por cima do percurso,
+ * na tela que o organizador mostra para a prefeitura.
+ *
+ * Mapa cinza com o traçado por cima é uma degradação que se explica. Pedido
+ * de pagamento de outra empresa atravessado no material do cliente, não.
+ */
+function fundoLiso(tema: "light" | "dark"): StyleSpecification {
+  return {
+    version: 8,
+    sources: {},
+    layers: [
+      {
+        id: "background",
+        type: "background",
+        paint: { "background-color": tema === "light" ? "#efede7" : "#0a0d10" },
+      },
+    ],
+  };
+}
+
 export const BASEMAPS: Record<BasemapId, Basemap> = {
   asfalto: {
     id: "asfalto",
@@ -124,7 +155,9 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
     descricaoChave: "map.basemapAsphaltHint",
     disponivel: true,
     licenca:
-      "CARTO basemaps sobre dados do OpenStreetMap, com atribuição obrigatória (já embutida no estilo). É o fundo que este produto usa desde o começo.",
+      "MapTiler, estilos `positron` e `darkmatter` — a mesma cartografia clara e neutra que este produto usa desde o começo, agora pelo provedor que já atende o resto do catálogo. Era CARTO sem cadastro, e eles passaram a carimbar \"API KEY REQUIRED\" na própria imagem da tile.",
+    // Continua sendo o padrão e por isso NÃO exige chave para aparecer na
+    // lista: sem chave ele cai para fundo liso, que é degradação explicável.
     exigeChave: false,
     rota: {
       // Azul fechado sobre papel claro; contorno branco para a linha não sumir
@@ -133,25 +166,9 @@ export const BASEMAPS: Record<BasemapId, Basemap> = {
       dark: { linha: "#78bef0", casing: "rgb(10 13 16 / 0.6)" },
     },
     estilo: (tema) =>
-      tema === "light"
-        ? raster(
-            [
-              "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-              "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-              "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-            ],
-            "#efede7",
-            `${ATRIBUICAO_OSM} · © <a href="https://carto.com/attributions">CARTO</a>`,
-          )
-        : raster(
-            [
-              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-            ],
-            "#0a0d10",
-            `${ATRIBUICAO_OSM} · © <a href="https://carto.com/attributions">CARTO</a>`,
-          ),
+      CHAVE_MAPTILER
+        ? estiloMapTiler(tema === "light" ? "positron" : "darkmatter")
+        : fundoLiso(tema),
   },
 
   topografico: {

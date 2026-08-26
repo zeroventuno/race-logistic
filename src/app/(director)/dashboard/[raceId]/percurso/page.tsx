@@ -2,7 +2,7 @@ import {
   PercursoEditor,
   type TrackAtual,
 } from "@/components/director/PercursoEditor";
-import { Aviso } from "@/components/director/ui";
+import { Aviso, BotaoLink } from "@/components/director/ui";
 import { getTranslator } from "@/lib/i18n/server";
 
 import { getRaceContext } from "../../../_lib/session";
@@ -51,6 +51,28 @@ export default async function PercursoPage({
           {t("route.purpose")}
         </p>
       </header>
+
+      {/*
+        OS PONTOS DE BLOQUEIO MORAM AQUI, e não só no resumo.
+        A primeira versão pôs o acesso no cartão de percurso da aba Resumo, e
+        quem foi procurar foi para a aba Percurso — que é onde a cabeça de quem
+        cadastra prova espera achar qualquer coisa ligada ao traçado. Custa uma
+        linha estar nos dois lugares e evita uma tela que existe e ninguém acha.
+      */}
+      {canEdit && trackAtual ? (
+        <div className="mb-6 flex flex-wrap items-center gap-3 border border-border bg-surface-1 px-4 py-3">
+          <span className="flex-1 text-sm text-ink-muted">
+            {t("blockpoints.lead")}
+          </span>
+          <BotaoLink
+            href={`/dashboard/${race.id}/bloqueios`}
+            variant="secondary"
+            size="sm"
+          >
+            {t("blockpoints.title")}
+          </BotaoLink>
+        </div>
+      ) : null}
 
       {canEdit ? (
         <PercursoEditor raceId={race.id} trackAtual={trackAtual} />
