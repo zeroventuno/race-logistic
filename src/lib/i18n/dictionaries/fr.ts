@@ -1128,6 +1128,7 @@ export const fr: Dictionary = {
   blockpoints: {
     title: "Points de blocage",
     lead: "Où quelqu'un se tient pour retenir la circulation : rond-point, carrefour, intersection. Le rapport final indique combien de temps chacun est resté fermé.",
+    mapHint: "Sur la carte : touchez un point pour l’activer ou le désactiver, et le tracé pour en créer un.",
     detect: "Détecter depuis la carte",
     detecting: "Recherche de carrefours…",
     detected: "{n} carrefours trouvés. Désactivez ceux qui ne sont pas des blocages.",

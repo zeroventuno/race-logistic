@@ -1112,6 +1112,7 @@ export const en: Dictionary = {
   blockpoints: {
     title: "Blocking points",
     lead: "Where someone stands holding traffic: roundabout, junction, crossroads. The final report states how long each one stayed closed.",
+    mapHint: "On the map: tap a point to switch it on or off, and the route to create one there.",
     detect: "Detect from map",
     detecting: "Looking for junctions…",
     detected: "{n} junctions found. Switch off the ones that are not blocks.",

@@ -24,6 +24,7 @@ const FONTE_PONTOS = "bloqueios-pontos";
 const CAMADA_ROTA = "bloqueios-rota-traco";
 const CAMADA_PONTOS = "bloqueios-pontos-circulo";
 const CAMADA_ACERTO = "bloqueios-pontos-acerto";
+const CAMADA_ROTA_ACERTO = "bloqueios-rota-acerto";
 
 export interface PontoNoMapa {
   id: string;
@@ -33,10 +34,15 @@ export interface PontoNoMapa {
 }
 
 export interface MapaDeBloqueiosProps {
-  rota: [number, number][];
+  /** `[lng, lat, metros percorridos]` — a quilometragem vem junto. */
+  rota: [number, number, number][];
   pontos: PontoNoMapa[];
   selecionado: string | null;
   onSelecionar: (id: string | null) => void;
+  /** Tocar num ponto liga e desliga. */
+  onAlternar: (id: string) => void;
+  /** Tocar no traçado, longe de qualquer ponto, cria um ali. */
+  onCriar: (offsetM: number) => void;
   basemap?: string | null;
   className?: string;
 }
@@ -46,6 +52,8 @@ export function MapaDeBloqueios({
   pontos,
   selecionado,
   onSelecionar,
+  onAlternar,
+  onCriar,
   basemap,
   className,
 }: MapaDeBloqueiosProps) {
@@ -57,10 +65,14 @@ export function MapaDeBloqueios({
   const pontosRef = useRef(pontos);
   const selecionadoRef = useRef(selecionado);
   const onSelecionarRef = useRef(onSelecionar);
+  const onAlternarRef = useRef(onAlternar);
+  const onCriarRef = useRef(onCriar);
   rotaRef.current = rota;
   pontosRef.current = pontos;
   selecionadoRef.current = selecionado;
   onSelecionarRef.current = onSelecionar;
+  onAlternarRef.current = onAlternar;
+  onCriarRef.current = onCriar;
 
   const redesenhar = useCallback(() => {
     const map = mapRef.current;
@@ -86,7 +98,10 @@ export function MapaDeBloqueios({
         data: {
           type: "Feature",
           properties: {},
-          geometry: { type: "LineString", coordinates: rotaRef.current },
+          geometry: {
+            type: "LineString",
+            coordinates: rotaRef.current.map(([lng, lat]) => [lng, lat]),
+          },
         },
       });
     }
@@ -142,27 +157,66 @@ export function MapaDeBloqueios({
       });
     }
 
+    if (!map.getLayer(CAMADA_ROTA_ACERTO)) {
+      // Faixa larga e invisível sobre o traçado. A linha tem 3 px; acertar 3 px
+      // para criar um ponto seria um teste de pontaria, não uma ferramenta.
+      map.addLayer({
+        id: CAMADA_ROTA_ACERTO,
+        type: "line",
+        source: FONTE_ROTA,
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-width": 24, "line-opacity": 0 },
+      });
+    }
+
     if (rotaRef.current.length > 1) enquadrar(map, rotaRef.current);
 
     if (gestosEmRef.current === map) return;
     gestosEmRef.current = map;
 
-    map.on("click", CAMADA_ACERTO, (e: MapLayerMouseEvent) => {
-      const id = e.features?.[0]?.properties?.id;
-      if (typeof id === "string") onSelecionarRef.current(id);
-    });
+    /*
+     * UM ÚNICO TRATADOR DE CLIQUE, com prioridade explícita.
+     *
+     * Registrar um `click` por camada deixaria a ordem de disparo a cargo da
+     * ordem de pintura do MapLibre — e um ponto EM CIMA do traçado dispararia
+     * os dois: alternaria o estado e criaria um vizinho a dois metros. A
+     * decisão de qual gesto foi feito é uma só, e é tomada aqui.
+     */
     map.on("click", (e) => {
-      const emCima = map.queryRenderedFeatures(e.point, {
+      const noPonto = map.queryRenderedFeatures(e.point, {
         layers: [CAMADA_ACERTO],
       });
-      if (emCima.length === 0) onSelecionarRef.current(null);
+
+      if (noPonto.length > 0) {
+        const id = noPonto[0]?.properties?.id;
+        if (typeof id === "string") {
+          onSelecionarRef.current(id);
+          onAlternarRef.current(id);
+        }
+        return;
+      }
+
+      const naRota = map.queryRenderedFeatures(e.point, {
+        layers: [CAMADA_ROTA_ACERTO],
+      });
+
+      if (naRota.length > 0) {
+        const offsetM = offsetNoTracado(rotaRef.current, e.lngLat.lng, e.lngLat.lat);
+        if (offsetM !== null) onCriarRef.current(offsetM);
+        return;
+      }
+
+      onSelecionarRef.current(null);
     });
-    map.on("mouseenter", CAMADA_ACERTO, () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-    map.on("mouseleave", CAMADA_ACERTO, () => {
-      map.getCanvas().style.cursor = "";
-    });
+
+    for (const camada of [CAMADA_ACERTO, CAMADA_ROTA_ACERTO]) {
+      map.on("mouseenter", camada, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", camada, () => {
+        map.getCanvas().style.cursor = "";
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -211,7 +265,59 @@ function pontosGeoJson(pontos: PontoNoMapa[], selecionado: string | null) {
   };
 }
 
-function enquadrar(map: MapLibreMap, rota: [number, number][]) {
+/**
+ * O quilômetro do traçado mais próximo do clique.
+ *
+ * Projeta sobre o SEGMENTO, não sobre o vértice mais próximo. Com amostragem
+ * de 80 m, cair no vértice erraria até 40 m — o suficiente para o ponto criado
+ * ficar do outro lado de um cruzamento.
+ */
+function offsetNoTracado(
+  rota: [number, number, number][],
+  lng: number,
+  lat: number,
+): number | null {
+  if (rota.length < 2) return null;
+
+  // Aproximação plana: na escala de metros a curvatura não muda nada.
+  const cos = Math.cos((lat * Math.PI) / 180);
+  const x = (l: number) => l * cos * 111_320;
+  const y = (l: number) => l * 110_540;
+
+  const px = x(lng);
+  const py = y(lat);
+
+  let melhorD2 = Infinity;
+  let melhorOffset: number | null = null;
+
+  for (let i = 1; i < rota.length; i++) {
+    const [aLng, aLat, aOff] = rota[i - 1]!;
+    const [bLng, bLat, bOff] = rota[i]!;
+
+    const ax = x(aLng);
+    const ay = y(aLat);
+    const dx = x(bLng) - ax;
+    const dy = y(bLat) - ay;
+    const len2 = dx * dx + dy * dy;
+
+    // Fração ao longo do segmento, presa em [0, 1] para não projetar fora dele.
+    const t =
+      len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+
+    const qx = ax + t * dx;
+    const qy = ay + t * dy;
+    const d2 = (px - qx) * (px - qx) + (py - qy) * (py - qy);
+
+    if (d2 < melhorD2) {
+      melhorD2 = d2;
+      melhorOffset = aOff + t * (bOff - aOff);
+    }
+  }
+
+  return melhorOffset;
+}
+
+function enquadrar(map: MapLibreMap, rota: [number, number, number][]) {
   let minLng = Infinity;
   let minLat = Infinity;
   let maxLng = -Infinity;

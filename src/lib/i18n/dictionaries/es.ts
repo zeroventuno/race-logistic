@@ -1130,6 +1130,7 @@ export const es: Dictionary = {
   blockpoints: {
     title: "Puntos de bloqueo",
     lead: "Donde alguien se queda parado sujetando el tráfico: rotonda, cruce, entronque. El informe final indica cuánto tiempo estuvo cerrado cada uno.",
+    mapHint: "En el mapa: toque un punto para activarlo o desactivarlo, y el trazado para crear uno ahí.",
     detect: "Detectar desde el mapa",
     detecting: "Buscando cruces…",
     detected: "{n} cruces encontrados. Desactive los que no son bloqueo.",

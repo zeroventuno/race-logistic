@@ -8,6 +8,38 @@ import { EditorDeBloqueios, type PontoNaTela } from "./Editor";
 
 export const dynamic = "force-dynamic";
 
+/** Um ponto do traçado a cada ~80 m: fino o bastante para clicar em cima. */
+const AMOSTRA_M = 80;
+
+/** Teto de pontos que descem para o navegador. */
+const MAX_PONTOS = 1600;
+
+function trilhaComQuilometragem(
+  carregada: Awaited<ReturnType<typeof loadRaceRoute>>,
+): [number, number, number][] {
+  if (!carregada) return [];
+
+  const passo = Math.max(
+    AMOSTRA_M,
+    carregada.track.totalDistanceM / MAX_PONTOS,
+  );
+
+  const saida: [number, number, number][] = [];
+  let proximo = 0;
+
+  for (const [lng, lat, offset] of carregada.track.points) {
+    if (offset >= proximo) {
+      saida.push([lng, lat, offset]);
+      proximo = offset + passo;
+    }
+  }
+
+  const ultimo = carregada.track.points[carregada.track.points.length - 1];
+  if (ultimo) saida.push([ultimo[0], ultimo[1], ultimo[2]]);
+
+  return saida;
+}
+
 /**
  * A tela mais curta do sistema, e a que produz a linha mais valiosa do
  * relatório final.
@@ -41,7 +73,7 @@ export default async function BloqueiosPage({
    * cada um precisa virar coordenada, e a conversão é do servidor, que já tem
    * o traçado carregado e em cache.
    */
-  const rota = await loadRaceRoute(raceId);
+  const rotaCarregada = await loadRaceRoute(raceId);
 
   const pontos: PontoNaTela[] = (
     (data ?? []) as {
@@ -53,7 +85,12 @@ export default async function BloqueiosPage({
     }[]
   ).map((p) => {
     const offsetM = Number(p.offset_m);
-    const em = rota ? positionAtOffset(rota.track, offsetM % rota.track.totalDistanceM) : null;
+    const em = rotaCarregada
+      ? positionAtOffset(
+          rotaCarregada.track,
+          offsetM % rotaCarregada.track.totalDistanceM,
+        )
+      : null;
 
     return {
       id: p.id,
@@ -68,19 +105,19 @@ export default async function BloqueiosPage({
 
   const distanciaM = (race.laps ?? 1) * (activeTrack?.total_distance_m ?? 0);
 
-  // `render_points` é buscado só aqui, como na tela de percurso: são centenas
-  // de pares, e carregá-los no contexto compartilhado faria outras telas
-  // pagarem por um dado que não desenham.
-  const { data: geometria } = activeTrack
-    ? await supabase
-        .from("route_tracks")
-        .select("render_points")
-        .eq("id", activeTrack.id)
-        .maybeSingle()
-    : { data: null };
-
-  const activeTrackRenderPoints = (geometria as { render_points?: unknown } | null)
-    ?.render_points;
+  /*
+   * O TRAÇADO VAI COM QUILOMETRAGEM, e não só com coordenadas.
+   *
+   * Clicar no mapa para criar um ponto exige a conversão inversa: da
+   * coordenada de volta para o quilômetro. Mandar `render_points` cru
+   * obrigaria o navegador a refazer a soma de distâncias — e sobre uma
+   * geometria já simplificada, o que daria um número parecido e errado.
+   *
+   * Cada terceiro elemento é a distância acumulada REAL, a mesma que o resto
+   * do sistema usa. A amostragem é por distância porque um GPX grava denso na
+   * cidade e esparso na estrada.
+   */
+  const rota = trilhaComQuilometragem(rotaCarregada);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
@@ -102,7 +139,7 @@ export default async function BloqueiosPage({
           raceId={race.id}
           pontos={pontos}
           distanciaM={distanciaM}
-          rota={(activeTrackRenderPoints ?? []) as [number, number][]}
+          rota={rota}
           basemap={race.map_basemap}
         />
       ) : (

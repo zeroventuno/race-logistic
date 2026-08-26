@@ -1132,6 +1132,7 @@ export const ptBR = {
   blockpoints: {
     title: "Pontos de bloqueio",
     lead: "Onde alguém fica parado segurando o trânsito: rotatória, cruzamento, entroncamento. O relatório final informa por quanto tempo cada um ficou fechado.",
+    mapHint: "No mapa: toque num ponto para ligar ou desligar, e no traçado para criar um novo ali.",
     detect: "Detectar pelo mapa",
     detecting: "Procurando cruzamentos…",
     detected: "{n} cruzamentos encontrados. Desligue os que não são bloqueio.",

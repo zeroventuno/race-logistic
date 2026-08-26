@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Botao } from "@/components/director/ui";
 import { useT } from "@/lib/i18n/client";
@@ -62,7 +62,7 @@ export function EditorDeBloqueios({
   raceId: string;
   pontos: PontoNaTela[];
   distanciaM: number;
-  rota: [number, number][];
+  rota: [number, number, number][];
   basemap?: string | null;
 }) {
   const t = useT();
@@ -72,6 +72,44 @@ export function EditorDeBloqueios({
 
   const [pontos, setPontos] = useState(pontosDoServidor);
   const [selecionado, setSelecionado] = useState<string | null>(null);
+
+  /** Quem acabou de nascer: a linha dele abre com o cursor no nome. */
+  const [recemCriado, setRecemCriado] = useState<string | null>(null);
+
+  /**
+   * Liga e desliga, com desfazer automático.
+   *
+   * A tela muda AGORA e o servidor confirma por baixo. Se ele recusar, o estado
+   * volta e o erro aparece — quem clicou não fica com a tela mentindo, e também
+   * não fica esperando.
+   */
+  const alternarPonto = (id: string, ativo: boolean) => {
+    setPontos((atual) => atual.map((x) => (x.id === id ? { ...x, ativo } : x)));
+
+    void alternar(raceId, id, ativo).then((r) => {
+      if (!r.erro) return;
+      setErro(r.erro);
+      setPontos((atual) =>
+        atual.map((x) => (x.id === id ? { ...x, ativo: !ativo } : x)),
+      );
+    });
+  };
+
+  /**
+   * Criar tocando no traçado.
+   *
+   * Nasce sem nome, e isso NÃO contradiz a regra de só aceitar cruzamento
+   * nomeado: aquela regra é da detecção automática, que não sabe o que está
+   * trazendo. Aqui quem apontou sabe. Por isso a linha nova já abre com o
+   * cursor no campo do nome — o gesto seguinte é escrever o que é.
+   */
+  const criarNoKm = (offsetM: number) => {
+    executar(async () => {
+      const r = await acrescentar(raceId, Math.round(offsetM), null);
+      if (!r.erro) setRecemCriado(String(Math.round(offsetM)));
+      return r;
+    });
+  };
 
   // Detectar, acrescentar e remover revalidam a rota, e é por aqui que a lista
   // nova chega. Sem isto o estado local ficaria preso na primeira renderização.
@@ -169,9 +207,18 @@ export function EditorDeBloqueios({
             .map((p) => ({ id: p.id, lat: p.lat!, lng: p.lng!, ativo: p.ativo }))}
           selecionado={selecionado}
           onSelecionar={setSelecionado}
+          onAlternar={(id) => {
+            const p = pontos.find((x) => x.id === id);
+            if (p) alternarPonto(id, !p.ativo);
+          }}
+          onCriar={criarNoKm}
           basemap={basemap}
           className="h-72 w-full border border-border sm:h-96"
         />
+      ) : null}
+
+      {rota.length > 1 ? (
+        <p className="-mt-3 text-xs text-ink-faint">{t("blockpoints.mapHint")}</p>
       ) : null}
 
       {pontos.length === 0 ? (
@@ -189,23 +236,8 @@ export function EditorDeBloqueios({
               executar={executar}
               selecionado={selecionado === p.id}
               onSelecionar={() => setSelecionado(p.id)}
-              onAlternar={(ativo) => {
-                // A tela muda AGORA. O servidor confirma por baixo, e se
-                // recusar o erro aparece — mas quem clicou não espera.
-                setPontos((atual) =>
-                  atual.map((x) => (x.id === p.id ? { ...x, ativo } : x)),
-                );
-                void alternar(raceId, p.id, ativo).then((r) => {
-                  if (r.erro) {
-                    setErro(r.erro);
-                    setPontos((atual) =>
-                      atual.map((x) =>
-                        x.id === p.id ? { ...x, ativo: !ativo } : x,
-                      ),
-                    );
-                  }
-                });
-              }}
+              onAlternar={(ativo) => alternarPonto(p.id, ativo)}
+              focarNome={recemCriado === String(Math.round(p.offsetM))}
             />
           ))}
         </ul>
@@ -262,6 +294,7 @@ function Linha({
   selecionado,
   onSelecionar,
   onAlternar,
+  focarNome,
 }: {
   raceId: string;
   p: PontoNaTela;
@@ -270,9 +303,19 @@ function Linha({
   selecionado: boolean;
   onSelecionar: () => void;
   onAlternar: (ativo: boolean) => void;
+  focarNome: boolean;
 }) {
   const t = useT();
   const [nome, setNome] = useState(p.nome ?? "");
+  const campoRef = useRef<HTMLInputElement | null>(null);
+
+  // Ponto criado pelo mapa chega sem nome, e o gesto seguinte é dar um. Levar o
+  // cursor até lá poupa a pessoa de procurar na lista qual das linhas é a nova.
+  useEffect(() => {
+    if (!focarNome) return;
+    campoRef.current?.focus();
+    campoRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focarNome]);
 
   const sujo = nome.trim() !== (p.nome ?? "");
 
@@ -292,6 +335,7 @@ function Linha({
       </button>
 
       <input
+        ref={campoRef}
         type="text"
         value={nome}
         maxLength={120}

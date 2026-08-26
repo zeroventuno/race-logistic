@@ -1132,6 +1132,7 @@ export const de: Dictionary = {
   blockpoints: {
     title: "Sperrpunkte",
     lead: "Wo jemand steht und den Verkehr anhält: Kreisverkehr, Kreuzung, Einmündung. Der Abschlussbericht nennt, wie lange jeder gesperrt war.",
+    mapHint: "Auf der Karte: einen Punkt antippen schaltet ihn ein oder aus, die Strecke antippen legt dort einen an.",
     detect: "Aus der Karte erkennen",
     detecting: "Suche Kreuzungen…",
     detected: "{n} Kreuzungen gefunden. Schalten Sie aus, was keine Sperre ist.",
