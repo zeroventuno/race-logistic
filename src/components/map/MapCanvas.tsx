@@ -4,7 +4,7 @@ import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 
 import type { TranslationKey } from "@/lib/i18n/translate";
-import { resolverBasemap, type BasemapId } from "@/lib/map/basemaps";
+import { fundoLiso, resolverBasemap, type BasemapId } from "@/lib/map/basemaps";
 import { resolverTema, useTemaResolvido } from "@/lib/tema-atual";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -140,17 +140,36 @@ export function MapCanvas({
         console.warn("[MapCanvas]", e.error?.message ?? e);
       }
 
-      const escolhido = resolverBasemap(basemap);
-      if (avisouRef.current || escolhido.id === resolverBasemap(null).id) return;
+      if (avisouRef.current) return;
 
       const ehTile = String(e.error?.message ?? "")
         .toLowerCase()
         .match(/tile|fetch|network|403|404|429/);
       if (!ehTile) return;
 
+      const escolhido = resolverBasemap(basemap);
+      const padrao = resolverBasemap(null);
+
       avisouRef.current = true;
       estiloAtualRef.current = null;
-      map.setStyle(resolverBasemap(null).estilo(resolverTema()), { diff: false });
+
+      /*
+       * CAIR PARA ONDE, quando o padrão é do mesmo provedor que falhou.
+       *
+       * Isto era: "se já estou no padrão, não faço nada" — e fazia sentido
+       * quando o padrão vinha de outro provedor, gratuito e independente. Não
+       * faz mais: o catálogo inteiro é MapTiler, então trocar para o padrão é
+       * pedir de novo a quem acabou de recusar, e não trocar é ficar cinza sem
+       * dizer por quê.
+       *
+       * Agora a queda é para fundo LISO — sem tile nenhuma — e sempre com
+       * aviso. O mapa perde a rua e mantém o que importa: o traçado, os
+       * marcadores e os números, que nunca dependeram do fundo.
+       */
+      const cair =
+        escolhido.id === padrao.id ? fundoLiso(resolverTema()) : padrao.estilo(resolverTema());
+
+      map.setStyle(cair, { diff: false });
       onFundoIndisponivel?.(escolhido.nomeChave);
     });
 

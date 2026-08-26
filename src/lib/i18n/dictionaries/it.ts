@@ -421,6 +421,10 @@ export const it: Dictionary = {
     finish: "Concludi gara",
     report: "Rapporto finale",
     reportHint: "PDF con la finestra misurata, gli incidenti e la carovana.",
+    frozenTitle: "Rapporto finale",
+    frozenLine: "Versione {v} · {tamanho} kB · generato il {quando}",
+    frozenHash: "Verifica il file ricevuto con questo SHA-256:",
+    frozenAgain: "Genera nuova versione",
 
     areaOverline: "Area direzione gara",
     filterAll: "Tutte",

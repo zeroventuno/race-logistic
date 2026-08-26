@@ -5,6 +5,7 @@ import { isUuid } from "@/app/(director)/_lib/session";
 import { isLocale } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { documentoDoRelatorio } from "@/lib/relatorio/Documento";
+import { congelar, ultimoCongelado } from "@/lib/relatorio/congelar";
 import { montarRelatorio } from "@/lib/relatorio/dados";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -30,13 +31,20 @@ import { supabaseServer } from "@/lib/supabase/server";
  * ainda estava acontecendo quando ele foi feito.
  *
  * ------------------------------------------------------------------------
- * NÃO GRAVA NADA, E POR ENQUANTO NÃO CONGELA
+ * A PRIMEIRA GERAÇÃO CONGELA; AS SEGUINTES DEVOLVEM A CÓPIA
  *
- * A versão congelada — PDF guardado com hash, que é o que libera o expurgo dos
- * pings — ainda não existe. Enquanto ela não existir, **não apagar
- * `location_pings`**: é deles que esta rota reconstrói a série, e uma limpeza
- * feita antes do congelamento leva junto a única prova de que a prova
- * aconteceu.
+ * O relatório é reconstruído dos pings, então gerar duas vezes pode dar dois
+ * arquivos: um ping atrasado, um ponto de bloqueio novo, o próprio relógio. A
+ * prefeitura recebeu UM arquivo, e o sistema precisa poder afirmar depois que é
+ * aquele mesmo.
+ *
+ * Então: existe versão congelada, devolve os bytes guardados. Não existe, gera
+ * e congela. `?refazer=1` cria uma versão NOVA, sem apagar a anterior — quem
+ * recebeu a versão 1 recebeu a versão 1.
+ *
+ * É o congelamento que libera o expurgo de `location_pings`: enquanto uma
+ * prova não tiver cópia guardada, apagar o rastro dela é apagar a única prova
+ * de que ela aconteceu.
  */
 
 export const runtime = "nodejs";
@@ -95,14 +103,38 @@ export async function GET(
    */
   const pedido = request.nextUrl.searchParams.get("idioma");
   const idioma = isLocale(pedido) ? pedido : await getLocale();
+  const refazer = request.nextUrl.searchParams.get("refazer") === "1";
 
-  const pdf = await renderToBuffer(documentoDoRelatorio(dados, idioma));
+  const guardado = refazer ? null : await ultimoCongelado(raceId, idioma);
 
-  return new NextResponse(new Uint8Array(pdf), {
+  const congelado =
+    guardado ??
+    (await (async () => {
+      const bytes = await renderToBuffer(documentoDoRelatorio(dados, idioma));
+      const novo = await congelar(raceId, idioma, bytes, auth.user.id);
+
+      // Congelar pode falhar — e o download não pode falhar junto. Quem apertou
+      // o botão precisa do documento; a cópia guardada é garantia para depois.
+      return (
+        novo ?? {
+          versao: 0,
+          sha256: "",
+          pdf: Buffer.from(bytes),
+          tamanhoBytes: bytes.byteLength,
+          geradoEm: new Date().toISOString(),
+        }
+      );
+    })());
+
+  return new NextResponse(new Uint8Array(congelado.pdf), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${nomeDoArquivo(dados.prova.nome, dados.prova.inicio, idioma)}"`,
+      "Content-Disposition": `attachment; filename="${nomeDoArquivo(dados.prova.nome, dados.prova.inicio, idioma, congelado.versao)}"`,
+      // O hash vai no cabeçalho para quem integrar depois; a tela lê daqui em
+      // vez de recalcular.
+      "X-Relatorio-Sha256": congelado.sha256,
+      "X-Relatorio-Versao": String(congelado.versao),
       // Documento com nome de motorista e rastro de incidente não fica em
       // cache de proxy nenhum.
       "Cache-Control": "private, no-store",
@@ -125,6 +157,7 @@ function nomeDoArquivo(
   nome: string,
   inicioIso: string | null,
   idioma: string,
+  versao: number,
 ): string {
   const base = nome
     .normalize("NFD")
@@ -138,6 +171,9 @@ function nomeDoArquivo(
 
   // O idioma entra no nome porque o mesmo relatório sai em mais de uma língua
   // — para a prefeitura e para a federação — e dois arquivos com o mesmo nome
-  // na mesma pasta é como se perde o certo.
-  return `relatorio-${base || "prova"}-${dia}-${idioma}.pdf`;
+  // na mesma pasta é como se perde o certo. A versão entra pelo mesmo motivo,
+  // a partir da segunda: quem regerou depois de acrescentar pontos de bloqueio
+  // fica com os dois arquivos e precisa saber qual mandou.
+  const v = versao > 1 ? `-v${versao}` : "";
+  return `relatorio-${base || "prova"}-${dia}-${idioma}${v}.pdf`;
 }

@@ -134,7 +134,7 @@ function raster(
  * Mapa cinza com o traçado por cima é uma degradação que se explica. Pedido
  * de pagamento de outra empresa atravessado no material do cliente, não.
  */
-function fundoLiso(tema: "light" | "dark"): StyleSpecification {
+export function fundoLiso(tema: "light" | "dark"): StyleSpecification {
   return {
     version: 8,
     sources: {},

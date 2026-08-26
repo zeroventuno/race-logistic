@@ -52,6 +52,28 @@ export function formatRaceDate(
   }).format(instante);
 }
 
+/**
+ * Data e hora no fuso da PROVA.
+ *
+ * O relatório congelado carrega "gerado em"; se esse instante sair no fuso do
+ * servidor, ele não bate com nada que quem estava lá lembra.
+ */
+export function formatRaceDateTime(
+  iso: string | null,
+  locale: Locale,
+  timeZone: string,
+): string {
+  if (!iso) return "—";
+  const instante = new Date(iso);
+  if (!Number.isFinite(instante.getTime())) return "—";
+
+  return new Intl.DateTimeFormat(tag(locale), {
+    timeZone,
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(instante);
+}
+
 /** Tom visual de cada status. O rótulo vem do dicionário. */
 export const RACE_STATUS_TONE: Record<
   RaceStatus,

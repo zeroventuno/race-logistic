@@ -13,7 +13,11 @@ import {
 import { getTranslator } from "@/lib/i18n/server";
 import { ROLE_META } from "@/lib/types";
 
-import { formatElevationGain, formatInteger } from "../../_lib/format";
+import {
+  formatElevationGain,
+  formatInteger,
+  formatRaceDateTime,
+} from "../../_lib/format";
 import { getRaceContext } from "../../_lib/session";
 import { utcToZonedInputs } from "../../_lib/timezone";
 
@@ -23,9 +27,31 @@ export default async function ResumoDaProvaPage({
   params: Promise<{ raceId: string }>;
 }) {
   const { raceId } = await params;
-  const { race, positions, activeTrack, readiness, canEdit } =
+  const { supabase, race, positions, activeTrack, readiness, canEdit } =
     await getRaceContext(raceId);
   const { locale, t } = await getTranslator();
+
+  /*
+   * O RELATÓRIO CONGELADO MAIS RECENTE, se houver.
+   *
+   * Uma consulta a mais numa tela que já faz várias, e só quando a prova
+   * chegou ao fim — antes disso não existe linha nenhuma para achar.
+   */
+  const { data: relatorio } = race.finished_at
+    ? await supabase
+        .from("race_reports")
+        .select("locale, version, sha256, size_bytes, generated_at")
+        .eq("race_id", race.id)
+        .order("generated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<{
+          locale: string;
+          version: number;
+          sha256: string;
+          size_bytes: number;
+          generated_at: string;
+        }>()
+    : { data: null };
 
   const largada = utcToZonedInputs(race.scheduled_start, race.timezone);
   const voltas = (race as { laps?: number }).laps ?? 1;
@@ -108,6 +134,54 @@ export default async function ResumoDaProvaPage({
           </div>
         ) : null}
       </Cartao>
+
+      {/*
+        O RELATÓRIO CONGELADO, e o hash à vista.
+        Guardar o hash e não mostrá-lo seria uma promessa sem uso: ele existe
+        para ser CITADO no e-mail que leva o PDF à prefeitura, para que quem
+        recebeu possa conferir meses depois que o arquivo na mesa dele é o
+        mesmo que saiu daqui. Fica no resumo porque é aqui que se volta depois
+        da prova, e não na tela ao vivo, que é de dia de evento.
+      */}
+      {relatorio ? (
+        <Cartao className="p-5 sm:p-6">
+          <TituloSecao
+            acao={
+              <BotaoLink
+                href={`/api/races/${race.id}/relatorio?idioma=${relatorio.locale}`}
+                variant="secondary"
+                size="sm"
+              >
+                ↓ PDF
+              </BotaoLink>
+            }
+          >
+            {t("director.frozenTitle")}
+          </TituloSecao>
+
+          <p className="mt-3 text-sm text-ink-muted">
+            {t("director.frozenLine", {
+              v: relatorio.version,
+              tamanho: Math.round(relatorio.size_bytes / 102.4) / 10,
+              quando: formatRaceDateTime(relatorio.generated_at, locale, race.timezone),
+            })}
+          </p>
+
+          <p className="mt-4 text-xs text-ink-faint">{t("director.frozenHash")}</p>
+          <p className="mt-1 break-all font-mono text-[0.7rem] text-ink-muted select-all">
+            {relatorio.sha256}
+          </p>
+
+          <p className="mt-4">
+            <Link
+              href={`/api/races/${race.id}/relatorio?idioma=${relatorio.locale}&refazer=1`}
+              className="text-xs text-ink-faint underline underline-offset-4 transition hover:text-ink"
+            >
+              {t("director.frozenAgain")}
+            </Link>
+          </p>
+        </Cartao>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Cartao className="p-5 sm:p-6">

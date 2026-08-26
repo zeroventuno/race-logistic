@@ -435,6 +435,10 @@ export const ptBR = {
     finish: "Encerrar prova",
     report: "Relatório final",
     reportHint: "PDF com a janela medida, os incidentes e o comboio.",
+    frozenTitle: "Relatório final",
+    frozenLine: "Versão {v} · {tamanho} kB · gerado em {quando}",
+    frozenHash: "Confira o arquivo recebido com este SHA-256:",
+    frozenAgain: "Gerar versão nova",
 
     areaOverline: "Área da direção de prova",
     filterAll: "Todas",

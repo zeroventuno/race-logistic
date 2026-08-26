@@ -420,6 +420,10 @@ export const en: Dictionary = {
     finish: "Finish race",
     report: "Final report",
     reportHint: "PDF with the measured window, incidents and convoy.",
+    frozenTitle: "Final report",
+    frozenLine: "Version {v} · {tamanho} kB · generated {quando}",
+    frozenHash: "Verify the received file against this SHA-256:",
+    frozenAgain: "Generate a new version",
 
     areaOverline: "Race control area",
     filterAll: "All",
