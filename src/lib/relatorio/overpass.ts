@@ -56,6 +56,23 @@ import type { RouteTrack } from "@/lib/route/track";
  * E o nome sai melhor: um nó de cruzamento quase nunca tem nome próprio, mas as
  * vias que se encontram nele têm. "Via Roma × Via Savona" é o que o fiscal
  * reconhece; o nome do nó seria vazio.
+ *
+ * ------------------------------------------------------------------------
+ * SÓ ENTRA CRUZAMENTO COM NOME
+ *
+ * A primeira versão trazia todo nó compartilhado, e a maioria vinha sem nome
+ * nenhum: entrada de lavoura, acesso de garagem, emenda de traçado do editor
+ * do OSM. Duzentas linhas de "km 37,4" numa tela que ninguém consegue situar.
+ *
+ * O nome não é enfeite — é a única coisa que torna a linha utilizável. O
+ * relatório vai para uma prefeitura que precisa reconhecer o lugar, e "o seu
+ * agente na rotatória da Via Roma" é uma frase que se confere; "o ponto do km
+ * 37,4" não é. Um cruzamento que o OSM não sabe nomear é, quase sempre, um
+ * cruzamento que ninguém vai bloquear.
+ *
+ * O que a detecção não descreve, a direção acrescenta à mão, com o nome que
+ * ela usa. É a divisão certa: a máquina traz o que consegue nomear, a pessoa
+ * traz o que conhece.
  */
 
 export interface CruzamentoDetectado {
@@ -277,10 +294,9 @@ function extrair(
     if (offsetM === null) continue;
 
     const nomes = [...info.nomes];
-    brutos.push({
-      offsetM,
-      nome: nomes.length === 0 ? null : nomes.slice(0, 3).join(" × "),
-    });
+    if (nomes.length === 0) continue;
+
+    brutos.push({ offsetM, nome: nomes.slice(0, 3).join(" × ") });
   }
 
   return agrupar(brutos);
@@ -369,10 +385,7 @@ function agrupar(brutos: CruzamentoDetectado[]): CruzamentoDetectado[] {
   for (const c of ordenados) {
     const anterior = saida[saida.length - 1];
 
-    if (anterior && c.offsetM - anterior.offsetM < AGRUPAR_M) {
-      if (!anterior.nome && c.nome) anterior.nome = c.nome;
-      continue;
-    }
+    if (anterior && c.offsetM - anterior.offsetM < AGRUPAR_M) continue;
 
     saida.push({ ...c });
     if (saida.length >= TETO) break;

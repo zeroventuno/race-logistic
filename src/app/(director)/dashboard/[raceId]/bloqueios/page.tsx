@@ -1,5 +1,7 @@
 import { Aviso } from "@/components/director/ui";
 import { getTranslator } from "@/lib/i18n/server";
+import { loadRaceRoute } from "@/lib/route/store";
+import { positionAtOffset } from "@/lib/route/track";
 
 import { getRaceContext } from "../../../_lib/session";
 import { EditorDeBloqueios, type PontoNaTela } from "./Editor";
@@ -30,6 +32,17 @@ export default async function BloqueiosPage({
     .eq("race_id", raceId)
     .order("offset_m");
 
+  /*
+   * A GEOMETRIA VEM PARA CÁ, e as coordenadas de cada ponto saem daqui.
+   *
+   * O ponto é guardado como quilômetro ao longo da rota, que é a forma certa
+   * de guardar — sobrevive a uma troca de percurso e é o que liga o ponto ao
+   * rastro dos veículos. Mas quilômetro não se desenha num mapa: para isso
+   * cada um precisa virar coordenada, e a conversão é do servidor, que já tem
+   * o traçado carregado e em cache.
+   */
+  const rota = await loadRaceRoute(raceId);
+
   const pontos: PontoNaTela[] = (
     (data ?? []) as {
       id: string;
@@ -38,18 +51,39 @@ export default async function BloqueiosPage({
       source: string;
       active: boolean;
     }[]
-  ).map((p) => ({
-    id: p.id,
-    offsetM: Number(p.offset_m),
-    nome: p.name,
-    detectado: p.source === "detected",
-    ativo: p.active,
-  }));
+  ).map((p) => {
+    const offsetM = Number(p.offset_m);
+    const em = rota ? positionAtOffset(rota.track, offsetM % rota.track.totalDistanceM) : null;
+
+    return {
+      id: p.id,
+      offsetM,
+      nome: p.name,
+      detectado: p.source === "detected",
+      ativo: p.active,
+      lat: em?.lat ?? null,
+      lng: em?.lng ?? null,
+    };
+  });
 
   const distanciaM = (race.laps ?? 1) * (activeTrack?.total_distance_m ?? 0);
 
+  // `render_points` é buscado só aqui, como na tela de percurso: são centenas
+  // de pares, e carregá-los no contexto compartilhado faria outras telas
+  // pagarem por um dado que não desenham.
+  const { data: geometria } = activeTrack
+    ? await supabase
+        .from("route_tracks")
+        .select("render_points")
+        .eq("id", activeTrack.id)
+        .maybeSingle()
+    : { data: null };
+
+  const activeTrackRenderPoints = (geometria as { render_points?: unknown } | null)
+    ?.render_points;
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <header className="mb-6">
         <h1 className="titulo text-2xl font-semibold text-ink">
           {t("blockpoints.title")}
@@ -68,6 +102,8 @@ export default async function BloqueiosPage({
           raceId={race.id}
           pontos={pontos}
           distanciaM={distanciaM}
+          rota={(activeTrackRenderPoints ?? []) as [number, number][]}
+          basemap={race.map_basemap}
         />
       ) : (
         <Aviso tone="warn" titulo={t("director.readOnly")}>

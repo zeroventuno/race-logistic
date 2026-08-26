@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { Botao } from "@/components/director/ui";
 import { useT } from "@/lib/i18n/client";
+
+import { MapaDeBloqueios } from "./MapaDeBloqueios";
 
 import {
   acrescentar,
@@ -20,33 +22,60 @@ export interface PontoNaTela {
   nome: string | null;
   detectado: boolean;
   ativo: boolean;
+  /** Onde o quilômetro cai no mapa. Nulo se o percurso não resolveu. */
+  lat: number | null;
+  lng: number | null;
 }
 
 /**
  * Podar, nomear e acrescentar pontos de bloqueio.
  *
- * A tela é uma lista e nada mais, de propósito. Ela é usada uma vez por prova,
- * na mesa, com o documento da prefeitura ao lado — não em movimento e não sob
- * pressão. Mapa aqui seria bonito e atrapalharia: o que a pessoa está fazendo é
- * conferir uma lista contra outra lista.
+ * É usada uma vez por prova, na mesa, com o documento da prefeitura ao lado —
+ * não em movimento e não sob pressão.
+ *
+ * NASCEU SEM MAPA, com o argumento de que a pessoa está conferindo uma lista
+ * contra outra lista. Era meia verdade e a metade que faltava derrubava a
+ * tela: a lista da prefeitura traz NOMES, e quem nunca dirigiu aquele trecho
+ * não liga "km 37,4" a lugar nenhum. Sem saber onde o ponto fica, manter ou
+ * desligar vira sorteio — e foi exatamente o que aconteceu no primeiro uso.
+ *
+ * A seleção anda nos dois sentidos: clicar no quilômetro aproxima o ponto no
+ * mapa, clicar no ponto marca a linha.
  *
  * DESLIGAR NÃO É APAGAR. O que veio da detecção só pode ser desligado, porque
  * apagar faria a próxima detecção trazer tudo de volta e o trabalho de podar
  * teria que ser refeito. Remover existe só para o que foi cadastrado à mão.
+ *
+ * LIGAR E DESLIGAR ACONTECE NA HORA, no estado local, e o servidor confirma por
+ * baixo. Antes cada caixa disparava revalidação da rota inteira: a tela piscava
+ * duas vezes antes de a caixa mudar, e quem estava podando cem pontos apanhava
+ * a cada linha. Só o que muda a LISTA — detectar, acrescentar, remover — espera
+ * o servidor, porque aí a tela realmente não sabe o resultado.
  */
 export function EditorDeBloqueios({
   raceId,
-  pontos,
+  pontos: pontosDoServidor,
   distanciaM,
+  rota,
+  basemap,
 }: {
   raceId: string;
   pontos: PontoNaTela[];
   distanciaM: number;
+  rota: [number, number][];
+  basemap?: string | null;
 }) {
   const t = useT();
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
+
+  const [pontos, setPontos] = useState(pontosDoServidor);
+  const [selecionado, setSelecionado] = useState<string | null>(null);
+
+  // Detectar, acrescentar e remover revalidam a rota, e é por aqui que a lista
+  // nova chega. Sem isto o estado local ficaria preso na primeira renderização.
+  useEffect(() => setPontos(pontosDoServidor), [pontosDoServidor]);
 
   const [novoKm, setNovoKm] = useState("");
   const [novoNome, setNovoNome] = useState("");
@@ -132,6 +161,19 @@ export function EditorDeBloqueios({
       {aviso ? <p className="text-sm text-ok">{aviso}</p> : null}
       {erro ? <p className="text-sm text-critical">{erro}</p> : null}
 
+      {rota.length > 1 ? (
+        <MapaDeBloqueios
+          rota={rota}
+          pontos={pontos
+            .filter((p) => p.lat !== null && p.lng !== null)
+            .map((p) => ({ id: p.id, lat: p.lat!, lng: p.lng!, ativo: p.ativo }))}
+          selecionado={selecionado}
+          onSelecionar={setSelecionado}
+          basemap={basemap}
+          className="h-72 w-full border border-border sm:h-96"
+        />
+      ) : null}
+
       {pontos.length === 0 ? (
         <p className="border border-border bg-surface-1 px-4 py-6 text-center text-sm text-ink-muted">
           {t("blockpoints.empty")}
@@ -145,6 +187,25 @@ export function EditorDeBloqueios({
               p={p}
               pendente={pendente}
               executar={executar}
+              selecionado={selecionado === p.id}
+              onSelecionar={() => setSelecionado(p.id)}
+              onAlternar={(ativo) => {
+                // A tela muda AGORA. O servidor confirma por baixo, e se
+                // recusar o erro aparece — mas quem clicou não espera.
+                setPontos((atual) =>
+                  atual.map((x) => (x.id === p.id ? { ...x, ativo } : x)),
+                );
+                void alternar(raceId, p.id, ativo).then((r) => {
+                  if (r.erro) {
+                    setErro(r.erro);
+                    setPontos((atual) =>
+                      atual.map((x) =>
+                        x.id === p.id ? { ...x, ativo: !ativo } : x,
+                      ),
+                    );
+                  }
+                });
+              }}
             />
           ))}
         </ul>
@@ -198,11 +259,17 @@ function Linha({
   p,
   pendente,
   executar,
+  selecionado,
+  onSelecionar,
+  onAlternar,
 }: {
   raceId: string;
   p: PontoNaTela;
   pendente: boolean;
   executar: (fn: () => Promise<Resposta>) => void;
+  selecionado: boolean;
+  onSelecionar: () => void;
+  onAlternar: (ativo: boolean) => void;
 }) {
   const t = useT();
   const [nome, setNome] = useState(p.nome ?? "");
@@ -213,11 +280,16 @@ function Linha({
     <li
       className={`flex flex-wrap items-center gap-3 border-b border-border/60 px-3 py-2.5 last:border-b-0 ${
         p.ativo ? "" : "opacity-45"
-      }`}
+      } ${selecionado ? "bg-surface-3" : ""}`}
     >
-      <span className="tnum w-14 shrink-0 text-sm text-ink-muted">
+      <button
+        type="button"
+        onClick={onSelecionar}
+        title={t("blockpoints.km")}
+        className="tnum w-14 shrink-0 text-left text-sm text-ink-muted underline decoration-transparent underline-offset-4 transition hover:decoration-current"
+      >
         {(p.offsetM / 1000).toFixed(1)}
-      </span>
+      </button>
 
       <input
         type="text"
@@ -255,8 +327,7 @@ function Linha({
         <input
           type="checkbox"
           checked={p.ativo}
-          disabled={pendente}
-          onChange={(e) => executar(() => alternar(raceId, p.id, e.target.checked))}
+          onChange={(e) => onAlternar(e.target.checked)}
           className="h-4 w-4"
         />
         {t("blockpoints.active")}

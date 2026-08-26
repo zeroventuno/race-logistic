@@ -173,7 +173,8 @@ export async function renomear(
 
   if (error) return { erro: error.message };
 
-  revalidatePath(`/dashboard/${raceId}/bloqueios`);
+  // SEM `revalidatePath`: a tela já sabe o nome que digitou, e revalidar
+  // remontaria a lista inteira por causa de uma letra. Ver a nota em alternar.
   return { ok: true };
 }
 
@@ -193,7 +194,20 @@ export async function alternar(
 
   if (error) return { erro: error.message };
 
-  revalidatePath(`/dashboard/${raceId}/bloqueios`);
+  /*
+   * SEM `revalidatePath`, e é o conserto de um defeito de uso.
+   *
+   * Cada clique numa caixa disparava revalidação da rota, que remonta a página
+   * inteira no servidor e devolve a lista toda. Com uma centena de pontos a
+   * tela piscava DUAS vezes antes de a caixa mudar de estado — uma na
+   * transição, outra na chegada dos dados —, e quem estava podando a lista
+   * apanhava a cada linha.
+   *
+   * Ligar ou desligar um ponto é a ação mais repetida desta tela. Quem clicou
+   * já sabe o que pediu; a tela reflete na hora e o servidor confirma por
+   * baixo. Só as ações que MUDAM A LISTA — detectar, acrescentar, remover —
+   * continuam revalidando, porque aí a tela realmente não sabe o resultado.
+   */
   return { ok: true };
 }
 
