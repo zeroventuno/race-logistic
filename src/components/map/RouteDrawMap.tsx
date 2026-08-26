@@ -2,6 +2,7 @@
 
 import type { FeatureCollection, LineString, Point } from "geojson";
 import type {
+  LayerSpecification,
   LngLatBoundsLike,
   MapLayerMouseEvent,
   MapLayerTouchEvent,
@@ -96,6 +97,21 @@ export function RouteDrawMap({
   onPreviewRef.current = onPreview;
   onSelecionarRef.current = onSelecionar;
 
+  /**
+   * Em qual instância de mapa os gestos já foram instalados.
+   *
+   * `aoPronto` roda MAIS DE UMA VEZ por montagem, e isso não é defeito do
+   * `MapCanvas`: `setStyle` derruba fontes e camadas, então quem desenha em
+   * cima precisa ser chamado de novo para redesenhar. Só que gestos NÃO são
+   * derrubados pelo `setStyle` — eles vivem no mapa, não no estilo —, e
+   * registrá-los a cada chamada empilha um `click` em cima do outro.
+   *
+   * O efeito era um clique produzir DUAS entradas de histórico: o vértice
+   * entrava uma vez só, mas o Ctrl+Z precisava de dois toques, e o primeiro
+   * parecia não fazer nada.
+   */
+  const gestosEmRef = useRef<MapLibreMap | null>(null);
+
   const redesenhar = useCallback(() => {
     const map = mapRef.current;
     if (!map || !prontoRef.current) return;
@@ -117,22 +133,19 @@ export function RouteDrawMap({
 
       const soLeitura = somenteLeituraRef.current;
 
-      map.addSource(FONTE_LINHA, {
-        type: "geojson",
-        data: linhaGeoJson(verticesRef.current),
-      });
-      map.addSource(FONTE_VERTICES, {
-        type: "geojson",
-        data: verticesGeoJson(
-          verticesRef.current,
-          selecionadoRef.current,
-          soLeitura,
-        ),
-      });
+      // Fonte e camada SÃO re-adicionadas a cada chamada, porque o `setStyle`
+      // as destrói. A guarda existe para o caso de `load` e `styledata`
+      // chegarem na ordem oposta, em que o estilo ainda tem tudo de pé.
+      garantirFonte(map, FONTE_LINHA, linhaGeoJson(verticesRef.current));
+      garantirFonte(
+        map,
+        FONTE_VERTICES,
+        verticesGeoJson(verticesRef.current, selecionadoRef.current, soLeitura),
+      );
 
       // Halo escuro por baixo: sobre a parte clara do basemap uma linha ciano
       // de 3 px desaparece.
-      map.addLayer({
+      garantirCamada(map, {
         id: CAMADA_LINHA_HALO,
         type: "line",
         source: FONTE_LINHA,
@@ -144,7 +157,7 @@ export function RouteDrawMap({
         },
       });
 
-      map.addLayer({
+      garantirCamada(map, {
         id: CAMADA_LINHA,
         type: "line",
         source: FONTE_LINHA,
@@ -152,7 +165,7 @@ export function RouteDrawMap({
         paint: { "line-color": COR_LINHA, "line-width": 3 },
       });
 
-      map.addLayer({
+      garantirCamada(map, {
         id: CAMADA_VERTICES,
         type: "circle",
         source: FONTE_VERTICES,
@@ -171,7 +184,7 @@ export function RouteDrawMap({
         },
       });
 
-      map.addLayer({
+      garantirCamada(map, {
         id: CAMADA_VERTICES_ACERTO,
         type: "circle",
         source: FONTE_VERTICES,
@@ -185,6 +198,10 @@ export function RouteDrawMap({
       }
 
       if (soLeitura) return;
+
+      // Daqui para baixo é gesto, e gesto sobrevive à troca de estilo.
+      if (gestosEmRef.current === map) return;
+      gestosEmRef.current = map;
 
       map.on("click", (e: MapMouseEvent) => {
         const emCima = map.queryRenderedFeatures(e.point, {
@@ -247,12 +264,37 @@ export function RouteDrawMap({
       onTeardown={() => {
         prontoRef.current = false;
         mapRef.current = null;
+        gestosEmRef.current = null;
       }}
       initialCenter={centroInicial}
       initialZoom={zoomInicial}
       className={className}
     />
   );
+}
+
+/**
+ * Fonte que suporta ser pedida de novo.
+ *
+ * Depois de um `setStyle` ela não existe mais e precisa voltar; antes dele,
+ * pedir de novo faria o MapLibre lançar "There is already a source with ID".
+ */
+export function garantirFonte(
+  map: MapLibreMap,
+  id: string,
+  data: FeatureCollection,
+): void {
+  if (map.getSource(id)) {
+    aplicarDados(map, id, data);
+    return;
+  }
+  map.addSource(id, { type: "geojson", data });
+}
+
+/** Mesma ideia para camada. */
+export function garantirCamada(map: MapLibreMap, spec: LayerSpecification): void {
+  if (map.getLayer(spec.id)) return;
+  map.addLayer(spec);
 }
 
 function aplicarDados(
